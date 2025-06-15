@@ -19,7 +19,6 @@ from pulumi_kubernetes.core.v1 import (
     Namespace,
     PersistentVolumeClaim,
     PersistentVolumeClaimSpecArgs,
-    PersistentVolumeClaimVolumeSourceArgs,
     PodSpecArgs,
     PodTemplateSpecArgs,
     ProbeArgs,
@@ -32,7 +31,6 @@ from pulumi_kubernetes.core.v1 import (
     TCPSocketActionArgs,
     VolumeArgs,
     VolumeMountArgs,
-    VolumeResourceRequirementsArgs,
 )
 from pulumi_kubernetes.meta.v1 import LabelSelectorArgs, ObjectMetaArgs
 
@@ -225,9 +223,7 @@ class SupabaseInfrastructure:
             ),
             spec=PersistentVolumeClaimSpecArgs(
                 access_modes=["ReadWriteOnce"],
-                resources=VolumeResourceRequirementsArgs(
-                    requests={"storage": self.config["postgres"]["storage"]}
-                ),
+                resources={"requests": {"storage": self.config["postgres"]["storage"]}},
                 storage_class_name="local-path",  # K3s default storage class
             ),
             opts=pulumi.ResourceOptions(provider=self.provider, depends_on=[namespace]),
@@ -244,9 +240,7 @@ class SupabaseInfrastructure:
             ),
             spec=PersistentVolumeClaimSpecArgs(
                 access_modes=["ReadWriteOnce"],
-                resources=VolumeResourceRequirementsArgs(
-                    requests={"storage": self.config["storage"]["storage"]}
-                ),
+                resources={"requests": {"storage": self.config["storage"]["storage"]}},
                 storage_class_name="local-path",
             ),
             opts=pulumi.ResourceOptions(provider=self.provider, depends_on=[namespace]),
@@ -336,9 +330,9 @@ class SupabaseInfrastructure:
                         volumes=[
                             VolumeArgs(
                                 name="postgres-storage",
-                                persistent_volume_claim=PersistentVolumeClaimVolumeSourceArgs(
-                                    claim_name="supabase-postgres-pvc"
-                                ),
+                                persistent_volume_claim={
+                                    "claim_name": "supabase-postgres-pvc"
+                                },
                             )
                         ],
                     ),
@@ -771,9 +765,9 @@ class SupabaseInfrastructure:
                         volumes=[
                             VolumeArgs(
                                 name="storage-data",
-                                persistent_volume_claim=PersistentVolumeClaimVolumeSourceArgs(
-                                    claim_name="supabase-storage-pvc"
-                                ),
+                                persistent_volume_claim={
+                                    "claim_name": "supabase-storage-pvc"
+                                },
                             )
                         ],
                     ),
@@ -805,10 +799,7 @@ class SupabaseInfrastructure:
         return deployment
 
     def _deploy_kong_gateway(
-        self,
-        namespace: Namespace,
-        config_map: ConfigMap,
-        dependencies: list[Any],
+        self, namespace: Namespace, config_map: ConfigMap, dependencies: list
     ) -> Deployment:
         """Deploy Kong Gateway as API gateway with proper configuration."""
         component_labels = {
@@ -885,7 +876,7 @@ class SupabaseInfrastructure:
             ),
             opts=pulumi.ResourceOptions(
                 provider=self.provider,
-                depends_on=[namespace, config_map, *dependencies],
+                depends_on=[namespace, config_map] + dependencies,
             ),
         )
 
@@ -913,7 +904,7 @@ class SupabaseInfrastructure:
         return deployment
 
 
-def main() -> None:
+def main():
     """Main function to deploy Supabase infrastructure."""
     # Get kubeconfig path from environment or use default
     kubeconfig_path = Path(os.getenv("KUBECONFIG", "~/.kube/config")).expanduser()

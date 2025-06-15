@@ -48,7 +48,7 @@ def validate_uv_environment(project_root: Optional[Path] = None) -> None:
                 cwd=project_root,
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
             print("✅ Virtual environment created successfully.")
         except subprocess.CalledProcessError as e:
@@ -84,18 +84,18 @@ def ensure_dependencies_synced(project_root: Optional[Path] = None) -> None:
             cwd=project_root,
             check=True,
             capture_output=True,
-            text=True
+            text=True,
         )
         print("✅ Dependencies synced successfully.")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
-            f"Failed to sync dependencies: {e}\n"
-            f"stdout: {e.stdout}\n"
-            f"stderr: {e.stderr}"
+            f"Failed to sync dependencies: {e}\nstdout: {e.stdout}\nstderr: {e.stderr}"
         )
 
 
-def run_with_uv(command: list[str], project_root: Optional[Path] = None) -> subprocess.CompletedProcess:
+def run_with_uv(
+    command: list[str], project_root: Optional[Path] = None
+) -> subprocess.CompletedProcess:
     """
     Run a command using UV's virtual environment.
 
@@ -138,9 +138,8 @@ def is_running_in_venv() -> bool:
     Returns:
         bool: True if running in a virtual environment, False otherwise
     """
-    return (
-        hasattr(sys, 'real_prefix') or
-        (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+    return hasattr(sys, "real_prefix") or (
+        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
     )
 
 
@@ -149,10 +148,7 @@ def print_uv_info() -> None:
     try:
         # Get UV version
         result = subprocess.run(
-            ["uv", "--version"],
-            capture_output=True,
-            text=True,
-            check=True
+            ["uv", "--version"], capture_output=True, text=True, check=True
         )
         uv_version = result.stdout.strip()
 

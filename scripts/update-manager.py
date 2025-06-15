@@ -4,6 +4,7 @@ Comprehensive update manager for all homelab components.
 Handles K3s, packages, containers, and configuration updates safely.
 """
 
+
 class UpdateManager:
     """Manage updates across entire homelab infrastructure."""
 
@@ -17,7 +18,7 @@ class UpdateManager:
             "k3s": await self._check_k3s_updates(),
             "containers": await self._check_container_updates(),
             "python_packages": await self._check_python_updates(),
-            "ansible_collections": await self._check_ansible_updates()
+            "ansible_collections": await self._check_ansible_updates(),
         }
         return updates
 
@@ -48,5 +49,6 @@ class UpdateManager:
             return False
 
         return True
+
 
 # Usage: python3 scripts/update-manager.py --check-all --safe-update

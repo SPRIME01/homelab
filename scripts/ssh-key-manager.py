@@ -17,7 +17,7 @@ class WSL2SSHKeyManager:
             result = subprocess.run(
                 ["powershell.exe", "-Command", "$env:USERNAME"],
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             if result.returncode == 0:
@@ -88,14 +88,23 @@ class WSL2SSHKeyManager:
             key_path = self.wsl2_ssh_path / "id_rsa"
 
             # Generate SSH key pair
-            result = subprocess.run([
-                "ssh-keygen",
-                "-t", "rsa",
-                "-b", "4096",
-                "-f", str(key_path),
-                "-N", "",  # No passphrase
-                "-C", "wsl2-homelab@192.168.0.51"
-            ], capture_output=True, text=True)
+            result = subprocess.run(
+                [
+                    "ssh-keygen",
+                    "-t",
+                    "rsa",
+                    "-b",
+                    "4096",
+                    "-f",
+                    str(key_path),
+                    "-N",
+                    "",  # No passphrase
+                    "-C",
+                    "wsl2-homelab@192.168.0.51",
+                ],
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode == 0:
                 self.log_message("Generated new SSH key pair for WSL2")
@@ -106,11 +115,13 @@ class WSL2SSHKeyManager:
                         for key_file in ["id_rsa", "id_rsa.pub"]:
                             shutil.copy2(
                                 self.wsl2_ssh_path / key_file,
-                                self.windows_ssh_path / key_file
+                                self.windows_ssh_path / key_file,
                             )
                         self.log_message("Synchronized SSH keys with Windows")
                     except Exception as e:
-                        self.log_message(f"Warning: Could not sync to Windows: {e}", "WARNING")
+                        self.log_message(
+                            f"Warning: Could not sync to Windows: {e}", "WARNING"
+                        )
 
                 return self._test_ssh_key()
             else:
@@ -125,9 +136,11 @@ class WSL2SSHKeyManager:
         """Test SSH key functionality."""
         try:
             # Test key format
-            result = subprocess.run([
-                "ssh-keygen", "-l", "-f", str(self.wsl2_ssh_path / "id_rsa.pub")
-            ], capture_output=True, text=True)
+            result = subprocess.run(
+                ["ssh-keygen", "-l", "-f", str(self.wsl2_ssh_path / "id_rsa.pub")],
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode == 0:
                 self.log_message(f"SSH key validation: {result.stdout.strip()}")
@@ -146,10 +159,20 @@ class WSL2SSHKeyManager:
 
         try:
             # Test current SSH access
-            result = subprocess.run([
-                "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-                f"ubuntu@{agent_ip}", "echo 'SSH test successful'"
-            ], capture_output=True, text=True, timeout=15)
+            result = subprocess.run(
+                [
+                    "ssh",
+                    "-o",
+                    "BatchMode=yes",
+                    "-o",
+                    "ConnectTimeout=10",
+                    f"ubuntu@{agent_ip}",
+                    "echo 'SSH test successful'",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
 
             if result.returncode == 0:
                 self.log_message("SSH access to agent node already working", "SUCCESS")
@@ -166,14 +189,25 @@ class WSL2SSHKeyManager:
         """Setup SSH key-based auth to agent node."""
         try:
             # Interactive password prompt for initial setup
-            password = self.console.input(f"[yellow]Enter password for ubuntu@{agent_ip}: [/yellow]", password=True)
+            password = self.console.input(
+                f"[yellow]Enter password for ubuntu@{agent_ip}: [/yellow]",
+                password=True,
+            )
 
             # Use ssh-copy-id with sshpass
-            result = subprocess.run([
-                "sshpass", "-p", password,
-                "ssh-copy-id", "-o", "StrictHostKeyChecking=no",
-                f"ubuntu@{agent_ip}"
-            ], capture_output=True, text=True)
+            result = subprocess.run(
+                [
+                    "sshpass",
+                    "-p",
+                    password,
+                    "ssh-copy-id",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    f"ubuntu@{agent_ip}",
+                ],
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode == 0:
                 self.log_message("SSH key copied to agent node successfully", "SUCCESS")

@@ -17,8 +17,10 @@ except ImportError:
     # Fallback if not available
     def validate_uv_environment():
         pass
+
     def ensure_dependencies_synced():
         pass
+
 
 class DevEnvironmentManager:
     """Manage development environment for optimal GitHub Copilot usage."""
@@ -38,9 +40,7 @@ class DevEnvironmentManager:
 
         # Check if project is initialized
         if not (self.project_root / "pyproject.toml").exists():
-            raise RuntimeError(
-                "Project not initialized. Please run 'uv init' first."
-            )
+            raise RuntimeError("Project not initialized. Please run 'uv init' first.")
 
         # Check if virtual environment exists
         venv_path = self.project_root / ".venv"
@@ -76,7 +76,7 @@ class DevEnvironmentManager:
                 "markdown": True,
                 "python": True,
                 "dockerfile": True,
-                "json": True
+                "json": True,
             },
             "github.copilot.inlineSuggest.enable": True,
             "github.copilot.editor.enableCodeActions": True,
@@ -86,7 +86,7 @@ class DevEnvironmentManager:
             "editor.quickSuggestions": {
                 "other": True,
                 "comments": True,
-                "strings": True
+                "strings": True,
             },
             "python.analysis.autoImportCompletions": True,
             "python.analysis.completeFunctionParens": True,
@@ -94,8 +94,8 @@ class DevEnvironmentManager:
                 "*.yaml": "yaml",
                 "*.yml": "yaml",
                 "Dockerfile*": "dockerfile",
-                "*.tf": "terraform"
-            }
+                "*.tf": "terraform",
+            },
         }
 
         self._update_vscode_settings(copilot_settings)
@@ -154,7 +154,7 @@ This is a comprehensive smart home laboratory environment using:
             "image": "mcr.microsoft.com/devcontainers/python:3.11",
             "features": {
                 "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-                "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {}
+                "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
             },
             "postCreateCommand": "uv sync --all-extras && uv run pre-commit install",
             "customizations": {
@@ -166,14 +166,14 @@ This is a comprehensive smart home laboratory environment using:
                         "charliermarsh.ruff",
                         "ms-python.mypy-type-checker",
                         "ms-kubernetes-tools.vscode-kubernetes-tools",
-                        "HashiCorp.terraform"
+                        "HashiCorp.terraform",
                     ]
                 }
             },
             "forwardPorts": [6443, 8080, 3000],
             "mounts": [
                 "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-            ]
+            ],
         }
 
         devcontainer_dir = self.project_root / ".devcontainer"
@@ -265,5 +265,6 @@ fi
 
         # Make executable
         subprocess.run(["chmod", "+x", "scripts/dev-shortcuts.sh"])
+
 
 # Usage: python3 scripts/dev-env-manager.py --setup-all

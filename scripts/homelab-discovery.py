@@ -12,6 +12,7 @@ import nmap
 from dataclasses import dataclass
 import yaml
 
+
 @dataclass
 class DiscoveredDevice:
     ip: str
@@ -20,6 +21,7 @@ class DiscoveredDevice:
     device_type: str
     services: List[str]
     manufacturer: str = "Unknown"
+
 
 class SmartHomeDiscovery:
     """Discover and integrate smart home devices."""
@@ -35,10 +37,10 @@ class SmartHomeDiscovery:
         devices = []
 
         # Scan network
-        nm.scan(hosts=self.network_range, arguments='-sn')
+        nm.scan(hosts=self.network_range, arguments="-sn")
 
         for host in nm.all_hosts():
-            if nm[host].state() == 'up':
+            if nm[host].state() == "up":
                 device = await self._identify_device(host, nm[host])
                 if device:
                     devices.append(device)
@@ -61,15 +63,15 @@ class SmartHomeDiscovery:
             8123: "home_assistant",
             9443: "unifi",
             22: "ssh",
-            23: "telnet"
+            23: "telnet",
         }
 
         nm = nmap.PortScanner()
-        nm.scan(ip, arguments='-p' + ','.join(map(str, port_checks.keys())))
+        nm.scan(ip, arguments="-p" + ",".join(map(str, port_checks.keys())))
 
         if ip in nm.all_hosts():
             for port, service in port_checks.items():
-                if nm[ip]['tcp'][port]['state'] == 'open':
+                if nm[ip]["tcp"][port]["state"] == "open":
                     services.append(service)
 
         # Device type inference
@@ -79,7 +81,7 @@ class SmartHomeDiscovery:
             device_type = "mqtt_broker"
         elif "alexa" in hostname.lower():
             device_type = "amazon_echo"
-        elif any(brand in hostname.lower() for brand in ['philips', 'hue']):
+        elif any(brand in hostname.lower() for brand in ["philips", "hue"]):
             device_type = "philips_hue"
         elif "unifi" in services:
             device_type = "unifi_device"
@@ -89,41 +91,43 @@ class SmartHomeDiscovery:
             hostname=hostname,
             mac_address=self._get_mac_address(ip),
             device_type=device_type,
-            services=services
+            services=services,
         )
 
     def generate_home_assistant_config(self, devices: List[DiscoveredDevice]) -> str:
         """Generate Home Assistant configuration for discovered devices."""
         config = {
-            'mqtt': {
-                'broker': '192.168.0.41',
-                'port': 1883,
-                'discovery': True
-            },
-            'device_tracker': [],
-            'switch': [],
-            'sensor': []
+            "mqtt": {"broker": "192.168.0.41", "port": 1883, "discovery": True},
+            "device_tracker": [],
+            "switch": [],
+            "sensor": [],
         }
 
         for device in devices:
             if device.device_type == "amazon_echo":
-                config['media_player'] = config.get('media_player', [])
-                config['media_player'].append({
-                    'platform': 'alexa_media',
-                    'accounts': [{
-                        'email': 'your_email@example.com',  # User to configure
-                        'password': 'your_password',
-                        'url': 'amazon.com'
-                    }]
-                })
+                config["media_player"] = config.get("media_player", [])
+                config["media_player"].append(
+                    {
+                        "platform": "alexa_media",
+                        "accounts": [
+                            {
+                                "email": "your_email@example.com",  # User to configure
+                                "password": "your_password",
+                                "url": "amazon.com",
+                            }
+                        ],
+                    }
+                )
 
             # Add device tracker for all discovered devices
-            config['device_tracker'].append({
-                'platform': 'nmap_tracker',
-                'hosts': f"{device.ip}/32",
-                'home_interval': 10,
-                'consider_home': 180
-            })
+            config["device_tracker"].append(
+                {
+                    "platform": "nmap_tracker",
+                    "hosts": f"{device.ip}/32",
+                    "home_interval": 10,
+                    "consider_home": 180,
+                }
+            )
 
         return yaml.dump(config, default_flow_style=False)
 
@@ -134,20 +138,21 @@ class SmartHomeDiscovery:
         for device in devices:
             if device.device_type in ["home_assistant", "mqtt_broker"]:
                 service_config = {
-                    'apiVersion': 'v1',
-                    'kind': 'Service',
-                    'metadata': {
-                        'name': f"{device.device_type.replace('_', '-')}-external",
-                        'namespace': 'smart-home'
+                    "apiVersion": "v1",
+                    "kind": "Service",
+                    "metadata": {
+                        "name": f"{device.device_type.replace('_', '-')}-external",
+                        "namespace": "smart-home",
                     },
-                    'spec': {
-                        'type': 'ExternalName',
-                        'externalName': device.ip,
-                        'ports': self._get_service_ports(device.services)
-                    }
+                    "spec": {
+                        "type": "ExternalName",
+                        "externalName": device.ip,
+                        "ports": self._get_service_ports(device.services),
+                    },
                 }
                 services.append(service_config)
 
         return yaml.dump_all(services, default_flow_style=False)
+
 
 # Usage: python3 scripts/homelab-discovery.py --scan --generate-configs

@@ -20,9 +20,7 @@ class SystemAuditor:
         # Try to find actual Windows username
         try:
             result = subprocess.run(
-                ["cmd.exe", "/c", "echo %USERNAME%"],
-                capture_output=True,
-                text=True
+                ["cmd.exe", "/c", "echo %USERNAME%"], capture_output=True, text=True
             )
             if result.returncode == 0:
                 windows_user = result.stdout.strip()
@@ -48,7 +46,7 @@ class SystemAuditor:
             "windows_host_reachable": False,
             "agent_node_reachable": False,
             "internet_connectivity": False,
-            "ssh_keys_accessible": False
+            "ssh_keys_accessible": False,
         }
 
         try:
@@ -62,18 +60,23 @@ class SystemAuditor:
                 network_info["ip_match"] = True
                 self.log_message(f"✅ WSL2 IP matches expected: {wsl2_ip}")
             else:
-                self.log_message(f"⚠️ WSL2 IP mismatch. Expected: {self.wsl2_expected_ip}, Got: {wsl2_ip}", "WARNING")
+                self.log_message(
+                    f"⚠️ WSL2 IP mismatch. Expected: {self.wsl2_expected_ip}, Got: {wsl2_ip}",
+                    "WARNING",
+                )
 
             # Test connectivity to Windows host
             try:
                 result = subprocess.run(
                     ["ping", "-c", "1", "-W", "2", self.windows_host_ip],
                     capture_output=True,
-                    timeout=5
+                    timeout=5,
                 )
                 network_info["windows_host_reachable"] = result.returncode == 0
                 status = "✅" if result.returncode == 0 else "❌"
-                self.log_message(f"{status} Windows host ({self.windows_host_ip}) reachability")
+                self.log_message(
+                    f"{status} Windows host ({self.windows_host_ip}) reachability"
+                )
             except:
                 self.log_message("❌ Cannot test Windows host connectivity", "WARNING")
 
@@ -82,7 +85,7 @@ class SystemAuditor:
                 result = subprocess.run(
                     ["ping", "-c", "1", "-W", "2", "192.168.0.66"],
                     capture_output=True,
-                    timeout=5
+                    timeout=5,
                 )
                 network_info["agent_node_reachable"] = result.returncode == 0
                 status = "✅" if result.returncode == 0 else "❌"
@@ -118,22 +121,26 @@ class SystemAuditor:
         network_table.add_row(
             "Windows Host IP",
             network_info["windows_host_ip"],
-            "✅ Expected" if network_info["windows_host_reachable"] else "❌ Unreachable"
+            "✅ Expected"
+            if network_info["windows_host_reachable"]
+            else "❌ Unreachable",
         )
         network_table.add_row(
             "WSL2 Instance IP",
             network_info.get("wsl2_ip", "Unknown"),
-            "✅ Expected" if network_info["ip_match"] else "⚠️ Different"
+            "✅ Expected" if network_info["ip_match"] else "⚠️ Different",
         )
         network_table.add_row(
             "Agent Node",
             "192.168.0.66",
-            "✅ Reachable" if network_info["agent_node_reachable"] else "❌ Unreachable"
+            "✅ Reachable"
+            if network_info["agent_node_reachable"]
+            else "❌ Unreachable",
         )
         network_table.add_row(
             "Windows SSH Keys",
             str(self.windows_ssh_path) if self.windows_ssh_path else "Not Found",
-            "✅ Accessible" if network_info["ssh_keys_accessible"] else "❌ Not Found"
+            "✅ Accessible" if network_info["ssh_keys_accessible"] else "❌ Not Found",
         )
 
         self.console.print(network_table)

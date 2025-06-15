@@ -18,7 +18,9 @@ try:
     from _uv_utils import validate_uv_environment, print_uv_info
 except ImportError as e:
     print(f"❌ Failed to import required dependencies: {e}")
-    print("💡 Please ensure the virtual environment is activated and dependencies are installed:")
+    print(
+        "💡 Please ensure the virtual environment is activated and dependencies are installed:"
+    )
     print("   uv sync --all-extras")
     sys.exit(1)
 
@@ -62,9 +64,10 @@ def audit():
 
     try:
         import subprocess
-        result = subprocess.run([
-            "uv", "run", "python", "scripts/00-system-audit.py"
-        ], check=True)
+
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/00-system-audit.py"], check=True
+        )
     except subprocess.CalledProcessError as e:
         console.print(f"❌ System audit failed: {e}", style="red")
         sys.exit(1)
@@ -77,9 +80,10 @@ def install():
 
     try:
         import subprocess
-        result = subprocess.run([
-            "uv", "run", "python", "scripts/01-install-components.py"
-        ], check=True)
+
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/01-install-components.py"], check=True
+        )
     except subprocess.CalledProcessError as e:
         console.print(f"❌ Installation failed: {e}", style="red")
         sys.exit(1)
@@ -92,9 +96,11 @@ def dev_setup():
 
     try:
         import subprocess
-        result = subprocess.run([
-            "uv", "run", "python", "scripts/dev-env-manager.py", "--setup-all"
-        ], check=True)
+
+        result = subprocess.run(
+            ["uv", "run", "python", "scripts/dev-env-manager.py", "--setup-all"],
+            check=True,
+        )
     except subprocess.CalledProcessError as e:
         console.print(f"❌ Development setup failed: {e}", style="red")
         sys.exit(1)
