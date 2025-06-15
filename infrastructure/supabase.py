@@ -18,9 +18,7 @@ from pulumi_kubernetes.core.v1 import (
     Service,
     ServicePortArgs,
     ServiceSpecArgs,
-    VolumeResourceRequirementsArgs,
 )
-from pulumi_kubernetes.meta.v1 import LabelSelectorArgs
 
 
 class SupabaseInfrastructure:
@@ -109,12 +107,9 @@ class SupabaseInfrastructure:
                 "name": "supabase-postgres-pvc",
                 "namespace": self.namespace_name,
             },
-            spec=Persistentimplment
-            VolumeClaimSpecArgs(
+            spec=PersistentVolumeClaimSpecArgs(
                 access_modes=["ReadWriteOnce"],
-                resources=VolumeResourceRequirementsArgs(
-                    requests={"storage": "10Gi"}
-                ),
+                resources={"requests": {"storage": "10Gi"}},
             ),
             opts=pulumi.ResourceOptions(provider=self.provider, depends_on=[namespace]),
         )
@@ -123,15 +118,10 @@ class SupabaseInfrastructure:
         """Create storage service persistent volume claim."""
         return PersistentVolumeClaim(
             "supabase-storage-pvc",
-            metadata={
-                "name": "supabase-storage-pvc",
-                "namespace": self.namespace_name,
-            },
+            metadata={"name": "supabase-storage-pvc", "namespace": self.namespace_name},
             spec=PersistentVolumeClaimSpecArgs(
                 access_modes=["ReadWriteOnce"],
-                resources=VolumeResourceRequirementsArgs(
-                    requests={"storage": "20Gi"}
-                ),
+                resources={"requests": {"storage": "20Gi"}},
             ),
             opts=pulumi.ResourceOptions(provider=self.provider, depends_on=[namespace]),
         )
@@ -144,7 +134,7 @@ class SupabaseInfrastructure:
             "supabase-postgres",
             metadata={"name": "supabase-postgres", "namespace": self.namespace_name},
             spec=DeploymentSpecArgs(
-                selector=LabelSelectorArgs(match_labels={"app": "supabase-postgres"}),
+                replicas=1,
                 selector={"matchLabels": {"app": "supabase-postgres"}},
                 template={
                     "metadata": {"labels": {"app": "supabase-postgres"}},
@@ -233,7 +223,8 @@ class SupabaseInfrastructure:
             "supabase-postgrest",
             metadata={"name": "supabase-postgrest", "namespace": self.namespace_name},
             spec=DeploymentSpecArgs(
-                selector=LabelSelectorArgs(match_labels={"app": "supabase-postgrest"}),
+                replicas=1,
+                selector={"matchLabels": {"app": "supabase-postgrest"}},
                 template={
                     "metadata": {"labels": {"app": "supabase-postgrest"}},
                     "spec": {
@@ -299,7 +290,7 @@ class SupabaseInfrastructure:
             "supabase-gotrue",
             metadata={"name": "supabase-gotrue", "namespace": self.namespace_name},
             spec=DeploymentSpecArgs(
-                selector=LabelSelectorArgs(match_labels={"app": "supabase-gotrue"}),
+                replicas=1,
                 selector={"matchLabels": {"app": "supabase-gotrue"}},
                 template={
                     "metadata": {"labels": {"app": "supabase-gotrue"}},
@@ -367,7 +358,7 @@ class SupabaseInfrastructure:
             "supabase-realtime",
             metadata={"name": "supabase-realtime", "namespace": self.namespace_name},
             spec=DeploymentSpecArgs(
-                selector=LabelSelectorArgs(match_labels={"app": "supabase-realtime"}),
+                replicas=1,
                 selector={"matchLabels": {"app": "supabase-realtime"}},
                 template={
                     "metadata": {"labels": {"app": "supabase-realtime"}},
@@ -436,7 +427,7 @@ class SupabaseInfrastructure:
             "supabase-storage",
             metadata={"name": "supabase-storage", "namespace": self.namespace_name},
             spec=DeploymentSpecArgs(
-                selector=LabelSelectorArgs(match_labels={"app": "supabase-storage"}),
+                replicas=1,
                 selector={"matchLabels": {"app": "supabase-storage"}},
                 template={
                     "metadata": {"labels": {"app": "supabase-storage"}},
@@ -528,7 +519,7 @@ class SupabaseInfrastructure:
             "supabase-kong",
             metadata={"name": "supabase-kong", "namespace": self.namespace_name},
             spec=DeploymentSpecArgs(
-                selector=LabelSelectorArgs(match_labels={"app": "supabase-kong"}),
+                replicas=1,
                 selector={"matchLabels": {"app": "supabase-kong"}},
                 template={
                     "metadata": {"labels": {"app": "supabase-kong"}},
