@@ -188,8 +188,27 @@ homelab/
 │   ├── cluster-health-monitor.py # Health monitoring
 │   └── performance-optimizer.py # Performance tuning
 │
-├── 🧪 tests/                  # Test suite
-│   └── test_supabase.py       # Infrastructure tests
+├── 🧪 tests/                  # Comprehensive Test Suite (90%+ Coverage)
+│   ├── unit/                  # Unit tests for individual components
+│   │   ├── test_uv_utils.py
+│   │   ├── test_system_audit.py
+│   │   ├── test_ssh_key_manager.py
+│   │   ├── test_install_components.py
+│   │   ├── test_supabase_infrastructure.py
+│   │   └── test_cli_main.py
+│   ├── integration/           # Integration and end-to-end tests
+│   │   ├── test_component_interactions.py
+│   │   ├── test_component_contracts.py
+│   │   ├── test_configuration_validation.py
+│   │   └── test_end_to_end_workflows.py
+│   ├── makefile/             # Makefile target testing
+│   │   ├── test_makefile_targets.py
+│   │   └── test_makefile_comprehensive.py
+│   ├── fixtures/             # Test data and mocks
+│   │   └── test_data.py
+│   ├── test_helpers.py       # Testing utilities and AAA base classes
+│   ├── conftest.py          # Pytest configuration and fixtures
+│   └── test_supabase.py     # Legacy infrastructure tests
 │
 ├── 📚 docs/                   # Documentation
 │   ├── planning/              # Architecture and design docs
@@ -237,25 +256,42 @@ The project supports flexible configuration through:
 
 ## 🧪 Testing
 
-Run the comprehensive test suite:
+### Comprehensive Test Suite (90%+ Coverage)
+
+This project includes a robust testing framework with unit, integration, and Makefile testing:
 
 ```bash
-# Run all tests
+# Run complete test suite with coverage
 make test
 
 # Run specific test categories
-uv run pytest tests/ -v                    # All tests
-uv run pytest tests/test_supabase.py -v    # Infrastructure tests
-uv run pytest --cov=src tests/             # With coverage
+uv run pytest tests/unit/ -v               # Unit tests
+uv run pytest tests/integration/ -v        # Integration tests
+uv run pytest tests/makefile/ -v           # Makefile tests
+uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure  # Coverage
 
-# Run type checking
-make type-check
+# Generate coverage reports
+uv run python scripts/coverage_analysis.py --generate-report
+make coverage
 
-# Run code quality checks
-make lint
+# Run quality checks
+make lint                                   # Code linting
+make format                                 # Code formatting
+uv run mypy --strict src/ scripts/         # Type checking
 ```
 
+### Test Architecture
+
+- **Unit Tests**: Mock external dependencies, test individual components
+- **Integration Tests**: Validate component interactions and workflows
+- **Makefile Tests**: Ensure build automation reliability
+- **CI/CD Integration**: GitHub Actions with automated testing
+
+> 📋 **For detailed testing documentation, see [docs/TESTING_DOCUMENTATION.md](docs/TESTING_DOCUMENTATION.md)**
+
 ## 🤝 Development
+
+> 📚 **For comprehensive development workflow documentation, see [docs/development_workflow.md](docs/development_workflow.md)**
 
 ### Development Workflow
 

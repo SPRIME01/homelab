@@ -1,0 +1,255 @@
+name: Smart Home K3s Lab - Test Suite
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 6 AM UTC
+    - cron: '0 6 * * *'
+
+env:
+  UV_CACHE_DIR: ~/.uv-cache
+
+jobs:
+  test:
+    name: Test Suite (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better coverage analysis
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras --frozen
+        uv run pip list
+
+    - name: Check code formatting
+      run: |
+        uv run ruff format --check src/ tests/ scripts/ infrastructure/
+
+    - name: Run linting
+      run: |
+        uv run ruff check src/ tests/ scripts/ infrastructure/
+
+    - name: Run type checking
+      run: |
+        uv run mypy --strict src/ scripts/
+
+    - name: Run unit tests with coverage
+      run: |
+        uv run pytest tests/unit/ -v \
+          --cov=src --cov=scripts --cov=infrastructure \
+          --cov-report=xml --cov-report=term-missing \
+          --junitxml=unit-test-results.xml
+
+    - name: Run integration tests
+      run: |
+        uv run pytest tests/integration/ -v \
+          --junitxml=integration-test-results.xml
+
+    - name: Run Makefile tests
+      run: |
+        uv run pytest tests/makefile/ -v \
+          --junitxml=makefile-test-results.xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+        path: |
+          *-test-results.xml
+          coverage.xml
+
+  makefile-tests:
+    name: Makefile Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+
+    - name: Install dependencies
+      run: uv sync --all-extras
+
+    - name: Test Makefile targets
+      run: |
+        make help
+        make check-uv
+        make lint
+        make format
+        make test
+
+    - name: Validate Makefile documentation
+      run: |
+        # Ensure all targets have documentation
+        make help | grep -E "^\s+[a-zA-Z_-]+\s+.*" | wc -l | xargs test 10 -le
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+
+    - name: Install dependencies
+      run: uv sync --all-extras
+
+    - name: Run safety check
+      run: |
+        uv add safety
+        uv run safety check
+
+    - name: Run bandit security scan
+      run: |
+        uv add bandit[toml]
+        uv run bandit -r src/ scripts/ infrastructure/ -f json -o bandit-report.json || true
+
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-scan-results
+        path: bandit-report.json
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+
+    - name: Install dependencies
+      run: uv sync --all-extras
+
+    - name: Run performance benchmarks
+      run: |
+        uv add pytest-benchmark
+        uv run pytest tests/ -m "performance" --benchmark-json=benchmark-results.json
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark-results.json
+
+  documentation:
+    name: Documentation Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+
+    - name: Install dependencies
+      run: |
+        uv sync --all-extras
+        uv add mkdocs mkdocs-material
+
+    - name: Build documentation
+      run: |
+        uv run mkdocs build --strict
+
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: site/
+
+  coverage-analysis:
+    name: Coverage Analysis & Optimization
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+
+    - name: Install dependencies
+      run: uv sync --all-extras
+
+    - name: Run comprehensive coverage analysis
+      run: |
+        uv run pytest tests/ \
+          --cov=src --cov=scripts --cov=infrastructure \
+          --cov-report=html --cov-report=json --cov-report=term-missing
+
+    - name: Generate coverage optimization report
+      run: |
+        uv run python scripts/coverage_optimizer.py
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          htmlcov/
+          coverage.json
+          COVERAGE_OPTIMIZATION.md
+
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [test, makefile-tests, security-scan, documentation, coverage-analysis]
+    if: always()
+
+    steps:
+    - name: Notify success
+      if: ${{ needs.test.result == 'success' && needs.makefile-tests.result == 'success' }}
+      run: |
+        echo "✅ All tests passed! Smart Home K3s Lab is ready for deployment."
+
+    - name: Notify failure
+      if: ${{ needs.test.result == 'failure' || needs.makefile-tests.result == 'failure' }}
+      run: |
+        echo "❌ Tests failed! Please review the results and fix issues before proceeding."
+        exit 1

@@ -76,7 +76,9 @@ class SupabaseInfrastructure:
         self._validate_kubeconfig(kubeconfig_path)
         self.provider = k8s.Provider("k3s-provider", kubeconfig=str(kubeconfig_path))
         self.namespace_name = "supabase"
-        self.config: dict[str, Any] = config if config is not None else self._get_default_config()
+        self.config: dict[str, Any] = (
+            config if config is not None else self._get_default_config()
+        )
         self.labels = {"app.kubernetes.io/part-of": "supabase"}
         self._validate_config()
 
@@ -125,7 +127,9 @@ class SupabaseInfrastructure:
         return "".join(secrets.choice(alphabet) for _ in range(length))
 
     @contextmanager
-    def _log_operation(self, operation: str, **kwargs: Any) -> Generator[None, None, None]:
+    def _log_operation(
+        self, operation: str, **kwargs: Any
+    ) -> Generator[None, None, None]:
         """Context manager for structured logging of operations."""
         operation_id = self._generate_secure_secret(8)
         logger.info(f"Starting {operation}", operation_id=operation_id, **kwargs)

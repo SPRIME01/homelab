@@ -4,6 +4,8 @@
 .PHONY: all install verify audit clean help
 .PHONY: health-check discover backup optimize update-all dev-setup
 .PHONY: dev-install dev-reset quick-test monitor status disaster-recovery
+.PHONY: install-editable test lint format docs pre-commit
+.PHONY: coverage coverage-check test-unit test-integration test-makefile test-all coverage-optimize
 
 # Check if UV is available
 UV_AVAILABLE := $(shell command -v uv 2> /dev/null)
@@ -38,15 +40,71 @@ clean: ## Clean up installation artifacts
 	@rm -rf logs/ .pytest_cache/ __pycache__/ *.egg-info/
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Development environment
-dev-install: check-uv ## Install development dependencies
+# Development environment with editable installation
+dev-install: check-uv ## Install development dependencies with editable package
 	@echo "🔧 Installing development environment..."
-	uv sync --all-extras
+	uv sync --all-extras --editable
+
+install-editable: check-uv ## Install package in editable mode for development
+	@echo "📦 Installing homelab package in editable mode..."
+	uv sync --editable
 
 dev-reset: clean dev-install ## Reset development environment
 	@echo "🔄 Resetting development environment..."
 	uv run pre-commit install
 	@echo "✅ Development environment reset complete"
+
+# Standard development workflow targets
+test: check-uv ## Run tests with coverage
+	@echo "🧪 Running tests with coverage..."
+	uv run pytest tests/ -v --cov=homelab --cov=scripts --cov=infrastructure
+
+lint: check-uv ## Run code quality checks
+	@echo "🔍 Running code quality checks..."
+	uv run ruff check src/ tests/ scripts/ infrastructure/
+	uv run mypy --strict src/ scripts/
+
+format: check-uv ## Format code with ruff
+	@echo "🎨 Formatting code..."
+	uv run ruff format src/ tests/ scripts/ infrastructure/
+
+docs: check-uv ## Build documentation
+	@echo "📚 Building documentation..."
+	@command -v mkdocs >/dev/null 2>&1 && uv run mkdocs build || echo "⚠️ MkDocs not available, skipping docs build"
+
+pre-commit: lint test ## Run pre-commit checks
+	@echo "✅ Running pre-commit validation..."
+	@echo "✅ All checks passed"
+
+# Coverage and advanced testing targets
+coverage: check-uv ## Generate comprehensive coverage report
+	@echo "📊 Generating coverage report..."
+	uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
+	@echo "✅ Coverage report generated in htmlcov/"
+
+coverage-check: check-uv ## Check coverage meets minimum requirements (90%)
+	@echo "📈 Checking coverage requirements..."
+	uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-fail-under=90
+	@echo "✅ Coverage requirements met"
+
+test-unit: check-uv ## Run unit tests only
+	@echo "🧪 Running unit tests..."
+	uv run pytest tests/unit/ -v
+
+test-integration: check-uv ## Run integration tests only
+	@echo "🔗 Running integration tests..."
+	uv run pytest tests/integration/ -v
+
+test-makefile: check-uv ## Run Makefile tests
+	@echo "⚙️ Testing Makefile targets..."
+	uv run pytest tests/makefile/ -v
+
+test-all: test coverage-check lint ## Run complete test suite with quality checks
+	@echo "✅ All tests and quality checks passed"
+
+coverage-optimize: check-uv ## Run coverage optimization analysis
+	@echo "🎯 Analyzing coverage optimization opportunities..."
+	uv run python scripts/coverage_optimizer.py
 
 # Additional utility targets
 health-check: check-uv ## Run comprehensive cluster health check

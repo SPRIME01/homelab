@@ -20,6 +20,7 @@ dependencies = [
     "postgrest>=0.13.0",
     "pulumi>=3.95.0",
     "pulumi-kubernetes>=4.0.0",
+    "pytest-cov>=6.2.1",
 ]
 
 [project.optional-dependencies]
@@ -72,7 +73,7 @@ disallow_incomplete_defs = true
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 addopts = [
-    "--cov=src",
+    "--cov=homelab",  # Change from src to your actual package name
     "--cov=scripts",
     "--cov=infrastructure",
     "--cov-report=term-missing",
@@ -80,7 +81,6 @@ addopts = [
     "--strict-markers",
     "--disable-warnings",
 ]
-pythonpath = ["."]
 markers = [
     "integration: mark a test as an integration test",
     "asyncio: mark a test as asyncio-based",
