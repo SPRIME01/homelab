@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "envFile": "${workspaceFolder}\\.env"
+    },
+    {
+      "name": "Python: System Audit",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}\\scripts\\00-system-audit.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+    },
+    {
+      "name": "Python: Install Components",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}\\scripts\\01-install-components.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+    },
+    {
+      "name": "Python: Homelab CLI",
+      "type": "python",
+      "request": "launch",
+      "module": "homelab.cli.main",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": ["info"]
+    },
+    {
+      "name": "Python: Test UV Setup",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}\\scripts\\test_uv_setup.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+    },
+    {
+      "name": "Python: Pytest",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": ["tests/", "-v"]
+    }
+  ]
+}

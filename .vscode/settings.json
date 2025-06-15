@@ -1,0 +1,66 @@
+{
+  // Python interpreter for this workspace
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+
+  // UV-specific settings
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}\\src",
+    "${workspaceFolder}\\scripts"
+  ],
+
+  // Formatting with Ruff
+  "[python]": {
+    "editor.formatOnType": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+
+  // Terminal settings for this workspace
+  "terminal.integrated.env.windows": {
+    "VIRTUAL_ENV": "${workspaceFolder}\\.venv"
+  },
+
+  // GitHub Copilot workspace-specific settings
+  "github.copilot.enable": {
+    "*": true,
+    "python": true,
+    "yaml": true,
+    "markdown": true,
+    "dockerfile": true,
+    "json": true,
+    "toml": true,
+    "makefile": true
+  },
+
+  // Files to include/exclude for this workspace
+  "files.associations": {
+    "*.yaml": "yaml",
+    "*.yml": "yaml",
+    "Dockerfile*": "dockerfile",
+    "*.tf": "terraform",
+    "Makefile": "makefile"
+  },
+
+  // Test configuration
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+
+  // UV task integration
+  "python.analysis.packageIndexDepths": [
+    {
+      "name": "",
+      "depth": 2
+    }
+  ]
+}
