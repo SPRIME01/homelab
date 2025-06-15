@@ -6,13 +6,9 @@ Monitors nodes, pods, services, and network connectivity continuously.
 
 import asyncio
 import json
-import subprocess
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 from dataclasses import dataclass
-from pathlib import Path
-import smtplib
-from email.mime.text import MimeText
+from datetime import datetime
+from typing import List
 
 @dataclass
 class HealthCheck:
@@ -34,10 +30,9 @@ class ClusterHealthMonitor:
             'memory_usage_percent': 85,
             'disk_usage_percent': 90
         }
-        self.notification_config = self._load_notification_config()
-
+        self.notification_config = {}
     async def run_health_checks(self) -> List[HealthCheck]:
-        """Run comprehensive health checks."""
+    async def run_health_checks(self) -> list[HealthCheck]:
         checks = []
 
         # Node health
@@ -61,7 +56,6 @@ class ClusterHealthMonitor:
         return checks
 
     async def _check_nodes(self) -> List[HealthCheck]:
-        """Check K3s node health."""
         checks = []
         try:
             result = await self._run_kubectl(['get', 'nodes', '-o', 'json'])
@@ -105,8 +99,7 @@ class ClusterHealthMonitor:
         return checks
 
     async def _check_mqtt_connectivity(self) -> List[HealthCheck]:
-        """Check MQTT connectivity to Home Assistant."""
-        checks = []
+    async def _check_mqtt_connectivity(self) -> List[HealthCheck]:
         try:
             import paho.mqtt.client as mqtt
 
@@ -170,9 +163,8 @@ class ClusterHealthMonitor:
             return False
 
     def generate_health_report(self, checks: List[HealthCheck]) -> str:
-        """Generate comprehensive health report."""
-        critical_issues = [c for c in checks if c.severity == "CRITICAL"]
-        warnings = [c for c in checks if c.severity == "WARNING"]
+    def generate_health_report(self, checks: list[HealthCheck]) -> str:
+    def generate_health_report(self, checks: List[HealthCheck]) -> str:
         healthy_services = [c for c in checks if c.status == "HEALTHY"]
 
         report = [

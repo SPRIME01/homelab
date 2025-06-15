@@ -69,6 +69,27 @@ update-all: check-uv ## Safely update all components
 	@echo "🔄 Checking and applying updates..."
 	uv run python scripts/update-manager.py --check-all --safe-update
 
+# Supabase operations
+supabase-deploy: check-uv ## Deploy Supabase stack to K3s
+	@echo "🗄️ Deploying Supabase stack..."
+	uv run python -c "from infrastructure.supabase import SupabaseInfrastructure; from pathlib import Path; import asyncio; asyncio.run(SupabaseInfrastructure(Path.home() / '.kube' / 'config').deploy_supabase_stack())"
+
+supabase-migrate: check-uv ## Run Supabase migration from PostgreSQL
+	@echo "🔄 Running PostgreSQL to Supabase migration..."
+	uv run python scripts/supabase-migration.py
+
+supabase-backup: check-uv ## Create Supabase backup
+	@echo "💾 Creating Supabase backup..."
+	uv run python scripts/backup-manager.py --supabase-backup
+
+supabase-health: check-uv ## Check Supabase health
+	@echo "🏥 Checking Supabase health..."
+	uv run python scripts/supabase-health-check.py
+
+supabase-monitor: check-uv ## Monitor Supabase continuously
+	@echo "📊 Starting Supabase continuous monitoring..."
+	uv run python scripts/supabase-health-check.py --continuous 300
+
 dev-setup: check-uv ## Setup optimal development environment
 	@echo "💻 Setting up development environment..."
 	uv run python scripts/dev-env-manager.py --setup-all
