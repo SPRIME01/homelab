@@ -412,3 +412,12 @@ def assert_log_contains(caplog):
         return False
 
     return _assert_log_contains
+
+
+@pytest.fixture
+def makefile_framework(project_root: Path):
+    """Create Makefile testing framework instance."""
+    # Import here to avoid circular imports
+    from tests.makefile.test_makefile_comprehensive import MakefileTestFramework
+
+    return MakefileTestFramework(project_root)

@@ -13,7 +13,9 @@ from loguru import logger
 
 
 class MakefileTestFramework:
-    """Framework for testing Makefile targets and functionality."""    def __init__(self, project_root: Path):
+    """Framework for testing Makefile targets and functionality."""
+
+    def __init__(self, project_root: Path):
         """Initialize Makefile testing framework.
 
         Args:
@@ -360,14 +362,11 @@ class TestMakefileTargets:
         )
 
 
-class TestMakefileComprehensive(MakefileTestFramework):
+class TestMakefileComprehensive:
     """Comprehensive test suite for advanced Makefile functionality."""
 
-    def __init__(self):
-        super().__init__(Path(__file__).parent.parent.parent)
-
     @pytest.mark.makefile
-    def test_all_makefile_targets_exist(self) -> None:
+    def test_all_makefile_targets_exist(self, makefile_framework) -> None:
         """Test that all expected Makefile targets exist.
 
         Arrange: Define list of expected targets
@@ -391,10 +390,8 @@ class TestMakefileComprehensive(MakefileTestFramework):
             "restore",
             "security-scan",
             "help",
-        ]
-
-        # Act
-        makefile_content = self.makefile_path.read_text()
+        ]  # Act
+        makefile_content = makefile_framework.makefile_path.read_text(encoding="utf-8")
 
         # Assert
         for target in expected_targets:
@@ -405,15 +402,14 @@ class TestMakefileComprehensive(MakefileTestFramework):
             logger.info(f"✓ Target '{target}' found in Makefile")
 
     @pytest.mark.makefile
-    def test_makefile_help_target(self) -> None:
+    def test_makefile_help_target(self, makefile_framework) -> None:
         """Test that help target provides useful information.
 
         Arrange: Prepare help command
         Act: Run make help
         Assert: Help output contains target descriptions
-        """
-        # Arrange & Act
-        result = self.run_make_target("help")
+        """  # Arrange & Act
+        result = makefile_framework.run_make_target("help")
 
         # Assert
         if result.returncode == 0:
@@ -501,9 +497,9 @@ class TestMakefileComprehensive(MakefileTestFramework):
 
             # Assert - either succeeds or completes within time limit
             if result.returncode == 0:
-                assert (
-                    execution_time < max_time
-                ), f"Target {target} took {execution_time:.2f}s (max: {max_time}s)"
+                assert execution_time < max_time, (
+                    f"Target {target} took {execution_time:.2f}s (max: {max_time}s)"
+                )
                 logger.info(f"✓ Target '{target}' completed in {execution_time:.2f}s")
             else:
                 logger.info(
@@ -540,9 +536,9 @@ class TestMakefileComprehensive(MakefileTestFramework):
                 1 for indicator in workflow_indicators if indicator in output_text
             )
 
-            assert (
-                indicators_found >= 2
-            ), f"All target should run multiple operations, found {indicators_found}"
+            assert indicators_found >= 2, (
+                f"All target should run multiple operations, found {indicators_found}"
+            )
             logger.info(
                 f"✓ All target executed comprehensive workflow ({indicators_found} operations)"
             )
@@ -569,9 +565,9 @@ class TestMakefileComprehensive(MakefileTestFramework):
 
             # Assert - both should have same success/failure pattern
             if result1.returncode == 0:
-                assert (
-                    result2.returncode == 0
-                ), f"Second run of {target} failed (not idempotent)"
+                assert result2.returncode == 0, (
+                    f"Second run of {target} failed (not idempotent)"
+                )
                 logger.info(f"✓ Target '{target}' is idempotent")
             else:
                 logger.info(
@@ -631,26 +627,32 @@ class TestMakefileComprehensive(MakefileTestFramework):
 
         # Assert
         comment_lines = [line for line in lines if line.strip().startswith("#")]
-        target_lines = [line for line in lines if ":" in line and not line.strip().startswith("#")]
+        target_lines = [
+            line for line in lines if ":" in line and not line.strip().startswith("#")
+        ]
 
         # Should have reasonable documentation
         documentation_ratio = len(comment_lines) / max(len(target_lines), 1)
 
-        assert (
-            documentation_ratio >= 0.3
-        ), f"Makefile should have more documentation (ratio: {documentation_ratio:.2f})"
-        logger.info(f"✓ Makefile has adequate documentation (ratio: {documentation_ratio:.2f})")
+        assert documentation_ratio >= 0.3, (
+            f"Makefile should have more documentation (ratio: {documentation_ratio:.2f})"
+        )
+        logger.info(
+            f"✓ Makefile has adequate documentation (ratio: {documentation_ratio:.2f})"
+        )
 
 
 class TestMakefileIntegrationScenarios:
     """Integration test scenarios for Makefile workflows."""
 
-    def __init__(self):
-        self.framework = MakefileTestFramework(Path(__file__).parent.parent.parent)
+    @pytest.fixture
+    def framework(self) -> MakefileTestFramework:
+        """Provide a test framework instance."""
+        return MakefileTestFramework(Path(__file__).parent.parent.parent)
 
     @pytest.mark.makefile
     @pytest.mark.integration
-    def test_development_workflow(self) -> None:
+    def test_development_workflow(self, framework: MakefileTestFramework) -> None:
         """Test complete development workflow using Makefile.
 
         Arrange: Prepare development environment
@@ -663,7 +665,7 @@ class TestMakefileIntegrationScenarios:
         # Act & Assert
         all_succeeded = True
         for target in workflow_targets:
-            result = self.framework.run_make_target(target)
+            result = framework.run_make_target(target)
             if result.returncode != 0:
                 all_succeeded = False
                 logger.warning(f"Development workflow target '{target}' failed")
@@ -673,11 +675,10 @@ class TestMakefileIntegrationScenarios:
         # At least some targets should succeed in a proper development environment
         logger.info(
             f"Development workflow completion status: {'✓ Complete' if all_succeeded else '⚠ Partial'}"
-        )
+        ) @ pytest.mark.makefile
 
-    @pytest.mark.makefile
     @pytest.mark.integration
-    def test_deployment_workflow(self) -> None:
+    def test_deployment_workflow(self, framework: MakefileTestFramework) -> None:
         """Test deployment workflow using Makefile.
 
         Arrange: Prepare deployment environment
@@ -690,21 +691,21 @@ class TestMakefileIntegrationScenarios:
         # Act & Assert
         workflow_results = {}
         for target in deployment_targets:
-            result = self.framework.run_make_target(target)
+            result = framework.run_make_target(target)
             workflow_results[target] = result.returncode
             logger.info(
                 f"Deployment target '{target}': {'✓' if result.returncode == 0 else '✗'}"
             )
 
         # Deployment workflow should be structurally sound
-        assert "deploy" in [
-            target for target in deployment_targets
-        ], "Deploy target should be defined"
+        assert "deploy" in [target for target in deployment_targets], (
+            "Deploy target should be defined"
+        )
         logger.info("✓ Deployment workflow is properly structured")
 
     @pytest.mark.makefile
     @pytest.mark.integration
-    def test_ci_cd_compatibility(self) -> None:
+    def test_ci_cd_compatibility(self, framework: MakefileTestFramework) -> None:
         """Test that Makefile targets are compatible with CI/CD.
 
         Arrange: Simulate CI/CD environment
@@ -712,22 +713,20 @@ class TestMakefileIntegrationScenarios:
         Assert: Targets behave appropriately for automation
         """
         # Arrange
-        ci_targets = ["install", "lint", "test", "docs"]
-
-        # Act & Assert
+        ci_targets = ["install", "lint", "test", "docs"]  # Act & Assert
         for target in ci_targets:
-            result = self.framework.run_make_target(target)
+            result = framework.run_make_target(target)
 
             # In CI/CD, we expect clear success/failure (no interactive prompts)
-            assert (
-                result.returncode in [0, 1]
-            ), f"Target {target} should have clear exit code"
+            assert result.returncode in [0, 1], (
+                f"Target {target} should have clear exit code"
+            )
 
             # Output should be suitable for logging
             output_length = len(result.stdout) + len(result.stderr)
-            assert (
-                output_length < 10000
-            ), f"Target {target} produces excessive output ({output_length} chars)"
+            assert output_length < 10000, (
+                f"Target {target} produces excessive output ({output_length} chars)"
+            )
 
             logger.info(f"✓ Target '{target}' is CI/CD compatible")
 
@@ -739,9 +738,13 @@ test_framework = MakefileTestFramework(Path(__file__).parent.parent.parent)
 @pytest.mark.makefile
 def test_makefile_exists_and_readable():
     """Test that Makefile exists and is readable."""
-    assert test_framework.makefile_path.exists(), "Makefile should exist in project root"
+    assert test_framework.makefile_path.exists(), (
+        "Makefile should exist in project root"
+    )
     assert test_framework.makefile_path.is_file(), "Makefile should be a file"
-    assert test_framework.makefile_path.stat().st_size > 0, "Makefile should not be empty"
+    assert test_framework.makefile_path.stat().st_size > 0, (
+        "Makefile should not be empty"
+    )
     logger.info("✓ Makefile exists and is readable")
 
 

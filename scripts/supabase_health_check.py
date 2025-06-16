@@ -10,7 +10,7 @@ import subprocess
 from datetime import datetime
 from typing import Any
 
-from scripts._uv_utils import validate_uv_environment
+from _uv_utils import validate_uv_environment
 
 
 class SupabaseHealthChecker:

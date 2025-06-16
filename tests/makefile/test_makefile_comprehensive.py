@@ -100,21 +100,18 @@ class MakefileTestFramework:
 class TestMakefileStructure:
     """Test suite for Makefile structure and basic functionality."""
 
-    def __init__(self):
-        self.framework = MakefileTestFramework(Path(__file__).parent.parent.parent)
-
     @pytest.mark.makefile
-    def test_makefile_exists(self) -> None:
+    def test_makefile_exists(self, makefile_framework) -> None:
         """Test that Makefile exists and is readable."""
-        assert self.framework.makefile_path.exists(), "Makefile should exist"
-        assert self.framework.makefile_path.is_file(), "Makefile should be a file"
-        assert self.framework.makefile_path.stat().st_size > 0, (
+        assert makefile_framework.makefile_path.exists(), "Makefile should exist"
+        assert makefile_framework.makefile_path.is_file(), "Makefile should be a file"
+        assert makefile_framework.makefile_path.stat().st_size > 0, (
             "Makefile should not be empty"
         )
         logger.info("✓ Makefile exists and is readable")
 
     @pytest.mark.makefile
-    def test_required_targets_exist(self) -> None:
+    def test_required_targets_exist(self, makefile_framework) -> None:
         """Test that all required Makefile targets exist."""
         required_targets = [
             "all",
@@ -128,7 +125,7 @@ class TestMakefileStructure:
             "help",
         ]
 
-        makefile_content = self.framework.makefile_path.read_text()
+        makefile_content = makefile_framework.makefile_path.read_text(encoding="utf-8")
 
         for target in required_targets:
             target_pattern = f"{target}:"
@@ -138,10 +135,10 @@ class TestMakefileStructure:
             logger.info(f"✓ Target '{target}' found in Makefile")
 
     @pytest.mark.makefile
-    def test_makefile_syntax(self) -> None:
+    def test_makefile_syntax(self, makefile_framework) -> None:
         """Test that Makefile has valid syntax."""
         # Try running make with a help or list target
-        result = self.framework.run_make_target("--version")
+        result = makefile_framework.run_make_target("--version")
         # If make itself works, the Makefile syntax is likely OK
         assert result.returncode in [0, 1, 2], "Make command should be available"
         logger.info("✓ Makefile syntax appears valid")
@@ -150,13 +147,10 @@ class TestMakefileStructure:
 class TestMakefileTargets:
     """Test suite for individual Makefile targets."""
 
-    def __init__(self):
-        self.framework = MakefileTestFramework(Path(__file__).parent.parent.parent)
-
     @pytest.mark.makefile
-    def test_help_target(self) -> None:
+    def test_help_target(self, makefile_framework) -> None:
         """Test that help target provides useful information."""
-        result = self.framework.run_make_target("help")
+        result = makefile_framework.run_make_target("help")
 
         if result.returncode == 0:
             output = result.stdout + result.stderr
@@ -170,9 +164,9 @@ class TestMakefileTargets:
             logger.info("⚠ Help target not available or failed")
 
     @pytest.mark.makefile
-    def test_install_target(self) -> None:
+    def test_install_target(self, makefile_framework) -> None:
         """Test that install target runs without critical errors."""
-        result = self.framework.run_make_target("install")
+        result = makefile_framework.run_make_target("install")
 
         # Install may fail in some environments, but should not crash
         assert result.returncode in [0, 1, 2], "Install target should execute"
@@ -183,23 +177,23 @@ class TestMakefileTargets:
             logger.info("⚠ Install target failed - may be environment dependent")
 
     @pytest.mark.makefile
-    def test_clean_target(self) -> None:
+    def test_clean_target(self, makefile_framework) -> None:
         """Test that clean target executes."""
         # Create a test cache directory
-        test_cache = self.framework.project_root / "__pycache__"
+        test_cache = makefile_framework.project_root / "__pycache__"
         test_cache.mkdir(exist_ok=True)
         (test_cache / "test.pyc").touch()
 
-        result = self.framework.run_make_target("clean")
+        result = makefile_framework.run_make_target("clean")
 
         # Clean should succeed
         assert result.returncode == 0, f"Clean target failed: {result.stderr}"
         logger.info("✓ Clean target executed successfully")
 
     @pytest.mark.makefile
-    def test_format_target(self) -> None:
+    def test_format_target(self, makefile_framework) -> None:
         """Test that format target executes."""
-        result = self.framework.run_make_target("format")
+        result = makefile_framework.run_make_target("format")
 
         # Format should succeed or fail gracefully
         assert result.returncode in [0, 1], "Format target should execute"
@@ -577,7 +571,7 @@ def test_makefile_exists_module() -> None:
 def test_basic_targets_module() -> None:
     """Module-level test for basic targets."""
     basic_targets = ["all", "install", "test", "clean"]
-    makefile_content = test_framework.makefile_path.read_text()
+    makefile_content = test_framework.makefile_path.read_text(encoding="utf-8")
 
     missing_targets = []
     for target in basic_targets:

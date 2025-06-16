@@ -116,7 +116,7 @@ class TestUVUtils:
                 cwd=temp_dir,
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
 
     def test_ensure_dependencies_synced_success(self, temp_dir, mock_subprocess):
@@ -157,7 +157,9 @@ class TestUVUtils:
             # Mock validate_uv_environment to succeed
             with patch("scripts._uv_utils.validate_uv_environment"):
                 # Mock sync failure
-                error = subprocess.CalledProcessError(1, ["uv", "sync"], "stdout", "stderr")
+                error = subprocess.CalledProcessError(
+                    1, ["uv", "sync"], "stdout", "stderr"
+                )
                 mock_subprocess.side_effect = error
 
                 # Act & Assert: Should raise RuntimeError
@@ -170,21 +172,19 @@ class TestUVUtils:
         Args:
             temp_dir: Temporary directory fixture
             mock_subprocess: Mocked subprocess.run
-        """
-        # Arrange: Set up environment and command
+        """  # Arrange: Set up environment and command
         self._setup_valid_uv_environment(temp_dir)
         command = ["python", "--version"]
         expected_command = ["uv", "run"] + command
 
         with patch("shutil.which", return_value="/usr/bin/uv"):
-            with patch("scripts._uv_utils.validate_uv_environment"):            # Act: Run command with UV
-            run_with_uv(command, temp_dir)
+            with patch("scripts._uv_utils.validate_uv_environment"):
+                # Act: Run command with UV
+                run_with_uv(command, temp_dir)
 
                 # Assert: Correct command was executed
                 mock_subprocess.assert_called_with(
-                    expected_command,
-                    cwd=temp_dir,
-                    check=True
+                    expected_command, cwd=temp_dir, check=True
                 )
 
     def test_get_virtual_env_path(self, temp_dir):
@@ -225,8 +225,7 @@ class TestUVUtils:
 
     def test_is_running_in_venv_false(self):
         """Test virtual environment detection - negative case."""
-        # Arrange: Mock system Python attributes
-        with patch.object(sys, "base_prefix", "/usr"):
+        # Arrange: Mock system Python attributes        with patch.object(sys, "base_prefix", "/usr"):
             with patch.object(sys, "prefix", "/usr"):
                 with patch.object(sys, "real_prefix", None, create=True):
                     # Act: Check if in venv
@@ -237,8 +236,8 @@ class TestUVUtils:
 
     def test_is_running_in_venv_real_prefix(self):
         """Test virtual environment detection with real_prefix attribute."""
-        # Arrange: Mock old-style virtualenv
-        with patch.object(sys, "real_prefix", "/usr"):
+        # Arrange: Mock old-style virtualenv with hasattr check
+        with patch("sys.real_prefix", "/usr", create=True):
             # Act: Check if in venv
             result = is_running_in_venv()
 
@@ -253,10 +252,7 @@ class TestUVUtils:
             capsys: Pytest stdout/stderr capture
         """
         # Arrange: Mock UV version command
-        mock_subprocess.return_value = Mock(
-            returncode=0,
-            stdout="uv 0.1.0\n"
-        )
+        mock_subprocess.return_value = Mock(returncode=0, stdout="uv 0.1.0\n")
 
         with patch("scripts._uv_utils.is_running_in_venv", return_value=True):
             with patch("scripts._uv_utils.get_virtual_env_path") as mock_get_venv:
@@ -330,7 +326,9 @@ class TestUVUtilsEdgeCases:
 
         with patch("shutil.which", return_value="/usr/bin/uv"):
             # Act & Assert: Should raise RuntimeError
-            with pytest.raises(RuntimeError, match="Virtual environment appears corrupted"):
+            with pytest.raises(
+                RuntimeError, match="Virtual environment appears corrupted"
+            ):
                 validate_uv_environment(temp_dir)
 
     def test_run_with_uv_none_project_root(self, mock_subprocess):
@@ -350,9 +348,7 @@ class TestUVUtilsEdgeCases:
 
                 # Assert: Uses current directory
                 mock_subprocess.assert_called_with(
-                    ["uv", "run"] + command,
-                    cwd=Path("/test/project"),
-                    check=True
+                    ["uv", "run"] + command, cwd=Path("/test/project"), check=True
                 )
 
     def test_ensure_dependencies_synced_none_project_root(self, mock_subprocess):
@@ -392,5 +388,7 @@ class TestUVUtilsEdgeCases:
             mock_subprocess.side_effect = error
 
             # Act & Assert: Should raise RuntimeError
-            with pytest.raises(RuntimeError, match="Failed to create virtual environment"):
+            with pytest.raises(
+                RuntimeError, match="Failed to create virtual environment"
+            ):
                 validate_uv_environment(temp_dir)

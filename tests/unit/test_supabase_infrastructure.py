@@ -102,12 +102,12 @@ class TestSupabaseInfrastructure(AAATester):
         """Test successful database configuration."""
         # Arrange
         db_config = sample_supabase_config["database"]
-        project_id = "test-project-123"
-
-        # Act
-        with patch("supabase.Client") as mock_client:
-            mock_client.return_value.table.return_value.select.return_value.execute.return_value = Mock(
-                data=[{"version": "1.0"}]
+        project_id = "test-project-123"  # Act
+        with patch("supabase.create_client") as mock_create_client:
+            mock_client = Mock()
+            mock_create_client.return_value = mock_client
+            mock_client.table.return_value.select.return_value.execute.return_value = (
+                Mock(data=[{"version": "1.0"}])
             )
 
             result = self._mock_configure_database(project_id, db_config)
@@ -123,11 +123,11 @@ class TestSupabaseInfrastructure(AAATester):
         """Test successful authentication configuration."""
         # Arrange
         auth_config = sample_supabase_config["auth"]
-        project_id = "test-project-123"
-
-        # Act
-        with patch("supabase.Client") as mock_client:
-            mock_client.return_value.auth.admin.update_user.return_value = Mock(
+        project_id = "test-project-123"  # Act
+        with patch("supabase.create_client") as mock_create_client:
+            mock_client = Mock()
+            mock_create_client.return_value = mock_client
+            mock_client.auth.admin.update_user.return_value = Mock(
                 user={"id": "user-123"}
             )
 
@@ -144,11 +144,11 @@ class TestSupabaseInfrastructure(AAATester):
         """Test successful storage bucket setup."""
         # Arrange
         storage_config = sample_supabase_config["storage"]
-        project_id = "test-project-123"
-
-        # Act
-        with patch("supabase.Client") as mock_client:
-            mock_client.return_value.storage.create_bucket.return_value = Mock(
+        project_id = "test-project-123"  # Act
+        with patch("supabase.create_client") as mock_create_client:
+            mock_client = Mock()
+            mock_create_client.return_value = mock_client
+            mock_client.storage.create_bucket.return_value = Mock(
                 bucket={"name": "test-bucket"}
             )
 
@@ -164,18 +164,18 @@ class TestSupabaseInfrastructure(AAATester):
         """Test successful database schema deployment."""
         # Arrange
         project_id = "test-project-123"
-        schema_files = ["schema/001_initial.sql", "schema/002_users.sql"]
-
-        # Act
+        schema_files = ["schema/001_initial.sql", "schema/002_users.sql"]  # Act
         with (
-            patch("supabase.Client") as mock_client,
+            patch("supabase.create_client") as mock_create_client,
             patch("pathlib.Path.read_text") as mock_read,
         ):
+            mock_client = Mock()
+            mock_create_client.return_value = mock_client
             mock_read.side_effect = [
                 "CREATE TABLE users (id SERIAL PRIMARY KEY);",
                 "ALTER TABLE users ADD COLUMN email VARCHAR(255);",
             ]
-            mock_client.return_value.rpc.return_value = Mock(data={"success": True})
+            mock_client.rpc.return_value = Mock(data={"success": True})
 
             result = self._mock_deploy_database_schema(project_id, schema_files)
 
@@ -187,11 +187,11 @@ class TestSupabaseInfrastructure(AAATester):
         """Test successful Row Level Security setup."""
         # Arrange
         project_id = "test-project-123"
-        tables = ["users", "posts", "comments"]
-
-        # Act
-        with patch("supabase.Client") as mock_client:
-            mock_client.return_value.rpc.return_value = Mock(data={"success": True})
+        tables = ["users", "posts", "comments"]  # Act
+        with patch("supabase.create_client") as mock_create_client:
+            mock_client = Mock()
+            mock_create_client.return_value = mock_client
+            mock_client.rpc.return_value = Mock(data={"success": True})
 
             result = self._mock_setup_row_level_security(project_id, tables)
 
@@ -207,13 +207,11 @@ class TestSupabaseInfrastructure(AAATester):
         realtime_config = {
             "enabled_tables": ["messages", "notifications"],
             "max_connections": 1000,
-        }
-
-        # Act
-        with patch("supabase.Client") as mock_client:
-            mock_client.return_value.realtime.subscribe.return_value = Mock(
-                status="SUBSCRIBED"
-            )
+        }  # Act
+        with patch("supabase.create_client") as mock_create_client:
+            mock_client = Mock()
+            mock_create_client.return_value = mock_client
+            mock_client.realtime.subscribe.return_value = Mock(status="SUBSCRIBED")
 
             result = self._mock_configure_realtime(project_id, realtime_config)
 

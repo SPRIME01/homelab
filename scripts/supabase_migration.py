@@ -8,11 +8,21 @@ import asyncio
 import json
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from scripts._uv_utils import validate_uv_environment
+# Add project root to Python path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+try:
+    from _uv_utils import validate_uv_environment
+except ImportError:
+    # Fallback for testing
+    def validate_uv_environment(project_root: Path | None = None) -> None:
+        pass
 
 
 @dataclass

@@ -4,14 +4,19 @@ Test suite for Supabase deployment and migration functionality.
 """
 
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from infrastructure.supabase_config import get_config, validate_config
-from scripts.supabase_health_check import SupabaseHealthChecker
-from scripts.supabase_migration import MigrationConfig, SupabaseMigrator
+# Add parent directories to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "infrastructure"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+
+from supabase_config import get_config, validate_config
+from supabase_health_check import SupabaseHealthChecker
+from supabase_migration import MigrationConfig, SupabaseMigrator
 
 
 class TestSupabaseConfig:
