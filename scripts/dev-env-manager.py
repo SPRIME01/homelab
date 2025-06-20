@@ -337,9 +337,22 @@ This is a comprehensive smart home laboratory environment using:
         venv_dir = self.project_root / ".venv"
         if venv_dir.exists():
             print(f"Existing virtual environment '{venv_dir}' found. Removing it...")
-            shutil.rmtree(
-                venv_dir, ignore_errors=False
-            )  # Be explicit about removal failure
+            try:
+                shutil.rmtree(venv_dir, onerror=self._on_rm_error)
+            except PermissionError as e:
+                print(f"\n[ERROR] Could not remove virtual environment: {e}")
+                print(
+                    "This is usually because a process (like an open terminal, editor, or Python process) is using a file in the venv."
+                )
+                print(
+                    f"Please close all terminals, editors, or processes using '{venv_dir}', then try again."
+                )
+                print("If the problem persists, delete the directory manually:")
+                print(f'    rmdir /s /q "{venv_dir}"')
+                return
+            except Exception as e:
+                print(f"Error removing existing virtual environment: {e}")
+                return
 
         print(f"Creating new virtual environment in '{venv_dir}'...")
         try:
