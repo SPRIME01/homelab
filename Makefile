@@ -7,6 +7,9 @@
 .PHONY: install-editable test lint format docs pre-commit
 .PHONY: coverage coverage-check test-unit test-integration test-makefile test-all coverage-optimize
 
+PYTHON_VENV_DIR := .venv
+PYTHON_VENV_BIN_DIR := $(PYTHON_VENV_DIR)/bin
+
 # Check if UV is available
 UV_AVAILABLE := $(shell command -v uv 2> /dev/null)
 
@@ -14,7 +17,7 @@ UV_AVAILABLE := $(shell command -v uv 2> /dev/null)
 check-uv:
 ifndef UV_AVAILABLE
 	@echo "❌ UV package manager not found. Installing..."
-	pip install uv
+	$(PYTHON_VENV_BIN_DIR)/pip install uv
 	@echo "✅ UV installed successfully"
 endif
 
