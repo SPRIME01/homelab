@@ -3,7 +3,7 @@
 
 .PHONY: all install verify audit clean help
 .PHONY: health-check discover backup optimize update-all dev-setup
-.PHONY: dev-install dev-reset quick-test monitor status disaster-recovery
+.PHONY: dev-install dev-reset quick-test monitor status disaster-recovery rebuild-environment
 .PHONY: install-editable test lint format docs pre-commit
 .PHONY: coverage coverage-check test-unit test-integration test-makefile test-all coverage-optimize
 
@@ -54,6 +54,11 @@ dev-reset: clean dev-install ## Reset development environment
 	uv run pre-commit install
 	@echo "✅ Development environment reset complete"
 
+rebuild-environment: check-uv ## Completely rebuilds the Python environment, including reinstalling uv and all dependencies.
+	@echo "🛠️  Completely rebuilding Python environment..."
+	uv run python scripts/dev-env-manager.py --rebuild-full-env
+	@echo "✅ Environment rebuild process initiated. Check script output for details."
+
 # Standard development workflow targets
 test: check-uv ## Run tests with coverage
 	@echo "🧪 Running tests with coverage..."
@@ -79,12 +84,12 @@ pre-commit: lint test ## Run pre-commit checks
 # Coverage and advanced testing targets
 coverage: check-uv ## Generate comprehensive coverage report
 	@echo "📊 Generating coverage report..."
-	uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
+	uv run pytest tests/ --cov=homelab --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
 	@echo "✅ Coverage report generated in htmlcov/"
 
 coverage-check: check-uv ## Check coverage meets minimum requirements (90%)
 	@echo "📈 Checking coverage requirements..."
-	uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-fail-under=90
+	uv run pytest tests/ --cov=homelab --cov=scripts --cov=infrastructure --cov-fail-under=90
 	@echo "✅ Coverage requirements met"
 
 test-unit: check-uv ## Run unit tests only
