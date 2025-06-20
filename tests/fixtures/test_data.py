@@ -1,30 +1,32 @@
 # Test Environment Configuration
 # Used for setting up consistent test environments
 
+from tests.conftest import get_env_var
+
 HOMELAB_TEST_CONFIG = {
     "cluster": {
-        "name": "homelab-test",
-        "control_node_ip": "192.168.0.50",
-        "wsl2_ip": "192.168.0.51",
-        "agent_node_ip": "192.168.0.66",
-        "kubeconfig_path": "/tmp/test-kubeconfig",
+        "name": get_env_var("TEST_CLUSTER_NAME", "homelab-test"),
+        "control_node_ip": get_env_var("TEST_CONTROL_NODE_IP", "192.168.0.50"),
+        "wsl2_ip": get_env_var("TEST_WSL2_IP", "192.168.0.51"),
+        "agent_node_ip": get_env_var("TEST_AGENT_NODE_IP", "192.168.0.66"),
+        "kubeconfig_path": get_env_var("TEST_KUBECONFIG_PATH", "/tmp/test-kubeconfig"),
     },
     "supabase": {
-        "namespace": "supabase",
-        "postgres_password": "test-password-123",
-        "jwt_secret": "test-jwt-secret-32-characters-minimum",
-        "postgres_storage": "5Gi",
-        "storage_size": "10Gi",
+        "namespace": get_env_var("TEST_SUPABASE_NAMESPACE", "supabase"),
+        "postgres_password": get_env_var("TEST_SUPABASE_POSTGRES_PASSWORD", "test-password-123"),
+        "jwt_secret": get_env_var("TEST_SUPABASE_JWT_SECRET", "test-jwt-secret-32-characters-minimum"),
+        "postgres_storage": get_env_var("TEST_SUPABASE_POSTGRES_STORAGE", "5Gi"),
+        "storage_size": get_env_var("TEST_SUPABASE_STORAGE_SIZE", "10Gi"),
     },
     "networking": {
-        "home_assistant_url": "http://192.168.0.41:8123",
-        "mqtt_broker": "192.168.0.41:1883",
-        "network_range": "192.168.0.0/24",
+        "home_assistant_url": get_env_var("TEST_HOME_ASSISTANT_URL", "http://192.168.0.41:8123"),
+        "mqtt_broker": get_env_var("TEST_MQTT_BROKER", "192.168.0.41:1883"),
+        "network_range": get_env_var("TEST_NETWORK_RANGE", "192.168.0.0/24"),
     },
     "paths": {
-        "ssh_key_path": "/tmp/test-ssh-key",
-        "backup_root": "/tmp/test-backups",
-        "log_directory": "/tmp/test-logs",
+        "ssh_key_path": get_env_var("TEST_SSH_KEY_PATH", "/tmp/test-ssh-key"),
+        "backup_root": get_env_var("TEST_BACKUP_ROOT", "/tmp/test-backups"),
+        "log_directory": get_env_var("TEST_LOG_DIRECTORY", "/tmp/test-logs"),
     },
 }
 
@@ -165,18 +167,18 @@ BACKUP_MANIFEST_SAMPLE = {
 
 # SSH configuration test data
 SSH_TEST_CONFIG = {
-    "default_user": "ubuntu",
-    "default_port": 22,
+    "default_user": "ubuntu", # Could be get_env_var("TEST_SSH_DEFAULT_USER", "ubuntu")
+    "default_port": 22,       # Could be get_env_var("TEST_SSH_DEFAULT_PORT", 22, cast=int)
     "key_types": ["rsa", "ed25519"],
     "test_connections": [
         {
-            "host": "192.168.0.66",
-            "user": "ubuntu",
-            "key_path": "/tmp/test-ssh-key",
+            "host": "192.168.0.66", # Could be get_env_var("TEST_SSH_AGENT_NODE_IP", "192.168.0.66")
+            "user": "ubuntu",    # Could be get_env_var("TEST_SSH_DEFAULT_USER", "ubuntu")
+            "key_path": "/tmp/test-ssh-key", # Could be get_env_var("TEST_SSH_KEY_PATH", "/tmp/test-ssh-key")
             "expected_success": True,
         },
         {
-            "host": "192.168.0.999",  # Invalid IP
+            "host": "192.168.0.999",  # Invalid IP, likely shouldn't be from env
             "user": "ubuntu",
             "key_path": "/tmp/test-ssh-key",
             "expected_success": False,

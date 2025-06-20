@@ -13,6 +13,8 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+import psycopg2 # Ensure psycopg2 is imported
+from testcontainers.core.container import DockerContainer # For type hint
 
 # Add project directories to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
@@ -260,90 +262,70 @@ class TestServiceContracts(AAATester):
         }
 
 
+# import paho.mqtt.client as mqtt # This import is in _test_mqtt_communication
+
 class TestCrossComponentCommunication(AAATester):
     """Test suite for cross-component communication patterns."""
 
-    def test_mqtt_message_flow(self) -> None:
+    def test_mqtt_message_flow(self, mqtt_test_config: dict) -> None:
         """Test MQTT message flow between components."""
         # Arrange
-        mqtt_config = {
-            "broker": "192.168.0.41",
-            "port": 1883,
+        full_mqtt_config = {
+            **mqtt_test_config,
             "topics": ["homelab/sensors", "homelab/alerts", "homelab/logs"],
         }
 
         # Act
-        with patch("paho.mqtt.client.Client") as mock_mqtt:
-            mock_client = Mock()
-            mock_mqtt.return_value = mock_client
-            result = self._test_mqtt_communication(mqtt_config)
+        result = self._test_mqtt_communication(full_mqtt_config)
 
         # Assert
         assert result["connection_successful"] is True
-        assert result["messages_published"] > 0
-        assert result["messages_received"] > 0
+        assert result["messages_published"] == len(full_mqtt_config["topics"])
+        assert result["messages_received"] == result["messages_published"]
         assert len(result["active_topics"]) == 3
 
-    def test_http_api_communication(self) -> None:
+    def test_http_api_communication(self, httpbin_test_base_url: str) -> None:
         """Test HTTP API communication between services."""
         # Arrange
+        # httpbin_test_base_url provides http://host:port
         api_endpoints = [
-            {"service": "supabase", "endpoint": "/rest/v1/users", "method": "GET"},
-            {"service": "traefik", "endpoint": "/api/http/routers", "method": "GET"},
-            {"service": "grafana", "endpoint": "/api/health", "method": "GET"},
+            {"service": httpbin_test_base_url, "endpoint": "/get", "method": "GET"},
+            {"service": httpbin_test_base_url, "endpoint": "/headers", "method": "GET"},
+            {"service": httpbin_test_base_url, "endpoint": "/ip", "method": "GET"},
         ]
 
         # Act
-        with patch("requests.request") as mock_request:
-            mock_request.return_value = Mock(
-                status_code=200, json=lambda: {"data": "success"}
-            )
-            result = self._test_http_api_communication(api_endpoints)
+        result = self._test_http_api_communication(api_endpoints)
 
         # Assert
         assert result["all_apis_responsive"] is True
-        assert len(result["successful_calls"]) == 3
+        assert len(result["successful_calls"]) == 3 # successful_calls now stores the base URL
         assert len(result["failed_calls"]) == 0
 
-    def test_database_connectivity(self) -> None:
+    def test_database_connectivity(self, postgres_test_config: dict) -> None:
         """Test database connectivity and query execution."""
         # Arrange
-        db_config = {
-            "host": "supabase-db",
-            "port": 5432,
-            "database": "homelab",
-            "user": "postgres",
-        }
-
+        # postgres_test_config directly provides the db_config dictionary
         # Act
-        with patch("psycopg2.connect") as mock_connect:
-            mock_conn = Mock()
-            mock_cursor = Mock()
-            mock_conn.cursor.return_value = mock_cursor
-            mock_cursor.fetchone.return_value = ("PostgreSQL 13.7",)
-            mock_connect.return_value = mock_conn
-
-            result = self._test_database_connectivity(db_config)
+        result = self._test_database_connectivity(postgres_test_config)
 
         # Assert
         assert result["connection_successful"] is True
         assert result["query_execution"] is True
         assert "PostgreSQL" in result["database_version"]
 
-    def test_event_driven_communication(self) -> None:
+    def test_event_driven_communication(self, rabbitmq_test_config: dict) -> None:
         """Test event-driven communication patterns."""
         # Arrange
-        event_config = {
-            "event_bus": "rabbitmq",
+        # rabbitmq_test_config provides host and port
+        full_event_config = {
+            **rabbitmq_test_config,
             "exchanges": ["homelab.events", "homelab.alerts"],
             "queues": ["sensor.data", "system.logs", "alerts.critical"],
         }
 
         # Act
-        with patch("pika.BlockingConnection") as mock_connection:
-            mock_channel = Mock()
-            mock_connection.return_value.channel.return_value = mock_channel
-            result = self._test_event_driven_communication(event_config)
+        result = self._test_event_driven_communication(full_event_config)
 
         # Assert
         assert result["event_bus_connected"] is True
@@ -352,61 +334,69 @@ class TestCrossComponentCommunication(AAATester):
         assert result["events_published"] > 0
 
     @pytest.mark.asyncio
-    async def test_async_service_communication(self) -> None:
+    async def test_async_service_communication(self, echo_websocket_test_endpoint: str) -> None:
         """Test asynchronous service communication patterns."""
         # Arrange
+        # echo_websocket_test_endpoint provides ws://host:port
         async_services = [
-            {"name": "log-processor", "endpoint": "ws://logs:8080/stream"},
-            {"name": "metric-collector", "endpoint": "ws://metrics:9090/stream"},
+            {"name": "echo-service1", "endpoint": echo_websocket_test_endpoint},
+            {"name": "echo-service2", "endpoint": echo_websocket_test_endpoint},
         ]
 
         # Act
-        with patch("websockets.connect", new_callable=AsyncMock) as mock_websocket:
-            mock_websocket.return_value.__aenter__.return_value.recv = AsyncMock(
-                return_value='{"type": "data", "payload": "test"}'
-            )
-            result = await self._test_async_service_communication(
-                async_services
-            )  # Assert
-        assert result["async_connections"] == 2
-        assert result["messages_received"] > 0
+        result = await self._test_async_service_communication(async_services)
+
+        # Assert
+        assert result["async_connections"] == 2 # Assuming both connect successfully
+        assert result["messages_received"] == 2 # Each connection sends and receives one message
         assert result["connection_stability"] is True
 
     def _test_mqtt_communication(self, config: dict[str, Any]) -> dict[str, Any]:
         """Test MQTT communication implementation."""
         from paho.mqtt.client import Client
+        import threading
+        import time
+        import json
 
         # Create MQTT client
         client = Client()
 
+        # Track received messages
+        messages_published = 0
+        messages_received = 0
+        received_event = threading.Event()
+        expected_messages = len(config["topics"])
+        lock = threading.Lock()
+
+        def on_message(client, userdata, msg):
+            nonlocal messages_received
+            with lock:
+                messages_received += 1
+                if messages_received >= expected_messages:
+                    received_event.set()
+
+        client.on_message = on_message
+
         # Connect to broker
         client.connect(config["broker"], config["port"], 60)
 
+        # Subscribe to topics
+        for topic in config["topics"]:
+            client.subscribe(topic)
+
+        client.loop_start()
+        time.sleep(0.5)  # Allow time for subscriptions
+
         # Publish test messages
-        messages_published = 0
         for topic in config["topics"]:
             payload = json.dumps({"timestamp": time.time(), "data": "test"})
             client.publish(topic, payload)
             messages_published += 1
 
-        # Subscribe and receive messages
-        messages_received = 0
-
-        def on_message(client, userdata, msg):
-            nonlocal messages_received
-            messages_received += 1
-
-        client.on_message = on_message
-        for topic in config["topics"]:
-            client.subscribe(topic)
-
-        client.loop_start()
-        time.sleep(1)  # Allow time for message processing
+        # Wait for all messages to be received or timeout
+        received_event.wait(timeout=5)
         client.loop_stop()
-
-        # For mocked tests, simulate received messages equal to published messages
-        if hasattr(client, "_mock_name"):
-            messages_received = messages_published
+        client.disconnect()
 
         return {
             "connection_successful": True,
@@ -451,13 +441,17 @@ class TestCrossComponentCommunication(AAATester):
         import psycopg2
 
         try:
+            # Enforce that password is present in config
+            if "password" not in config or not config["password"]:
+                raise ValueError("Database password must be provided in config.")
+
             # Connect to database
             conn = psycopg2.connect(
                 host=config["host"],
                 port=config["port"],
                 database=config["database"],
                 user=config["user"],
-                password=config.get("password", ""),
+                password=config["password"],
             )
 
             # Execute test query
@@ -488,7 +482,12 @@ class TestCrossComponentCommunication(AAATester):
         import pika
 
         # Connect to message broker
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq"))
+        # Modified to use host and port from config
+        connection_params = pika.ConnectionParameters(
+            host=config["host"],
+            port=config["port"]
+        )
+        connection = pika.BlockingConnection(connection_params)
         channel = connection.channel()
 
         # Declare exchanges
@@ -536,15 +535,22 @@ class TestCrossComponentCommunication(AAATester):
                 async with connect(service["endpoint"]) as websocket:
                     connections += 1
 
-                    # Send test message
-                    await websocket.send(
-                        json.dumps({"type": "test", "data": "ping"})
-                    )  # Receive response
-                    await websocket.recv()
-                    messages_received += 1
+                    sent_message = {"type": "test", "data": "ping", "service_name": service["name"]}
+                    await websocket.send(json.dumps(sent_message))
 
-                    return True
-            except Exception:
+                    received_message_str = await websocket.recv()
+                    received_message = json.loads(received_message_str)
+
+                    # Echo server should return what was sent
+                    if received_message == sent_message:
+                        messages_received += 1
+                        return True
+                    else:
+                        # Optionally log mismatch
+                        print(f"WS message mismatch: sent {sent_message}, got {received_message}")
+                        return False
+            except Exception as e:
+                print(f"WS connection error for {service['name']}: {e}")
                 return False
 
         # Test all service connections concurrently
