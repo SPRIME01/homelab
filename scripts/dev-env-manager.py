@@ -202,7 +202,6 @@ This is a comprehensive smart home laboratory environment using:
                 os.remove(uv_path)
                 print(f"Successfully removed {uv_path}")
             except PermissionError:
-                # Check if uv_path is a system path (e.g., /usr/bin/uv)
                 system_paths = [
                     "/usr/bin",
                     "/usr/local/bin",
@@ -215,7 +214,9 @@ This is a comprehensive smart home laboratory environment using:
                         f"PermissionError: Could not remove system-managed uv at {uv_path}.\n"
                         "This is expected if uv was installed via a package manager or system-wide.\n"
                         "The script will proceed to install a user-local version (e.g., ~/.local/bin/uv), "
-                        "which will take precedence if ~/.local/bin is in your PATH.\n"
+                        "which will take precedence if ~/.local/bin is earlier in your PATH.\n"
+                        "⚠️ Note: Having both a system and user-local uv may cause confusion if PATH order is not clear.\n"
+                        "You can check your PATH with 'echo $PATH' and reorder if needed.\n"
                         "If you wish to remove the system uv, please consult your OS package manager documentation."
                     )
                 else:
@@ -507,6 +508,10 @@ if __name__ == "__main__":
                 print(
                     "Consider running --rebuild-full-env if issues persist or if you want to start fresh."
                 )
+        elif not command_to_run and skip_uv_validation:
+            print(
+                "\nInfo: Initial UV validation was skipped due to --rebuild-full-env presence, but no specific command was run after it."
+            )
         elif not command_to_run and skip_uv_validation:
             print(
                 "\nInfo: Initial UV validation was skipped due to --rebuild-full-env presence, but no specific command was run after it."
