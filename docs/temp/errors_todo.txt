@@ -1,0 +1,175 @@
+> git -c user.useConfigOnly=true commit --quiet --allow-empty-message --file -
+[INFO] Initializing environment for https://github.com/astral-sh/ruff-pre-commit.
+[INFO] Initializing environment for https://github.com/pre-commit/mirrors-mypy:rich,typer,pydantic,loguru,aiofiles,httpx,pyyaml,kubernetes,ansible,pytest,types-pyyaml.
+[INFO] Initializing environment for https://github.com/PyCQA/bandit.
+[INFO] Initializing environment for https://github.com/PyCQA/bandit:toml.
+[INFO] Installing environment for https://github.com/astral-sh/ruff-pre-commit.
+[INFO] Once installed this environment will be reused.
+[INFO] This may take a few minutes...
+[INFO] Installing environment for https://github.com/pre-commit/mirrors-mypy.
+[INFO] Once installed this environment will be reused.
+[INFO] This may take a few minutes...
+[INFO] Installing environment for https://github.com/PyCQA/bandit.
+[INFO] Once installed this environment will be reused.
+[INFO] This may take a few minutes...
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+check yaml...............................................................Passed
+check for added large files..............................................Passed
+check for case conflicts.................................................Passed
+check that executables have shebangs.....................................Passed
+check for merge conflicts................................................Passed
+check for broken symlinks............................(no files to check)Skipped
+check toml...........................................(no files to check)Skipped
+detect private key.......................................................Passed
+ruff.....................................................................Passed
+ruff-format..............................................................Passed
+mypy.....................................................................Failed
+- hook id: mypy
+- exit code: 1
+
+scripts\dev_env_manager.py:15: error: Function is missing a return type annotation  [no-untyped-def]
+scripts\dev_env_manager.py:15: note: Use "-> None" if function does not return a value
+scripts\dev_env_manager.py:22: error: Function is missing a return type annotation  [no-untyped-def]
+scripts\dev_env_manager.py:22: note: Use "-> None" if function does not return a value
+scripts\dev_env_manager.py:29: error: Function is missing a return type annotation  [no-untyped-def]
+scripts\dev_env_manager.py:29: note: Use "-> None" if function does not return a value
+scripts\dev_env_manager.py:36: error: Function is missing a return type annotation  [no-untyped-def]
+scripts\dev_env_manager.py:36: note: Use "-> None" if function does not return a value
+scripts\dev_env_manager.py:48: error: Call to untyped function "setup_copilot" in typed context  [no-untyped-call]
+scripts\dev_env_manager.py:50: error: Call to untyped function "rebuild_full_env" in typed context  [no-untyped-call]
+scripts\dev_env_manager.py:52: error: Call to untyped function "create_shortcuts" in typed context  [no-untyped-call]
+scripts\dev_env_manager.py:59: error: Call to untyped function "main" in typed context  [no-untyped-call]
+src\homelab\cli\main.py:17: error: Cannot find implementation or library stub for module named "_uv_utils"  [import-not-found]
+src\homelab\cli\main.py:17: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+src\homelab\cli\main.py:39: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:39: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:45: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:55: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:55: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:62: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:69: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:80: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:80: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:86: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:93: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:100: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:110: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:110: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:117: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:127: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:141: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:151: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:151: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:158: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:158: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:165: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:172: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:179: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:179: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:191: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:191: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:204: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:204: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:219: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:219: note: Use "-> None" if function does not return a value
+src\homelab\cli\main.py:234: error: Function is missing a return type annotation  [no-untyped-def]
+src\homelab\cli\main.py:234: note: Use "-> None" if function does not return a value
+tests\unit\test_uv_utils.py:29: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:57: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:69: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:81: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:97: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:122: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:146: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:169: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:190: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:203: error: Function is missing a return type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:203: note: Use "-> None" if function does not return a value
+tests\unit\test_uv_utils.py:215: error: Function is missing a return type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:215: note: Use "-> None" if function does not return a value
+tests\unit\test_uv_utils.py:226: error: Function is missing a return type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:226: note: Use "-> None" if function does not return a value
+tests\unit\test_uv_utils.py:237: error: Function is missing a return type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:237: note: Use "-> None" if function does not return a value
+tests\unit\test_uv_utils.py:247: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:270: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:313: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:334: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:354: error: Function is missing a type annotation  [no-untyped-def]
+tests\unit\test_uv_utils.py:375: error: Function is missing a type annotation  [no-untyped-def]
+Found 50 errors in 3 files (checked 4 source files)
+
+bandit...................................................................Failed
+- hook id: bandit
+- exit code: 1
+
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	using config: pyproject.toml
+[main]	INFO	running on Python 3.12.1
+Traceback (most recent call last):
+  File "C:\Users\sprim\.cache\pre-commit\repo1ace48s6\py_env-python3\Lib\site-packages\bandit\core\manager.py", line 186, in output_results
+    report_func(
+  File "C:\Users\sprim\.cache\pre-commit\repo1ace48s6\py_env-python3\Lib\site-packages\bandit\formatters\text.py", line 195, in report
+    wrapped_file.write(result)
+  File "C:\Users\sprim\AppData\Roaming\uv\python\cpython-3.12.1-windows-x86_64-none\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 1149: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\sprim\.cache\pre-commit\repo1ace48s6\py_env-python3\Scripts\bandit.EXE\__main__.py", line 7, in <module>
+  File "C:\Users\sprim\.cache\pre-commit\repo1ace48s6\py_env-python3\Lib\site-packages\bandit\cli\main.py", line 671, in main
+    b_mgr.output_results(
+  File "C:\Users\sprim\.cache\pre-commit\repo1ace48s6\py_env-python3\Lib\site-packages\bandit\core\manager.py", line 195, in output_results
+    raise RuntimeError(
+RuntimeError: Unable to output report using 'txt' formatter: 'charmap' codec can't encode character '\u2705' in position 1149: character maps to <undefined>
+
+UV Environment Check.....................................................Passed
+Unit Tests...............................................................Failed
+- hook id: pytest-unit
+- exit code: 2
+
+=================================== ERRORS ====================================
+________________ ERROR collecting tests/unit/test_uv_utils.py _________________
+ImportError while importing test module 'C:\Users\sprim\Focus Areas\Projects\Dev\homelab\tests\unit\test_uv_utils.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\..\..\AppData\Roaming\uv\python\cpython-3.12.1-windows-x86_64-none\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_uv_utils.py:15: in <module>
+    from scripts._uv_utils import (
+E   ModuleNotFoundError: No module named 'scripts'
+=========================== short test summary info ===========================
+ERROR tests/unit/test_uv_utils.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 4.31s ===============================
+
+Coverage Validation......................................................Failed
+- hook id: coverage-check
+- exit code: 2
+
+=================================== ERRORS ====================================
+________________ ERROR collecting tests/unit/test_uv_utils.py _________________
+ImportError while importing test module 'C:\Users\sprim\Focus Areas\Projects\Dev\homelab\tests\unit\test_uv_utils.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+..\..\..\..\AppData\Roaming\uv\python\cpython-3.12.1-windows-x86_64-none\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\unit\test_uv_utils.py:15: in <module>
+    from scripts._uv_utils import (
+E   ModuleNotFoundError: No module named 'scripts'
+=========================== short test summary info ===========================
+ERROR tests/unit/test_uv_utils.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 3.59s ===============================
+

@@ -226,13 +226,13 @@ class TestUVUtils:
     def test_is_running_in_venv_false(self):
         """Test virtual environment detection - negative case."""
         # Arrange: Mock system Python attributes        with patch.object(sys, "base_prefix", "/usr"):
-            with patch.object(sys, "prefix", "/usr"):
-                with patch.object(sys, "real_prefix", None, create=True):
-                    # Act: Check if in venv
-                    result = is_running_in_venv()
+        with patch.object(sys, "prefix", "/usr"):
+            with patch.object(sys, "real_prefix", None, create=True):
+                # Act: Check if in venv
+                result = is_running_in_venv()
 
-                    # Assert: Should not detect virtual environment
-                    assert result is False
+                # Assert: Should not detect virtual environment
+                assert result is False
 
     def test_is_running_in_venv_real_prefix(self):
         """Test virtual environment detection with real_prefix attribute."""

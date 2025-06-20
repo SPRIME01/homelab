@@ -237,7 +237,7 @@ def dev_setup():
 
     try:
         subprocess.run(
-            ["uv", "run", "python", "scripts/dev-env-manager.py", "--setup-all"],
+            ["uv", "run", "python", "scripts/dev_env_manager.py", "--setup-all"],
             check=True,
         )
         console.print("✅ Development environment setup completed", style="green")
