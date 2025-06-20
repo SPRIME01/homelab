@@ -14,14 +14,13 @@ dependencies = [
     "pyyaml>=6.0.1",
     "kubernetes>=28.1.0",
     "ansible>=8.0.0",
-    # Supabase and PostgreSQL dependencies
     "asyncpg>=0.29.0",
     "supabase>=2.0.0",
     "postgrest>=0.13.0",
     "pulumi>=3.95.0",
     "pulumi-kubernetes>=4.0.0",
-    "psycopg2-binary>=2.9.9",  # Added psycopg2-binary
-    "pika>=1.3.0",  # Added pika
+    "psycopg2-binary>=2.9.9",
+    "pika>=1.3.0",
 ]
 
 [project.optional-dependencies]
@@ -74,22 +73,29 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [tool.pytest.ini_options]
+pythonpath = [
+  "src",
+  "scripts",
+  "infrastructure"
+]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 addopts = [
-    "--cov=homelab",  # Change from src to your actual package name
+    "--cov=homelab",
     "--cov=scripts",
     "--cov=infrastructure",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml:coverage.xml",
-    "--cov-fail-under=25",
+    "--cov-fail-under=90",
     "--strict-markers",
     "--strict-config",
+    "--disable-warnings",
     "--tb=short",
     "-ra",
     "--durations=10",
-    "--disable-warnings",
 ]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -106,6 +112,25 @@ markers = [
     "security: Security-related tests",
     "performance: Performance optimization tests",
     "asyncio: mark a test as asyncio-based",
+    "unit: Unit tests (fast, isolated)",
+    "e2e: End-to-end tests (slowest, full system tests)",
+    "makefile: Tests for Makefile functionality",
+    "slow: Tests that take more than 2 seconds",
+    "network: Tests that require network connectivity",
+    "k8s: Tests that require Kubernetes/K3s cluster",
+    "supabase: Tests specific to Supabase functionality",
+    "backup: Tests for backup and restore functionality",
+    "security: Security-related tests",
+    "performance: Performance optimization tests",
+]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*PYTHONPATH.*:UserWarning",
 ]
 asyncio_mode = "auto"
 minversion = "7.0"

@@ -151,9 +151,9 @@ class TestHelpers:
         actual_args = actual_call[0][0]  # First positional argument
 
         # Assert: Command arguments match
-        assert actual_args == expected_args, (
-            f"Expected command: {expected_args}\nActual command: {actual_args}"
-        )
+        assert (
+            actual_args == expected_args
+        ), f"Expected command: {expected_args}\nActual command: {actual_args}"
 
     @staticmethod
     def create_sample_device_data() -> list[dict[str, Any]]:
@@ -407,9 +407,9 @@ class AAATester:
             expected_keys: Expected keys in result (optional)
         """
         assert isinstance(result, dict), "Result must be a dictionary"
-        assert result.get("success") is True, (
-            f"Operation failed: {result.get('error', 'Unknown error')}"
-        )
+        assert (
+            result.get("success") is True
+        ), f"Operation failed: {result.get('error', 'Unknown error')}"
 
         if expected_keys:
             for key in expected_keys:
@@ -429,6 +429,6 @@ class AAATester:
         assert "error" in result, "Failed result must contain error message"
 
         if expected_error:
-            assert expected_error.lower() in result["error"].lower(), (
-                f"Expected error '{expected_error}' not found in '{result['error']}'"
-            )
+            assert (
+                expected_error.lower() in result["error"].lower()
+            ), f"Expected error '{expected_error}' not found in '{result['error']}'"

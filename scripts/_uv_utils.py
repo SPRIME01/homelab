@@ -8,10 +8,9 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 
-def validate_uv_environment(project_root: Optional[Path] = None) -> None:
+def validate_uv_environment(project_root: Path | None = None) -> None:
     """
     Validate that UV is available and the environment is properly set up.
 
@@ -66,7 +65,7 @@ def validate_uv_environment(project_root: Optional[Path] = None) -> None:
         )
 
 
-def ensure_dependencies_synced(project_root: Optional[Path] = None) -> None:
+def ensure_dependencies_synced(project_root: Path | None = None) -> None:
     """
     Ensure project dependencies are synced using UV.
 
@@ -79,7 +78,7 @@ def ensure_dependencies_synced(project_root: Optional[Path] = None) -> None:
     validate_uv_environment(project_root)
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["uv", "sync", "--all-extras"],
             cwd=project_root,
             check=True,
@@ -94,8 +93,8 @@ def ensure_dependencies_synced(project_root: Optional[Path] = None) -> None:
 
 
 def run_with_uv(
-    command: list[str], project_root: Optional[Path] = None
-) -> subprocess.CompletedProcess:
+    command: list[str], project_root: Path | None = None
+) -> subprocess.CompletedProcess[str]:
     """
     Run a command using UV's virtual environment.
 
@@ -112,10 +111,10 @@ def run_with_uv(
     validate_uv_environment(project_root)
 
     uv_command = ["uv", "run"] + command
-    return subprocess.run(uv_command, cwd=project_root, check=True)
+    return subprocess.run(uv_command, cwd=project_root, check=True, text=True)
 
 
-def get_virtual_env_path(project_root: Optional[Path] = None) -> Path:
+def get_virtual_env_path(project_root: Path | None = None) -> Path:
     """
     Get the path to the virtual environment.
 
@@ -152,27 +151,27 @@ def print_uv_info() -> None:
         )
         uv_version = result.stdout.strip()
 
-        print(f"📦 UV Version: {uv_version}")
-        print(f"🐍 Python: {sys.executable}")
-        print(f"🌍 Virtual Environment: {'Yes' if is_running_in_venv() else 'No'}")
+        print(f"UV Version: {uv_version}")
+        print(f"Python: {sys.executable}")
+        print(f"Virtual Environment: {'Yes' if is_running_in_venv() else 'No'}")
 
         project_root = Path.cwd()
         venv_path = get_virtual_env_path(project_root)
-        print(f"📁 Virtual Environment Path: {venv_path}")
-        print(f"✅ Virtual Environment Exists: {venv_path.exists()}")
+        print(f"Virtual Environment Path: {venv_path}")
+        print(f"Virtual Environment Exists: {venv_path.exists()}")
 
     except Exception as e:
-        print(f"❌ Error getting UV info: {e}")
+        print(f"Error getting UV info: {e}")
 
 
 if __name__ == "__main__":
     """Run UV environment validation and info when called directly."""
     try:
-        print("🔍 Validating UV environment...")
+        print("Validating UV environment...")
         validate_uv_environment()
-        print("✅ UV environment validation successful!")
+        print("UV environment validation successful!")
         print()
         print_uv_info()
     except RuntimeError as e:
-        print(f"❌ UV environment validation failed: {e}")
+        print(f"UV environment validation failed: {e}")
         sys.exit(1)

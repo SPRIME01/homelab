@@ -295,14 +295,32 @@ uv run mypy --strict src/ scripts/         # Type checking
 
 ### Development Workflow
 
-1. **Fork and clone** the repository
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Set up development environment**: `make dev-install`
-4. **Make your changes** with proper testing
-5. **Run quality checks**: `make lint test`
-6. **Commit changes**: `git commit -m 'Add amazing feature'`
-7. **Push to branch**: `git push origin feature/amazing-feature`
-8. **Open a Pull Request**
+- Install dependencies:
+  ```sh
+  uv sync
+  ```
+- Run tests:
+  ```sh
+  uv run pytest
+  ```
+- Lint and type-check:
+  ```sh
+  uv run make lint
+  ```
+- Format code:
+  ```sh
+  uv run make format
+  ```
+- Build docs:
+  ```sh
+  uv run make docs
+  ```
+- Deploy infrastructure:
+  ```sh
+  uv run make deploy
+  ```
+
+> All dependencies and build configuration are managed via `pyproject.toml` and `uv`.
 
 ### Code Quality Standards
 

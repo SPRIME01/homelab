@@ -112,7 +112,7 @@ firewall=true
         with open(wslconfig_path, "w") as f:
             f.write(wslconfig_content)
 
-        print("✅ WSL2 optimizations applied. Restart WSL2 with: wsl --shutdown")
+        print("(OK) WSL2 optimizations applied. Restart WSL2 with: wsl --shutdown")
 
     def _analyze_cpu_usage(self) -> list[OptimizationRecommendation]:
         """Analyze CPU usage and suggest optimizations."""

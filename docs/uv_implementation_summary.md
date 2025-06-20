@@ -18,7 +18,7 @@ This document summarizes the updates made to implement UV package manager best p
 - Configured build system with hatchling
 - Added tool configurations for ruff, mypy, and pytest
 
-### 2. `scripts/dev-env-manager.py` - Enhanced UV Integration
+### 2. `scripts/dev_env_manager.py` - Enhanced UV Integration
 
 **Changes Made:**
 
