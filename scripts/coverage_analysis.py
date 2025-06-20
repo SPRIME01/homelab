@@ -210,7 +210,7 @@ class CoverageAnalyzer:
             report += f"## Overall Coverage: {total_coverage:.1f}%\n\n"
 
             if total_coverage >= 90:
-                report += "✅ **Coverage target achieved!**\n\n"
+                report += "(OK) **Coverage target achieved!**\n\n"
             else:
                 needed = 90 - total_coverage
                 report += (
@@ -220,14 +220,12 @@ class CoverageAnalyzer:
             # Module breakdown
             report += "## Module Coverage Breakdown\n\n"
             for module, data in coverage_data.get("module_coverage", {}).items():
-                status = (
-                    "✅"
-                    if data["coverage"] >= 90
-                    else "⚠️"
-                    if data["coverage"] >= 70
-                    else "❌"
-                )
-                report += f"{status} {module}: {data['coverage']:.1f}% ({data['covered']}/{data['statements']} statements)\n"
+                status_char = "(OK)"
+                if data["coverage"] < 90:
+                    status_char = "⚠️"
+                if data["coverage"] < 70:
+                    status_char = "❌"
+                report += f"{status_char} {module}: {data['coverage']:.1f}% ({data['covered']}/{data['statements']} statements)\n"
 
             # Recommendations
             report += "\n## Recommendations\n\n"
@@ -275,12 +273,10 @@ class CoverageAnalyzer:
             summary += f"**{category}**: {len(files)} files\n"
 
         summary += "\n**Test Infrastructure**:\n"
-        summary += (
-            f"- Fixtures: {'✅' if (self.tests_dir / 'fixtures').exists() else '❌'}\n"
-        )
-        summary += f"- Test helpers: {'✅' if (self.tests_dir / 'test_helpers.py').exists() else '❌'}\n"
-        summary += f"- Conftest: {'✅' if (self.tests_dir / 'conftest.py').exists() else '❌'}\n"
-        summary += f"- pytest.ini: {'✅' if (self.project_root / 'pytest.ini').exists() else '❌'}\n"
+        summary += f"- Fixtures: {'(OK)' if (self.tests_dir / 'fixtures').exists() else '❌'}\n"
+        summary += f"- Test helpers: {'(OK)' if (self.tests_dir / 'test_helpers.py').exists() else '❌'}\n"
+        summary += f"- Conftest: {'(OK)' if (self.tests_dir / 'conftest.py').exists() else '❌'}\n"
+        summary += f"- pytest.ini: {'(OK)' if (self.project_root / 'pytest.ini').exists() else '❌'}\n"
 
         return summary
 

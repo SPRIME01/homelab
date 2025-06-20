@@ -1,31 +1,13 @@
 #!/usr/bin/env python3
 """
-Test scrip    # Test 4: Check if UV can read the project configuration
-    try:
-        # Use 'uv pip list' to check if UV can work with the project
-        result = subprocess.run(
-            ["uv", "pip", "list"],
-            cwd=project_root,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        print("✅ UV can read project configuration")
-    except subprocess.CalledProcessError as e:
-        print(f"⚠️ UV project check failed (this is normal if dependencies aren't synced yet): {e}")
-
-    # Test 5: Check if dependencies are already installed
-    try:
-        result = subprocess.run(
-            ["uv", "run", "python", "-c", "import rich; print('Dependencies are installed')"],
-            cwd=project_root,
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        print("✅ Core dependencies are installed")
-    except subprocess.CalledProcessError:
-        print("⚠️ Dependencies not yet installed - run 'uv sync --all-extras' to install them")UV setup and environment.
+Test script for UV setup and environment.
+This script checks:
+1. If UV is installed and its version.
+2. If pyproject.toml exists.
+3. If a virtual environment exists (optional on first run).
+4. If UV can perform a dry-run sync.
+5. (Commented out) If UV can read project configuration via 'uv pip list'.
+6. (Commented out) If core dependencies are installed by trying to import 'rich'.
 """
 
 import subprocess
@@ -45,7 +27,7 @@ def main():
         result = subprocess.run(
             ["uv", "--version"], capture_output=True, text=True, check=True
         )
-        print(f"✅ UV Version: {result.stdout.strip()}")
+        print(f"(OK) UV Version: {result.stdout.strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("❌ UV not found. Please install with: pip install uv")
         return False
@@ -53,7 +35,7 @@ def main():
     # Test 2: Check pyproject.toml exists
     pyproject_path = project_root / "pyproject.toml"
     if pyproject_path.exists():
-        print("✅ pyproject.toml found")
+        print("(OK) pyproject.toml found")
     else:
         print("❌ pyproject.toml not found")
         return False
@@ -61,7 +43,7 @@ def main():
     # Test 3: Check virtual environment
     venv_path = project_root / ".venv"
     if venv_path.exists():
-        print("✅ Virtual environment exists")
+        print("(OK) Virtual environment exists")
     else:
         print("⚠️ Virtual environment not found - this is expected on first run")
 
@@ -74,11 +56,40 @@ def main():
             text=True,
             check=True,
         )
-        print("✅ UV sync dry-run successful")
+        print("(OK) UV sync dry-run successful")
     except subprocess.CalledProcessError as e:
         print(f"❌ UV sync dry-run failed: {e}")
         print(f"Error output: {e.stderr}")
         return False
+
+    # The following tests were part of the original malformed docstring,
+    # keeping them commented out but corrected for reference.
+    # Test 4 (original): Check if UV can read the project configuration
+    # try:
+    #     # Use 'uv pip list' to check if UV can work with the project
+    #     result = subprocess.run(
+    #         ["uv", "pip", "list"],
+    #         cwd=project_root,
+    #         capture_output=True,
+    #         text=True,
+    #         check=True
+    #     )
+    #     print("(OK) UV can read project configuration")
+    # except subprocess.CalledProcessError as e:
+    #     print(f"⚠️ UV project check failed (this is normal if dependencies aren't synced yet): {e}")
+
+    # Test 5 (original): Check if dependencies are already installed
+    # try:
+    #     result = subprocess.run(
+    #         ["uv", "run", "python", "-c", "import rich; print('Dependencies are installed')"],
+    #         cwd=project_root,
+    #         capture_output=True,
+    #         text=True,
+    #         check=True
+    #     )
+    #     print("(OK) Core dependencies are installed")
+    # except subprocess.CalledProcessError:
+    #     print("⚠️ Dependencies not yet installed - run 'uv sync --all-extras' to install them")
 
     print("\n🎉 UV environment setup validation complete!")
     print("\n📝 Next steps:")

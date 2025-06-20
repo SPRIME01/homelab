@@ -421,3 +421,14 @@ def makefile_framework(project_root: Path):
     from tests.makefile.test_makefile_comprehensive import MakefileTestFramework
 
     return MakefileTestFramework(project_root)
+
+
+@pytest.fixture
+def log_capture():
+    """Fixture to capture Loguru logs."""
+    from tests.test_helpers import LogCapture as LogCaptureHelper
+
+    capture = LogCaptureHelper()
+    capture.start_capture()
+    yield capture
+    capture.stop_capture()

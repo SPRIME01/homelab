@@ -105,9 +105,9 @@ class TestMakefileStructure:
         """Test that Makefile exists and is readable."""
         assert makefile_framework.makefile_path.exists(), "Makefile should exist"
         assert makefile_framework.makefile_path.is_file(), "Makefile should be a file"
-        assert makefile_framework.makefile_path.stat().st_size > 0, (
-            "Makefile should not be empty"
-        )
+        assert (
+            makefile_framework.makefile_path.stat().st_size > 0
+        ), "Makefile should not be empty"
         logger.info("✓ Makefile exists and is readable")
 
     @pytest.mark.makefile
@@ -129,9 +129,9 @@ class TestMakefileStructure:
 
         for target in required_targets:
             target_pattern = f"{target}:"
-            assert target_pattern in makefile_content, (
-                f"Required target '{target}' missing"
-            )
+            assert (
+                target_pattern in makefile_content
+            ), f"Required target '{target}' missing"
             logger.info(f"✓ Target '{target}' found in Makefile")
 
     @pytest.mark.makefile
@@ -156,9 +156,9 @@ class TestMakefileTargets:
             output = result.stdout + result.stderr
             help_indicators = ["Available", "Usage", "targets", "help", "make"]
             has_help_content = any(indicator in output for indicator in help_indicators)
-            assert has_help_content or len(output.strip()) > 20, (
-                "Help should provide information"
-            )
+            assert (
+                has_help_content or len(output.strip()) > 20
+            ), "Help should provide information"
             logger.info("✓ Help target provides useful information")
         else:
             logger.info("⚠ Help target not available or failed")
@@ -264,9 +264,9 @@ class TestMakefilePerformance:
             result = makefile_framework.run_make_target(target)
             execution_time = time.time() - start_time
 
-            assert execution_time < max_time, (
-                f"Target '{target}' took {execution_time:.2f}s, expected < {max_time}s"
-            )
+            assert (
+                execution_time < max_time
+            ), f"Target '{target}' took {execution_time:.2f}s, expected < {max_time}s"
 
             if result.returncode == 0:
                 logger.info(f"Target '{target}' completed in {execution_time:.2f}s")
@@ -307,9 +307,9 @@ class TestMakefilePerformance:
 
         # Assert
         for target in safe_parallel_targets:
-            assert results[target] is not None, (
-                f"Target '{target}' failed in parallel execution"
-            )
+            assert (
+                results[target] is not None
+            ), f"Target '{target}' failed in parallel execution"
             if results[target].returncode == 0:
                 logger.info(f"Target '{target}' completed successfully in parallel")
 
@@ -340,9 +340,9 @@ class TestMakefileErrorHandling:
             # Should not crash with unhandled exceptions
             # Either succeeds (return code 0) or fails gracefully (non-zero but with output)
             if result.returncode != 0:
-                assert result.stderr is not None or result.stdout is not None, (
-                    f"Target '{target}' failed without any output"
-                )
+                assert (
+                    result.stderr is not None or result.stdout is not None
+                ), f"Target '{target}' failed without any output"
                 logger.info(
                     f"Target '{target}' failed gracefully: {result.stderr or result.stdout}"
                 )
@@ -419,9 +419,9 @@ class TestMakefileIntegration:
             if result.returncode == 0
         ]
 
-        assert len(successful_steps) >= 2, (
-            f"Development workflow failed too early. Successful: {successful_steps}"
-        )
+        assert (
+            len(successful_steps) >= 2
+        ), f"Development workflow failed too early. Successful: {successful_steps}"
 
         logger.info(
             f"Development workflow: {len(successful_steps)}/{len(workflow_targets)} steps successful"
@@ -465,9 +465,9 @@ class TestMakefileIntegration:
         )
 
         # Should have at least basic readiness (audit and verify working)
-        assert readiness_score >= 2, (
-            f"System not ready for deployment. Score: {readiness_score}/{len(readiness_targets)}"
-        )
+        assert (
+            readiness_score >= 2
+        ), f"System not ready for deployment. Score: {readiness_score}/{len(readiness_targets)}"
 
 
 class TestMakefileDocumentation:
@@ -499,19 +499,19 @@ class TestMakefileDocumentation:
 
         # Assert
         assert help_result.returncode == 0, "Help target should always work"
-        assert len(documented_targets) >= 10, (
-            f"Expected at least 10 documented targets, found {len(documented_targets)}"
-        )
+        assert (
+            len(documented_targets) >= 10
+        ), f"Expected at least 10 documented targets, found {len(documented_targets)}"
 
         help_output = help_result.stdout
         for target_name, description in documented_targets:
-            assert target_name in help_output, (
-                f"Target '{target_name}' should appear in help output"
-            )
+            assert (
+                target_name in help_output
+            ), f"Target '{target_name}' should appear in help output"
             # Description should be meaningful (more than just the target name)
-            assert len(description.strip()) > len(target_name), (
-                f"Target '{target_name}' needs better description: '{description}'"
-            )
+            assert len(description.strip()) > len(
+                target_name
+            ), f"Target '{target_name}' needs better description: '{description}'"
 
         logger.info(
             f"Documentation check: {len(documented_targets)} targets properly documented"
@@ -549,9 +549,9 @@ class TestMakefileDocumentation:
         assert len(missing_sections) == 0, f"Help missing sections: {missing_sections}"
 
         # Should be well-formatted (contains formatting characters)
-        assert any(char in result.stdout for char in ["=", "-", "*"]), (
-            "Help output should have formatting for readability"
-        )
+        assert any(
+            char in result.stdout for char in ["=", "-", "*"]
+        ), "Help output should have formatting for readability"
 
         logger.info("Help target provides comprehensive documentation")
 

@@ -12,28 +12,28 @@ import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def setup_copilot():
+def setup_copilot() -> None:
     """Set up GitHub Copilot for the development environment."""
     print("Setting up GitHub Copilot...")
     # Add commands to set up GitHub Copilot
     # For example, configuring VSCode settings for Copilot
 
 
-def rebuild_full_env():
+def rebuild_full_env() -> None:
     """Rebuild the entire development environment."""
     print("Rebuilding the full development environment...")
     # Add commands to rebuild the environment
     # This may include reinstalling packages, resetting configurations, etc.
 
 
-def create_shortcuts():
+def create_shortcuts() -> None:
     """Create shortcuts for the development environment."""
     print("Creating shortcuts for the development environment...")
     # Add commands to create shortcuts
     # This may include creating symlinks, copying files, etc.
 
 
-def main():
+def main() -> None:
     """Main entry point of the script."""
     if len(sys.argv) < 2:
         print("Usage:")

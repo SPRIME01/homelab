@@ -144,7 +144,7 @@ def _setup_k3s_kubeconfig(self, wsl2_ip: str, windows_host_ip: str) -> bool:
 
         # Update kubeconfig server URL for external access
         kubeconfig_path = kube_dir / "config"
-        with open(kubeconfig_path, "r") as f:
+        with open(kubeconfig_path) as f:
             content = f.read()
 
         # Replace localhost with WSL2 IP for internal access

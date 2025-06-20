@@ -69,9 +69,9 @@ class MakefileTestFramework:
         makefile_content = self.makefile_path.read_text()
 
         # Assert: Target exists in Makefile
-        assert f"{target}:" in makefile_content, (
-            f"Make target '{target}' not found in Makefile"
-        )
+        assert (
+            f"{target}:" in makefile_content
+        ), f"Make target '{target}' not found in Makefile"
 
     def assert_target_succeeds(self, target: str) -> subprocess.CompletedProcess:
         """Assert that a make target runs successfully.
@@ -264,9 +264,10 @@ class TestMakefileTargets:
         result = makefile_framework.run_make_target("test")
 
         # Assert: Test target ran (may pass or fail, but should execute)
-        assert result.returncode in [0, 1], (
-            f"Test target had unexpected return code: {result.returncode}"
-        )
+        assert result.returncode in [
+            0,
+            1,
+        ], f"Test target had unexpected return code: {result.returncode}"
 
     def test_lint_target(self, makefile_framework: MakefileTestFramework):
         """Test the lint target runs code quality checks.
@@ -282,9 +283,10 @@ class TestMakefileTargets:
         result = makefile_framework.run_make_target("lint")
 
         # Assert: Lint target executed
-        assert result.returncode in [0, 1], (
-            f"Lint target had unexpected return code: {result.returncode}"
-        )
+        assert result.returncode in [
+            0,
+            1,
+        ], f"Lint target had unexpected return code: {result.returncode}"
 
     def test_format_target(self, makefile_framework: MakefileTestFramework):
         """Test the format target formats code properly.
@@ -313,9 +315,10 @@ class TestMakefileTargets:
         result = makefile_framework.run_make_target("all")
 
         # Assert: All target completed (may warn but should not fail completely)
-        assert result.returncode in [0, 1], (
-            f"All target had unexpected return code: {result.returncode}"
-        )
+        assert result.returncode in [
+            0,
+            1,
+        ], f"All target had unexpected return code: {result.returncode}"
 
     def _uv_available(self) -> bool:
         """Check if UV package manager is available."""
@@ -396,9 +399,9 @@ class TestMakefileComprehensive:
         # Assert
         for target in expected_targets:
             target_pattern = f"{target}:"
-            assert target_pattern in makefile_content, (
-                f"Target '{target}' not found in Makefile"
-            )
+            assert (
+                target_pattern in makefile_content
+            ), f"Target '{target}' not found in Makefile"
             logger.info(f"✓ Target '{target}' found in Makefile")
 
     @pytest.mark.makefile
@@ -497,9 +500,9 @@ class TestMakefileComprehensive:
 
             # Assert - either succeeds or completes within time limit
             if result.returncode == 0:
-                assert execution_time < max_time, (
-                    f"Target {target} took {execution_time:.2f}s (max: {max_time}s)"
-                )
+                assert (
+                    execution_time < max_time
+                ), f"Target {target} took {execution_time:.2f}s (max: {max_time}s)"
                 logger.info(f"✓ Target '{target}' completed in {execution_time:.2f}s")
             else:
                 logger.info(
@@ -536,9 +539,9 @@ class TestMakefileComprehensive:
                 1 for indicator in workflow_indicators if indicator in output_text
             )
 
-            assert indicators_found >= 2, (
-                f"All target should run multiple operations, found {indicators_found}"
-            )
+            assert (
+                indicators_found >= 2
+            ), f"All target should run multiple operations, found {indicators_found}"
             logger.info(
                 f"✓ All target executed comprehensive workflow ({indicators_found} operations)"
             )
@@ -565,9 +568,9 @@ class TestMakefileComprehensive:
 
             # Assert - both should have same success/failure pattern
             if result1.returncode == 0:
-                assert result2.returncode == 0, (
-                    f"Second run of {target} failed (not idempotent)"
-                )
+                assert (
+                    result2.returncode == 0
+                ), f"Second run of {target} failed (not idempotent)"
                 logger.info(f"✓ Target '{target}' is idempotent")
             else:
                 logger.info(
@@ -634,9 +637,9 @@ class TestMakefileComprehensive:
         # Should have reasonable documentation
         documentation_ratio = len(comment_lines) / max(len(target_lines), 1)
 
-        assert documentation_ratio >= 0.3, (
-            f"Makefile should have more documentation (ratio: {documentation_ratio:.2f})"
-        )
+        assert (
+            documentation_ratio >= 0.3
+        ), f"Makefile should have more documentation (ratio: {documentation_ratio:.2f})"
         logger.info(
             f"✓ Makefile has adequate documentation (ratio: {documentation_ratio:.2f})"
         )
@@ -698,9 +701,9 @@ class TestMakefileIntegrationScenarios:
             )
 
         # Deployment workflow should be structurally sound
-        assert "deploy" in [target for target in deployment_targets], (
-            "Deploy target should be defined"
-        )
+        assert "deploy" in [
+            target for target in deployment_targets
+        ], "Deploy target should be defined"
         logger.info("✓ Deployment workflow is properly structured")
 
     @pytest.mark.makefile
@@ -718,15 +721,16 @@ class TestMakefileIntegrationScenarios:
             result = framework.run_make_target(target)
 
             # In CI/CD, we expect clear success/failure (no interactive prompts)
-            assert result.returncode in [0, 1], (
-                f"Target {target} should have clear exit code"
-            )
+            assert result.returncode in [
+                0,
+                1,
+            ], f"Target {target} should have clear exit code"
 
             # Output should be suitable for logging
             output_length = len(result.stdout) + len(result.stderr)
-            assert output_length < 10000, (
-                f"Target {target} produces excessive output ({output_length} chars)"
-            )
+            assert (
+                output_length < 10000
+            ), f"Target {target} produces excessive output ({output_length} chars)"
 
             logger.info(f"✓ Target '{target}' is CI/CD compatible")
 
@@ -738,13 +742,13 @@ test_framework = MakefileTestFramework(Path(__file__).parent.parent.parent)
 @pytest.mark.makefile
 def test_makefile_exists_and_readable():
     """Test that Makefile exists and is readable."""
-    assert test_framework.makefile_path.exists(), (
-        "Makefile should exist in project root"
-    )
+    assert (
+        test_framework.makefile_path.exists()
+    ), "Makefile should exist in project root"
     assert test_framework.makefile_path.is_file(), "Makefile should be a file"
-    assert test_framework.makefile_path.stat().st_size > 0, (
-        "Makefile should not be empty"
-    )
+    assert (
+        test_framework.makefile_path.stat().st_size > 0
+    ), "Makefile should not be empty"
     logger.info("✓ Makefile exists and is readable")
 
 

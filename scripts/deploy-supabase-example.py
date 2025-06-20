@@ -32,7 +32,7 @@ async def deploy_supabase_example():
         print("🏗️ Deploying Supabase components...")
         components = supabase.deploy_supabase_stack()
 
-        print("✅ Supabase deployment completed successfully!")
+        print("(OK) Supabase deployment completed successfully!")
         print("\n📊 Deployed components:")
         for name, component in components.items():
             print(f"  • {name}: {type(component).__name__}")

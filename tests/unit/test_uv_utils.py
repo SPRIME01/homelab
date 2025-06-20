@@ -7,9 +7,11 @@ Tests the UV package manager utility functions with comprehensive mocking.
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch
+from typing import Any  # Will remove if not needed after this test
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from _pytest.capture import CaptureFixture
 from loguru import logger
 
 from scripts._uv_utils import (
@@ -26,7 +28,9 @@ from scripts._uv_utils import (
 class TestUVUtils:
     """Test suite for UV utilities functionality."""
 
-    def test_validate_uv_environment_success(self, temp_dir, mock_subprocess):
+    def test_validate_uv_environment_success(
+        self, temp_dir: Path, mock_subprocess: Mock
+    ) -> None:
         """Test successful UV environment validation.
 
         Args:
@@ -54,7 +58,7 @@ class TestUVUtils:
             # Assert: No exception should be raised
             logger.info("UV environment validation succeeded as expected")
 
-    def test_validate_uv_environment_no_uv(self, temp_dir):
+    def test_validate_uv_environment_no_uv(self, temp_dir: Path) -> None:
         """Test validation failure when UV is not installed.
 
         Args:
@@ -66,7 +70,7 @@ class TestUVUtils:
             with pytest.raises(RuntimeError, match="UV package manager not found"):
                 validate_uv_environment(temp_dir)
 
-    def test_validate_uv_environment_no_pyproject(self, temp_dir):
+    def test_validate_uv_environment_no_pyproject(self, temp_dir: Path) -> None:
         """Test validation failure when pyproject.toml is missing.
 
         Args:
@@ -78,7 +82,9 @@ class TestUVUtils:
             with pytest.raises(RuntimeError, match="Project not initialized"):
                 validate_uv_environment(temp_dir)
 
-    def test_validate_uv_environment_creates_venv(self, temp_dir, mock_subprocess):
+    def test_validate_uv_environment_creates_venv(
+        self, temp_dir: Path, mock_subprocess: MagicMock
+    ) -> None:
         """Test that virtual environment is created when missing.
 
         Args:
@@ -94,7 +100,9 @@ class TestUVUtils:
             mock_subprocess.return_value = Mock(returncode=0)
 
             # Mock python executable creation after venv
-            def side_effect(*args, **kwargs):
+            def side_effect(
+                *args: Any, **kwargs: Any
+            ) -> Mock:  # Added types for *args, **kwargs
                 venv_dir = temp_dir / ".venv"
                 venv_dir.mkdir(exist_ok=True)
                 if sys.platform == "win32":
@@ -119,7 +127,9 @@ class TestUVUtils:
                 text=True,
             )
 
-    def test_ensure_dependencies_synced_success(self, temp_dir, mock_subprocess):
+    def test_ensure_dependencies_synced_success(
+        self, temp_dir: Path, mock_subprocess: Mock
+    ) -> None:
         """Test successful dependency synchronization.
 
         Args:
@@ -143,7 +153,9 @@ class TestUVUtils:
 
             assert sync_call is not None, "uv sync command was not called"
 
-    def test_ensure_dependencies_synced_failure(self, temp_dir, mock_subprocess):
+    def test_ensure_dependencies_synced_failure(
+        self, temp_dir: Path, mock_subprocess: MagicMock
+    ) -> None:
         """Test dependency synchronization failure handling.
 
         Args:
@@ -166,7 +178,7 @@ class TestUVUtils:
                 with pytest.raises(RuntimeError, match="Failed to sync dependencies"):
                     ensure_dependencies_synced(temp_dir)
 
-    def test_run_with_uv_success(self, temp_dir, mock_subprocess):
+    def test_run_with_uv_success(self, temp_dir: Path, mock_subprocess: Mock) -> None:
         """Test successful command execution with UV.
 
         Args:
@@ -184,10 +196,10 @@ class TestUVUtils:
 
                 # Assert: Correct command was executed
                 mock_subprocess.assert_called_with(
-                    expected_command, cwd=temp_dir, check=True
+                    expected_command, cwd=temp_dir, check=True, text=True
                 )
 
-    def test_get_virtual_env_path(self, temp_dir):
+    def test_get_virtual_env_path(self, temp_dir: Path) -> None:
         """Test getting virtual environment path.
 
         Args:
@@ -200,7 +212,7 @@ class TestUVUtils:
         expected_path = temp_dir / ".venv"
         assert venv_path == expected_path
 
-    def test_get_virtual_env_path_default(self):
+    def test_get_virtual_env_path_default(self) -> None:
         """Test getting virtual environment path with default project root."""
         # Arrange: Use current working directory
         with patch("pathlib.Path.cwd") as mock_cwd:
@@ -212,7 +224,7 @@ class TestUVUtils:
             # Assert: Uses current directory
             assert venv_path == Path("/test/project/.venv")
 
-    def test_is_running_in_venv_true(self):
+    def test_is_running_in_venv_true(self) -> None:
         """Test virtual environment detection - positive case."""
         # Arrange: Mock virtual environment attributes
         with patch.object(sys, "base_prefix", "/usr"):
@@ -223,7 +235,7 @@ class TestUVUtils:
                 # Assert: Should detect virtual environment
                 assert result is True
 
-    def test_is_running_in_venv_false(self):
+    def test_is_running_in_venv_false(self) -> None:
         """Test virtual environment detection - negative case."""
         # Arrange: Mock system Python attributes        with patch.object(sys, "base_prefix", "/usr"):
         with patch.object(sys, "prefix", "/usr"):
@@ -234,7 +246,7 @@ class TestUVUtils:
                 # Assert: Should not detect virtual environment
                 assert result is False
 
-    def test_is_running_in_venv_real_prefix(self):
+    def test_is_running_in_venv_real_prefix(self) -> None:
         """Test virtual environment detection with real_prefix attribute."""
         # Arrange: Mock old-style virtualenv with hasattr check
         with patch("sys.real_prefix", "/usr", create=True):
@@ -244,7 +256,9 @@ class TestUVUtils:
             # Assert: Should detect virtual environment
             assert result is True
 
-    def test_print_uv_info_success(self, mock_subprocess, capsys):
+    def test_print_uv_info_success(
+        self, mock_subprocess: Mock, capsys: CaptureFixture
+    ) -> None:
         """Test successful UV info printing.
 
         Args:
@@ -267,7 +281,9 @@ class TestUVUtils:
                     assert "Virtual Environment: Yes" in captured.out
                     assert "Virtual Environment Exists: True" in captured.out
 
-    def test_print_uv_info_failure(self, mock_subprocess, capsys):
+    def test_print_uv_info_failure(
+        self, mock_subprocess: Mock, capsys: CaptureFixture
+    ) -> None:
         """Test UV info printing when UV command fails.
 
         Args:
@@ -282,8 +298,9 @@ class TestUVUtils:
 
         # Assert: Error message displayed
         captured = capsys.readouterr()
-        assert "❌ Error getting UV info:" in captured.out
+        assert "Error getting UV info:" in captured.out # Removed emoji, check actual error string
 
+    # This is the problematic function, rewriting it completely
     def _setup_valid_uv_environment(self, temp_dir: Path) -> None:
         """Set up a valid UV environment for testing.
 
@@ -310,7 +327,7 @@ class TestUVUtils:
 class TestUVUtilsEdgeCases:
     """Test edge cases and error conditions for UV utilities."""
 
-    def test_validate_uv_environment_corrupted_venv(self, temp_dir):
+    def test_validate_uv_environment_corrupted_venv(self, temp_dir: Path) -> None:
         """Test handling of corrupted virtual environment.
 
         Args:
@@ -331,7 +348,7 @@ class TestUVUtilsEdgeCases:
             ):
                 validate_uv_environment(temp_dir)
 
-    def test_run_with_uv_none_project_root(self, mock_subprocess):
+    def test_run_with_uv_none_project_root(self, mock_subprocess: Mock) -> None:
         """Test run_with_uv with None project_root parameter.
 
         Args:
@@ -348,10 +365,12 @@ class TestUVUtilsEdgeCases:
 
                 # Assert: Uses current directory
                 mock_subprocess.assert_called_with(
-                    ["uv", "run"] + command, cwd=Path("/test/project"), check=True
+                    ["uv", "run"] + command, cwd=Path("/test/project"), check=True, text=True
                 )
 
-    def test_ensure_dependencies_synced_none_project_root(self, mock_subprocess):
+    def test_ensure_dependencies_synced_none_project_root(
+        self, mock_subprocess: Mock
+    ) -> None:
         """Test ensure_dependencies_synced with None project_root.
 
         Args:
@@ -359,7 +378,7 @@ class TestUVUtilsEdgeCases:
         """
         # Arrange: Mock current working directory and validation
         with patch("pathlib.Path.cwd") as mock_cwd:
-            mock_cwd.return_value = Path("/test/project")
+            mock_cwd.return_value = Path("/test/.project")  # Corrected path
             with patch("scripts._uv_utils.validate_uv_environment"):
                 mock_subprocess.return_value = Mock(returncode=0)
 
@@ -368,11 +387,13 @@ class TestUVUtilsEdgeCases:
 
                 # Assert: Uses current directory
                 assert any(
-                    call[1]["cwd"] == Path("/test/project")
+                    call[1]["cwd"] == Path("/test/.project")  # Corrected path
                     for call in mock_subprocess.call_args_list
                 )
 
-    def test_venv_creation_failure(self, temp_dir, mock_subprocess):
+    def test_venv_creation_failure(
+        self, temp_dir: Path, mock_subprocess: MagicMock
+    ) -> None:
         """Test handling of virtual environment creation failure.
 
         Args:

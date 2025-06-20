@@ -4,12 +4,9 @@ Discover and integrate smart home devices and services.
 Auto-configures Home Assistant entities, MQTT topics, and K8s services.
 """
 
-import asyncio
-import json
-import requests
-from typing import Dict, List
-import nmap
 from dataclasses import dataclass
+
+import nmap
 import yaml
 
 
@@ -19,7 +16,7 @@ class DiscoveredDevice:
     hostname: str
     mac_address: str
     device_type: str
-    services: List[str]
+    services: list[str]
     manufacturer: str = "Unknown"
 
 
@@ -31,7 +28,7 @@ class SmartHomeDiscovery:
         self.known_devices = {}
         self.home_assistant_url = "http://192.168.0.41:8123"
 
-    async def discover_network_devices(self) -> List[DiscoveredDevice]:
+    async def discover_network_devices(self) -> list[DiscoveredDevice]:
         """Scan network for smart home devices."""
         nm = nmap.PortScanner()
         devices = []
@@ -94,7 +91,7 @@ class SmartHomeDiscovery:
             services=services,
         )
 
-    def generate_home_assistant_config(self, devices: List[DiscoveredDevice]) -> str:
+    def generate_home_assistant_config(self, devices: list[DiscoveredDevice]) -> str:
         """Generate Home Assistant configuration for discovered devices."""
         config = {
             "mqtt": {"broker": "192.168.0.41", "port": 1883, "discovery": True},
@@ -131,7 +128,7 @@ class SmartHomeDiscovery:
 
         return yaml.dump(config, default_flow_style=False)
 
-    def generate_k8s_services(self, devices: List[DiscoveredDevice]) -> str:
+    def generate_k8s_services(self, devices: list[DiscoveredDevice]) -> str:
         """Generate Kubernetes service configurations."""
         services = []
 

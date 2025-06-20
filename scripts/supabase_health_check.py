@@ -99,9 +99,9 @@ class SupabaseHealthChecker:
             }
 
             # Print status
-            status_icon = "✅" if service_healthy else "❌"
+            status_char = "(OK)" if service_healthy else "❌"
             print(
-                f"{status_icon} {service_name}: {'Healthy' if service_healthy else 'Unhealthy'}"
+                f"{status_char} {service_name}: {'Healthy' if service_healthy else 'Unhealthy'}"
             )
 
             if not service_healthy:
@@ -110,9 +110,9 @@ class SupabaseHealthChecker:
 
         # Summary
         print("\n" + "=" * 50)
-        summary_icon = "✅" if overall_healthy else "❌"
+        summary_char = "(OK)" if overall_healthy else "❌"
         print(
-            f"{summary_icon} Overall Status: {'All services healthy' if overall_healthy else 'Some services unhealthy'}"
+            f"{summary_char} Overall Status: {'All services healthy' if overall_healthy else 'Some services unhealthy'}"
         )
 
         if overall_healthy:
