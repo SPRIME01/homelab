@@ -14,6 +14,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "infrastructure"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
+# Import TestHelpers from the test_helpers module
+from tests.test_helpers import TestHelpers
 from supabase_config import get_config, validate_config
 from supabase_health_check import SupabaseHealthChecker
 from supabase_migration import MigrationConfig, SupabaseMigrator
@@ -254,36 +256,9 @@ class TestSupabaseIntegration:
             pytest.skip("kubectl not available")
 
 
-# Utility functions for test setup
-def create_test_kubeconfig(tmp_path: Path) -> Path:
-    """Create a test kubeconfig file."""
-    kubeconfig = tmp_path / "kubeconfig"
-    kubeconfig.write_text("""
-apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    server: https://127.0.0.1:6443
-  name: test-cluster
-contexts:
-- context:
-    cluster: test-cluster
-    user: test-user
-  name: test-context
-current-context: test-context
-users:
-- name: test-user
-  user:
-    token: test-token
-""")
-    return kubeconfig
-
-
-def mock_kubectl_response(
-    command: str, returncode: int = 0, stdout: str = "", stderr: str = ""
-):
-    """Helper to mock kubectl responses."""
-    return Mock(returncode=returncode, stdout=stdout, stderr=stderr)
+# Removed local create_test_kubeconfig and mock_kubectl_response
+# Use TestHelpers.create_test_kubeconfig or conftest.mock_kubeconfig fixture
+# Use TestHelpers.mock_kubectl_response
 
 
 if __name__ == "__main__":
