@@ -270,7 +270,6 @@ class TestCrossComponentCommunication(AAATester):
     def test_mqtt_message_flow(self, mqtt_test_config: dict) -> None:
         """Test MQTT message flow between components."""
         # Arrange
-        # mqtt_test_config now provides broker and port
         full_mqtt_config = {
             **mqtt_test_config,
             "topics": ["homelab/sensors", "homelab/alerts", "homelab/logs"],
@@ -281,8 +280,8 @@ class TestCrossComponentCommunication(AAATester):
 
         # Assert
         assert result["connection_successful"] is True
-        assert result["messages_published"] > 0
-        assert result["messages_received"] > 0 # This will now depend on actual broker interaction
+        assert result["messages_published"] == len(full_mqtt_config["topics"])
+        assert result["messages_received"] == result["messages_published"]
         assert len(result["active_topics"]) == 3
 
     def test_http_api_communication(self, httpbin_test_base_url: str) -> None:
@@ -355,46 +354,54 @@ class TestCrossComponentCommunication(AAATester):
     def _test_mqtt_communication(self, config: dict[str, Any]) -> dict[str, Any]:
         """Test MQTT communication implementation."""
         from paho.mqtt.client import Client
+        import threading
+        import time
+        import json
 
         # Create MQTT client
         client = Client()
 
+        # Track received messages
+        messages_published = 0
+        messages_received = 0
+        received_event = threading.Event()
+        expected_messages = len(config["topics"])
+        lock = threading.Lock()
+
+        def on_message(client, userdata, msg):
+            nonlocal messages_received
+            with lock:
+                messages_received += 1
+                if messages_received >= expected_messages:
+                    received_event.set()
+
+        client.on_message = on_message
+
         # Connect to broker
         client.connect(config["broker"], config["port"], 60)
 
+        # Subscribe to topics
+        for topic in config["topics"]:
+            client.subscribe(topic)
+
+        client.loop_start()
+        time.sleep(0.5)  # Allow time for subscriptions
+
         # Publish test messages
-        messages_published = 0
         for topic in config["topics"]:
             payload = json.dumps({"timestamp": time.time(), "data": "test"})
             client.publish(topic, payload)
             messages_published += 1
 
-        # Subscribe and receive messages
-        messages_received = 0
-
-        def on_message(client, userdata, msg):
-            nonlocal messages_received
-            messages_received += 1
-
-        client.on_message = on_message
-        for topic in config["topics"]:
-            client.subscribe(topic)
-
-        client.loop_start()
-        time.sleep(1)  # Allow time for message processing
+        # Wait for all messages to be received or timeout
+        received_event.wait(timeout=5)
         client.loop_stop()
-
-        # For mocked tests, simulate received messages equal to published messages
-        # This part needs to be re-evaluated for real broker.
-        # If the client is not a mock, actual messages must be received.
-        # The original logic has a time.sleep(1) which might be enough for local container.
-        # if hasattr(client, "_mock_name"): # This condition will now be false
-        #     messages_received = messages_published
+        client.disconnect()
 
         return {
-            "connection_successful": True, # This is set true before connect attempt in original code
+            "connection_successful": True,
             "messages_published": messages_published,
-            "messages_received": messages_received, # This will depend on real broker interaction
+            "messages_received": messages_received,
             "active_topics": config["topics"],
         }
 
@@ -434,14 +441,17 @@ class TestCrossComponentCommunication(AAATester):
         import psycopg2
 
         try:
+            # Enforce that password is present in config
+            if "password" not in config or not config["password"]:
+                raise ValueError("Database password must be provided in config.")
+
             # Connect to database
-            # Ensure password from config is used.
             conn = psycopg2.connect(
                 host=config["host"],
                 port=config["port"],
                 database=config["database"],
                 user=config["user"],
-                password=config["password"], # Ensure password from config is used.
+                password=config["password"],
             )
 
             # Execute test query

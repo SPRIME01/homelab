@@ -162,19 +162,26 @@ def get_env_var(name: str, default: Optional[T] = None, cast: Optional[Type[T]] 
     """
     Retrieves an environment variable with optional casting and default value.
     Logs warnings if casting fails or variable is not found and no default is provided.
+    If cast is not provided but default is, infers cast from type(default).
+    Handles ValueError and TypeError during casting.
     """
     value = os.getenv(name)
     if value is None:
         if default is None:
             logger.warning(f"Environment variable {name} not found and no default value provided.")
         return default
-    if cast:
+
+    cast_to = cast
+    if cast_to is None and default is not None:
+        cast_to = type(default)
+
+    if cast_to:
         try:
-            return cast(value)
-        except ValueError:
-            logger.warning(f"Could not cast environment variable {name}='{value}' to {cast}. Returning default.")
+            return cast_to(value)  # type: ignore[call-arg]
+        except (ValueError, TypeError):
+            logger.warning(f"Could not cast environment variable {name}='{value}' to {cast_to}. Returning default.")
             return default
-    return value # type: ignore
+    return value if cast_to is None else default
 
 
 @pytest.fixture
