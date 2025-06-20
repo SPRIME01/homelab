@@ -11,15 +11,24 @@ import tempfile
 from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
+from typing import TypeVar, Type, Optional
 
 import pytest
 from loguru import logger
+from dotenv import load_dotenv
 
 # Add project directories to path for testing
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 sys.path.insert(0, str(PROJECT_ROOT / "infrastructure"))
+
+# Load .env file
+logger.info("Attempting to load .env file...")
+if load_dotenv():
+    logger.info(".env file loaded successfully.")
+else:
+    logger.warning(".env file not found. Proceeding with environment variables or defaults.")
 
 
 # ============================================================================
@@ -147,6 +156,26 @@ users:
 # Environment and Configuration Fixtures
 # ============================================================================
 
+T = TypeVar('T')
+
+def get_env_var(name: str, default: Optional[T] = None, cast: Optional[Type[T]] = None) -> Optional[T]:
+    """
+    Retrieves an environment variable with optional casting and default value.
+    Logs warnings if casting fails or variable is not found and no default is provided.
+    """
+    value = os.getenv(name)
+    if value is None:
+        if default is None:
+            logger.warning(f"Environment variable {name} not found and no default value provided.")
+        return default
+    if cast:
+        try:
+            return cast(value)
+        except ValueError:
+            logger.warning(f"Could not cast environment variable {name}='{value}' to {cast}. Returning default.")
+            return default
+    return value # type: ignore
+
 
 @pytest.fixture
 def mock_environment():
@@ -191,6 +220,133 @@ def homelab_config():
 # ============================================================================
 # Mock External Dependencies
 # ============================================================================
+
+from testcontainers.core.container import DockerContainer
+from testcontainers.core.waiting_utils import wait_for_logs # Added for waiting
+
+@pytest.fixture(scope="session")
+def postgres_container(test_logger) -> Generator[DockerContainer, None, None]: # Renamed logger to test_logger to match existing fixture
+    test_logger.info("Starting PostgreSQL container for testing...")
+    container = DockerContainer("postgres:13")
+    container.with_env("POSTGRES_PASSWORD", "test")
+    container.with_exposed_ports(5432)
+    try:
+        container.start()
+        wait_for_logs(container, "database system is ready to accept connections", timeout=30)
+        test_logger.info(f"PostgreSQL container started on port {container.get_exposed_port(5432)}")
+        yield container
+    finally:
+        test_logger.info("Stopping PostgreSQL container...")
+        container.stop()
+        test_logger.info("PostgreSQL container stopped.")
+
+@pytest.fixture(scope="session")
+def mqtt_container(test_logger) -> Generator[DockerContainer, None, None]:
+    test_logger.info("Starting MQTT container (eclipse-mosquitto)...")
+    container = DockerContainer("eclipse-mosquitto:latest")
+    container.with_exposed_ports(1883)
+    try:
+        container.start()
+        # Mosquitto version 1.x log: "mosquitto version x.x.x (build date ...) starting"
+        # Mosquitto version 2.x log: "mosquitto version x.x.x running"
+        wait_for_logs(container, r"mosquitto version .* (starting|running)", timeout=20)
+        test_logger.info(f"MQTT container started on port {container.get_exposed_port(1883)}")
+        yield container
+    finally:
+        test_logger.info("Stopping MQTT container...")
+        container.stop()
+        test_logger.info("MQTT container stopped.")
+
+@pytest.fixture(scope="session")
+def rabbitmq_container(test_logger) -> Generator[DockerContainer, None, None]:
+    test_logger.info("Starting RabbitMQ container...")
+    container = DockerContainer("rabbitmq:3-management-alpine")
+    container.with_exposed_ports(5672, 15672) # 5672 for AMQP, 15672 for management
+    try:
+        container.start()
+        # Default RabbitMQ log line: " completed with 0 plugins." or "Starting RabbitMQ"
+        # More specific: "Server startup complete"
+        wait_for_logs(container, "Server startup complete", timeout=30)
+        test_logger.info(f"RabbitMQ container started on AMQP port {container.get_exposed_port(5672)}")
+        yield container
+    finally:
+        test_logger.info("Stopping RabbitMQ container...")
+        container.stop()
+        test_logger.info("RabbitMQ container stopped.")
+
+@pytest.fixture(scope="session")
+def echo_websocket_server_container(test_logger) -> Generator[DockerContainer, None, None]:
+    test_logger.info("Starting echo WebSocket server container (jmalloc/echo-server)...")
+    # This server echoes back whatever it receives. Listens on port 8080.
+    container = DockerContainer("jmalloc/echo-server:latest")
+    container.with_exposed_ports(8080)
+    try:
+        container.start()
+        # jmalloc/echo-server logs "Listening on port 8080"
+        wait_for_logs(container, "Listening on port 8080", timeout=20)
+        test_logger.info(f"Echo WebSocket server container started on port {container.get_exposed_port(8080)}")
+        yield container
+    finally:
+        test_logger.info("Stopping echo WebSocket server container...")
+        container.stop()
+        test_logger.info("Echo WebSocket server container stopped.")
+
+@pytest.fixture(scope="session")
+def httpbin_container(test_logger) -> Generator[DockerContainer, None, None]:
+    test_logger.info("Starting httpbin container (kennethreitz/httpbin)...")
+    container = DockerContainer("kennethreitz/httpbin:latest")
+    container.with_exposed_ports(80) # Default httpbin port
+    try:
+        container.start()
+        # Httpbin doesn't have a very specific "ready" log line quickly,
+        # but it starts fast. Check for a common gunicorn log.
+        wait_for_logs(container, "Listening at: http://0.0.0.0:80", timeout=20)
+        test_logger.info(f"httpbin container started on port {container.get_exposed_port(80)}")
+        yield container
+    finally:
+        test_logger.info("Stopping httpbin container...")
+        container.stop()
+        test_logger.info("httpbin container stopped.")
+
+# ============================================================================
+# Higher-Level Test Configuration Fixtures
+# ============================================================================
+
+@pytest.fixture(scope="session")
+def postgres_test_config(postgres_container: DockerContainer) -> dict:
+    return {
+        "host": postgres_container.get_container_host_ip(),
+        "port": int(postgres_container.get_exposed_port(5432)),
+        "database": "postgres",  # Default database
+        "user": "postgres",      # Default user
+        "password": "test"       # Password set in postgres_container fixture
+    }
+
+@pytest.fixture(scope="session")
+def mqtt_test_config(mqtt_container: DockerContainer) -> dict:
+    return {
+        "broker": mqtt_container.get_container_host_ip(),
+        "port": int(mqtt_container.get_exposed_port(1883)),
+    }
+
+@pytest.fixture(scope="session")
+def rabbitmq_test_config(rabbitmq_container: DockerContainer) -> dict:
+    return {
+        "host": rabbitmq_container.get_container_host_ip(),
+        "port": int(rabbitmq_container.get_exposed_port(5672)),
+    }
+
+@pytest.fixture(scope="session")
+def echo_websocket_test_endpoint(echo_websocket_server_container: DockerContainer) -> str:
+    host = echo_websocket_server_container.get_container_host_ip()
+    port = echo_websocket_server_container.get_exposed_port(8080)
+    return f"ws://{host}:{port}"
+
+@pytest.fixture(scope="session")
+def httpbin_test_base_url(httpbin_container: DockerContainer) -> str:
+    host = httpbin_container.get_container_host_ip()
+    port = httpbin_container.get_exposed_port(80)
+    return f"http://{host}:{port}"
 
 
 @pytest.fixture
