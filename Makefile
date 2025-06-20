@@ -7,6 +7,9 @@
 .PHONY: install-editable test lint format docs pre-commit
 .PHONY: coverage coverage-check test-unit test-integration test-makefile test-all coverage-optimize
 
+PYTHON_VENV_DIR := .venv
+PYTHON_VENV_BIN_DIR := $(PYTHON_VENV_DIR)/bin
+
 # Check if UV is available
 UV_AVAILABLE := $(shell command -v uv 2> /dev/null)
 
@@ -14,7 +17,7 @@ UV_AVAILABLE := $(shell command -v uv 2> /dev/null)
 check-uv:
 ifndef UV_AVAILABLE
 	@echo "❌ UV package manager not found. Installing..."
-	pip install uv
+	$(PYTHON_VENV_BIN_DIR)/pip install uv
 	@echo "✅ UV installed successfully"
 endif
 
@@ -42,12 +45,15 @@ clean: ## Clean up installation artifacts
 
 # Development environment with editable installation
 dev-install: check-uv ## Install development dependencies with editable package
-	@echo "🔧 Installing development environment..."
-	uv sync --all-extras --editable
+	@echo "🔨 Installing development environment..."
+	uv sync --all-extras
+	uv pip install -e .[dev]
+	uv run pre-commit install
 
 install-editable: check-uv ## Install package in editable mode for development
 	@echo "📦 Installing homelab package in editable mode..."
-	uv sync --editable
+	uv sync
+	uv pip install -e .[dev]
 
 dev-reset: clean dev-install ## Reset development environment
 	@echo "🔄 Resetting development environment..."
@@ -56,18 +62,18 @@ dev-reset: clean dev-install ## Reset development environment
 
 rebuild-environment: check-uv ## Completely rebuilds the Python environment, including reinstalling uv and all dependencies.
 	@echo "🛠️  Completely rebuilding Python environment..."
-	uv run python scripts/dev-env-manager.py --rebuild-full-env
+	uv run python scripts/dev_env_manager.py --rebuild-full-env
 	@echo "✅ Environment rebuild process initiated. Check script output for details."
 
 # Standard development workflow targets
 test: check-uv ## Run tests with coverage
 	@echo "🧪 Running tests with coverage..."
-	uv run pytest tests/ -v --cov=homelab --cov=scripts --cov=infrastructure
+	@PYTHONPATH=src uv run pytest tests/ -v --cov=src --cov=scripts --cov=infrastructure
 
 lint: check-uv ## Run code quality checks
 	@echo "🔍 Running code quality checks..."
-	uv run ruff check src/ tests/ scripts/ infrastructure/
-	uv run mypy --strict src/ scripts/
+	@PYTHONPATH=src uv run ruff check src/ tests/ scripts/ infrastructure/
+	@PYTHONPATH=src uv run mypy --strict src/ scripts/
 
 format: check-uv ## Format code with ruff
 	@echo "🎨 Formatting code..."
@@ -77,19 +83,19 @@ docs: check-uv ## Build documentation
 	@echo "📚 Building documentation..."
 	@command -v mkdocs >/dev/null 2>&1 && uv run mkdocs build || echo "⚠️ MkDocs not available, skipping docs build"
 
-pre-commit: lint test ## Run pre-commit checks
-	@echo "✅ Running pre-commit validation..."
-	@echo "✅ All checks passed"
+pre-commit: check-uv ## Run all pre-commit hooks on all files
+	@echo "✅ Running pre-commit hooks on all files..."
+	uv run pre-commit run --all-files
 
 # Coverage and advanced testing targets
 coverage: check-uv ## Generate comprehensive coverage report
 	@echo "📊 Generating coverage report..."
-	uv run pytest tests/ --cov=homelab --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
+	@PYTHONPATH=src uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
 	@echo "✅ Coverage report generated in htmlcov/"
 
 coverage-check: check-uv ## Check coverage meets minimum requirements (90%)
 	@echo "📈 Checking coverage requirements..."
-	uv run pytest tests/ --cov=homelab --cov=scripts --cov=infrastructure --cov-fail-under=90
+	@PYTHONPATH=src uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-fail-under=90
 	@echo "✅ Coverage requirements met"
 
 test-unit: check-uv ## Run unit tests only
@@ -155,7 +161,7 @@ supabase-monitor: check-uv ## Monitor Supabase continuously
 
 dev-setup: check-uv ## Setup optimal development environment
 	@echo "💻 Setting up development environment..."
-	uv run python scripts/dev-env-manager.py --setup-all
+	uv run python scripts/dev_env_manager.py --setup-all
 
 # Monitoring and maintenance
 monitor: check-uv ## Start continuous monitoring
@@ -188,4 +194,4 @@ disaster-recovery: ## Show disaster recovery options
 help: ## Show this help message
 	@echo "Smart Home K3s Lab - Available Commands:"
 	@echo "========================================"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_][a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'

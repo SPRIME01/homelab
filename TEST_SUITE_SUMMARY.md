@@ -178,4 +178,3 @@ uv run pytest --html=report.html --self-contained-html
 - ✓ test_helpers.py
 - ✓ fixtures/test_data.py
 - ✓ pytest.ini
-

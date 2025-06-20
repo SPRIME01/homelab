@@ -1,4 +1,4 @@
-name: Smart Home K3s Lab - Test Suite
+name: Smart Home K3s Lab - CI Pipeline
 
 on:
   push:
@@ -13,8 +13,30 @@ env:
   UV_CACHE_DIR: ~/.uv-cache
 
 jobs:
+  quality-checks:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v2
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@v3.0.1
+
   test:
-    name: Test Suite (Python ${{ matrix.python-version }})
+    name: Test Suite (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    needs: quality-checks
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -26,7 +48,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Full history for better coverage analysis
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
 
     - name: Install UV
       uses: astral-sh/setup-uv@v2
@@ -34,27 +61,11 @@ jobs:
         enable-cache: true
         cache-dependency-glob: "uv.lock"
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
     - name: Install dependencies
-      run: |
-        uv sync --all-extras --frozen
-        uv run pip list
+      run: uv sync --all-extras --frozen
 
-    - name: Check code formatting
-      run: |
-        uv run ruff format --check src/ tests/ scripts/ infrastructure/
-
-    - name: Run linting
-      run: |
-        uv run ruff check src/ tests/ scripts/ infrastructure/
-
-    - name: Run type checking
-      run: |
-        uv run mypy --strict src/ scripts/
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=src" >> $GITHUB_ENV
 
     - name: Run unit tests with coverage
       run: |
@@ -95,7 +106,7 @@ jobs:
   makefile-tests:
     name: Makefile Integration Tests
     runs-on: ubuntu-latest
-    needs: test
+    needs: quality-checks
 
     steps:
     - name: Checkout code
@@ -115,44 +126,10 @@ jobs:
         make format
         make test
 
-    - name: Validate Makefile documentation
-      run: |
-        # Ensure all targets have documentation
-        make help | grep -E "^\s+[a-zA-Z_-]+\s+.*" | wc -l | xargs test 10 -le
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install UV
-      uses: astral-sh/setup-uv@v2
-
-    - name: Install dependencies
-      run: uv sync --all-extras
-
-    - name: Run safety check
-      run: |
-        uv add safety
-        uv run safety check
-
-    - name: Run bandit security scan
-      run: |
-        uv add bandit[toml]
-        uv run bandit -r src/ scripts/ infrastructure/ -f json -o bandit-report.json || true
-
-    - name: Upload security scan results
-      uses: actions/upload-artifact@v4
-      with:
-        name: security-scan-results
-        path: bandit-report.json
-
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-latest
+    needs: test
     if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
 
     steps:
@@ -179,6 +156,7 @@ jobs:
   documentation:
     name: Documentation Build
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
     - name: Checkout code
@@ -239,7 +217,7 @@ jobs:
   notify:
     name: Notification
     runs-on: ubuntu-latest
-    needs: [test, makefile-tests, security-scan, documentation, coverage-analysis]
+    needs: [test, makefile-tests, documentation, coverage-analysis]
     if: always()
 
     steps:

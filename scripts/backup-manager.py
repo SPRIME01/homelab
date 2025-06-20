@@ -120,7 +120,7 @@ class BackupManager:
             # Cleanup uncompressed backup
             shutil.rmtree(backup_dir)
 
-            print(f"✅ Supabase backup completed: {archive_path}")
+            print(f"(OK) Supabase backup completed: {archive_path}")
             return archive_path
 
         except Exception as e:
@@ -161,7 +161,7 @@ class BackupManager:
         if process.returncode != 0:
             raise RuntimeError(f"Database backup failed: {stderr.decode()}")
 
-        print(f"✅ Database backup saved: {backup_file}")
+        print(f"(OK) Database backup saved: {backup_file}")
 
     async def _backup_supabase_config(self, backup_dir: Path) -> None:
         """Backup Supabase configuration and secrets."""
@@ -192,7 +192,7 @@ class BackupManager:
             output_file=config_backup_dir / "services.yaml",
         )
 
-        print("✅ Configuration backup completed")
+        print("(OK) Configuration backup completed")
 
     async def _backup_supabase_storage(self, backup_dir: Path) -> None:
         """Backup Supabase storage volumes."""
@@ -252,7 +252,7 @@ class BackupManager:
                     ]
                 )
 
-                print("✅ Storage data backup completed")
+                print("(OK) Storage data backup completed")
             else:
                 print("⚠️ Storage pod not found, skipping storage data backup")
 
@@ -456,7 +456,7 @@ if [ -d "$BACKUP_DIR/home_assistant" ] && ping -c 1 192.168.0.41 &> /dev/null; t
     echo "Please manually restore to Home Assistant Yellow device"
 fi
 
-echo "✅ Disaster recovery restore completed!"
+echo "(OK) Disaster recovery restore completed!"
 echo "🔍 Please verify all services are running correctly"
 echo "Run: kubectl get pods --all-namespaces"
 
@@ -499,7 +499,7 @@ async def main() -> None:
         print("🗄️ Starting Supabase backup...")
         backup_path = await backup_manager.create_supabase_backup()
         if backup_path:
-            print(f"✅ Supabase backup completed: {backup_path}")
+            print(f"(OK) Supabase backup completed: {backup_path}")
         else:
             print("❌ Supabase backup failed")
             exit(1)
@@ -507,7 +507,7 @@ async def main() -> None:
     elif args.full_backup:
         print("🔄 Starting full system backup...")
         backup_path = await backup_manager.create_full_backup()
-        print(f"✅ Full backup completed: {backup_path}")
+        print(f"(OK) Full backup completed: {backup_path}")
 
         # Create restore script
         restore_script = backup_manager.create_restore_script(backup_path)
