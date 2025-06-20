@@ -199,7 +199,10 @@ This is a comprehensive smart home laboratory environment using:
         uv_cache_dir = Path.home() / ".uv-cache"
         if uv_cache_dir.exists():
             print(f"Removing uv cache directory: {uv_cache_dir}")
-            shutil.rmtree(uv_cache_dir, ignore_errors=True)
+            try:
+                shutil.rmtree(uv_cache_dir)
+            except OSError as e:
+                print(f"Warning: Could not remove uv cache directory {uv_cache_dir}: {e}")
 
         uv_alt_cache_dir = Path.home() / ".cache" / "uv"
         if uv_alt_cache_dir.exists():
