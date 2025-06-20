@@ -6,20 +6,22 @@ and full environment rebuilds.
 """
 
 import json
-import subprocess
+import os  # Added
 import shutil
-import os # Added
+import subprocess
 from pathlib import Path
-from typing import Dict, List
 
 # Import UV utilities
 # These might not be available if we are about to rebuild the environment,
 # so their absence should not be a hard stop initially.
 try:
-    from _uv_utils import validate_uv_environment as uv_utils_validate
     from _uv_utils import ensure_dependencies_synced as uv_utils_sync
+    from _uv_utils import validate_uv_environment as uv_utils_validate
 except ImportError:
-    print("Warning: _uv_utils not found. Some advanced UV checks might be skipped or handled by rebuild.")
+    print(
+        "Warning: _uv_utils not found. Some advanced UV checks might be skipped or handled by rebuild."
+    )
+
     def uv_utils_validate():
         print("Info: _uv_utils.validate_uv_environment (stub) called.")
         pass
@@ -52,13 +54,17 @@ class DevEnvironmentManager:
 
         # Check if project is initialized
         if not (self.project_root / "pyproject.toml").exists():
-            raise RuntimeError("Project not initialized (pyproject.toml missing). Please run 'uv init' first or ensure you are in the project root.")
+            raise RuntimeError(
+                "Project not initialized (pyproject.toml missing). Please run 'uv init' first or ensure you are in the project root."
+            )
         print("pyproject.toml found.")
 
         # Check if virtual environment exists (basic check)
         venv_path = self.project_root / ".venv"
         if not venv_path.exists():
-            print(f"Virtual environment not found at {venv_path}. It may be created by 'uv sync' or the rebuild process.")
+            print(
+                f"Virtual environment not found at {venv_path}. It may be created by 'uv sync' or the rebuild process."
+            )
             # Don't create it here, as sync or rebuild will handle it.
         else:
             print(f"Virtual environment directory {venv_path} found.")
@@ -66,8 +72,7 @@ class DevEnvironmentManager:
         # Call the more specific uv_utils validation if available
         uv_utils_validate()
 
-
-    def _update_vscode_settings(self, settings: Dict) -> None:
+    def _update_vscode_settings(self, settings: dict) -> None:
         """Update VSCode settings file."""
         self.vscode_settings.mkdir(exist_ok=True)
         settings_file = self.vscode_settings / "settings.json"
@@ -75,10 +80,12 @@ class DevEnvironmentManager:
         existing_settings = {}
         if settings_file.exists():
             try:
-                with open(settings_file, "r") as f:
+                with open(settings_file) as f:
                     existing_settings = json.load(f)
             except json.JSONDecodeError:
-                print(f"Warning: Could not decode existing VSCode settings at {settings_file}. Overwriting.")
+                print(
+                    f"Warning: Could not decode existing VSCode settings at {settings_file}. Overwriting."
+                )
 
         existing_settings.update(settings)
 
@@ -91,19 +98,29 @@ class DevEnvironmentManager:
         print("Setting up optimal Copilot environment...")
         copilot_settings = {
             "github.copilot.enable": {
-                "*": True, "yaml": True, "markdown": True, "python": True,
-                "dockerfile": True, "json": True,
+                "*": True,
+                "yaml": True,
+                "markdown": True,
+                "python": True,
+                "dockerfile": True,
+                "json": True,
             },
             "github.copilot.inlineSuggest.enable": True,
             "github.copilot.editor.enableCodeActions": True,
             "github.copilot.chat.localeOverride": "en",
             "editor.inlineSuggest.enabled": True,
             "editor.tabCompletion": "on",
-            "editor.quickSuggestions": {"other": True, "comments": True, "strings": True},
+            "editor.quickSuggestions": {
+                "other": True,
+                "comments": True,
+                "strings": True,
+            },
             "python.analysis.autoImportCompletions": True,
             "python.analysis.completeFunctionParens": True,
             "files.associations": {
-                "*.yaml": "yaml", "*.yml": "yaml", "Dockerfile*": "dockerfile",
+                "*.yaml": "yaml",
+                "*.yml": "yaml",
+                "Dockerfile*": "dockerfile",
                 "*.tf": "terraform",
             },
         }
@@ -139,7 +156,7 @@ This is a comprehensive smart home laboratory environment using:
         print("Setting up devcontainer...")
         devcontainer_config = {
             "name": "Smart Home K3s Lab",
-            "image": "mcr.microsoft.com/devcontainers/python:3.11", # Consider updating Python version if needed
+            "image": "mcr.microsoft.com/devcontainers/python:3.11",  # Consider updating Python version if needed
             "features": {
                 "ghcr.io/devcontainers/features/docker-in-docker:2": {},
                 "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
@@ -148,9 +165,13 @@ This is a comprehensive smart home laboratory environment using:
             "customizations": {
                 "vscode": {
                     "extensions": [
-                        "GitHub.copilot", "GitHub.copilot-chat", "ms-python.python",
-                        "charliermarsh.ruff", "ms-python.mypy-type-checker",
-                        "ms-kubernetes-tools.vscode-kubernetes-tools", "HashiCorp.terraform",
+                        "GitHub.copilot",
+                        "GitHub.copilot-chat",
+                        "ms-python.python",
+                        "charliermarsh.ruff",
+                        "ms-python.mypy-type-checker",
+                        "ms-kubernetes-tools.vscode-kubernetes-tools",
+                        "HashiCorp.terraform",
                     ]
                 }
             },
@@ -181,7 +202,27 @@ This is a comprehensive smart home laboratory environment using:
                 os.remove(uv_path)
                 print(f"Successfully removed {uv_path}")
             except PermissionError:
-                print(f"PermissionError: Could not remove {uv_path}. Try running with sudo or remove manually.")
+                # Check if uv_path is a system path (e.g., /usr/bin/uv)
+                system_paths = [
+                    "/usr/bin",
+                    "/usr/local/bin",
+                    "/bin",
+                    "/opt/homebrew/bin",
+                ]
+                is_system_uv = any(uv_path.startswith(p) for p in system_paths)
+                if is_system_uv:
+                    print(
+                        f"PermissionError: Could not remove system-managed uv at {uv_path}.\n"
+                        "This is expected if uv was installed via a package manager or system-wide.\n"
+                        "The script will proceed to install a user-local version (e.g., ~/.local/bin/uv), "
+                        "which will take precedence if ~/.local/bin is in your PATH.\n"
+                        "If you wish to remove the system uv, please consult your OS package manager documentation."
+                    )
+                else:
+                    print(
+                        f"PermissionError: Could not remove {uv_path}. "
+                        "Check file permissions or remove manually if desired."
+                    )
             except Exception as e:
                 print(f"Error removing {uv_path}: {e}")
         else:
@@ -202,7 +243,9 @@ This is a comprehensive smart home laboratory environment using:
             try:
                 shutil.rmtree(uv_cache_dir)
             except OSError as e:
-                print(f"Warning: Could not remove uv cache directory {uv_cache_dir}: {e}")
+                print(
+                    f"Warning: Could not remove uv cache directory {uv_cache_dir}: {e}"
+                )
 
         uv_alt_cache_dir = Path.home() / ".cache" / "uv"
         if uv_alt_cache_dir.exists():
@@ -222,7 +265,14 @@ This is a comprehensive smart home laboratory environment using:
 
         try:
             # Using /bin/bash explicitly for `sh` pipe
-            result = subprocess.run(install_command, shell=True, check=False, capture_output=True, text=True, executable='/bin/bash')
+            result = subprocess.run(
+                install_command,
+                shell=True,
+                check=False,
+                capture_output=True,
+                text=True,
+                executable="/bin/bash",
+            )
             if result.returncode == 0:
                 print("uv installation script executed successfully.")
                 print(result.stdout)
@@ -234,37 +284,48 @@ This is a comprehensive smart home laboratory environment using:
                 # Attempt to source .cargo/env if it exists, as uv might be installed via cargo
                 cargo_env_path = Path.home() / ".cargo" / "env"
                 if cargo_env_path.exists():
-                    print(f"Attempting to update PATH with {Path.home() / '.cargo' / 'bin'} as a fallback...")
+                    print(
+                        f"Attempting to update PATH with {Path.home() / '.cargo' / 'bin'} as a fallback..."
+                    )
                     cargo_bin_path = str(Path.home() / ".cargo" / "bin")
                     if cargo_bin_path not in os.environ.get("PATH", ""):
-                         os.environ["PATH"] = f"{cargo_bin_path}:{os.environ.get('PATH', '')}"
+                        os.environ["PATH"] = (
+                            f"{cargo_bin_path}:{os.environ.get('PATH', '')}"
+                        )
         except Exception as e:
             print(f"An exception occurred during uv installation: {e}")
         finally:
             # Restore original PATH if it was modified
-            if user_local_bin not in original_path: # Check based on original condition
+            if user_local_bin not in original_path:  # Check based on original condition
                 os.environ["PATH"] = original_path
                 print("Restored original PATH.")
-
 
         print("--- Verifying uv installation ---")
         # Update PATH again before this check, in case the install script added uv to .local/bin
         # and the current shell instance doesn't know about it yet.
         if user_local_bin not in os.environ.get("PATH", ""):
-             os.environ["PATH"] = f"{user_local_bin}:{os.environ.get('PATH', '')}"
+            os.environ["PATH"] = f"{user_local_bin}:{os.environ.get('PATH', '')}"
         cargo_bin_path_str = str(Path.home() / ".cargo" / "bin")
-        if cargo_bin_path_str not in os.environ.get("PATH", ""): # Also check cargo path
+        if cargo_bin_path_str not in os.environ.get(
+            "PATH", ""
+        ):  # Also check cargo path
             os.environ["PATH"] = f"{cargo_bin_path_str}:{os.environ.get('PATH', '')}"
 
         if not shutil.which("uv"):
             print("Error: uv command not found after installation attempt.")
             print(f"Current PATH: {os.environ.get('PATH')}")
-            print(f"Please check your PATH. Make sure '{user_local_bin}' or '{cargo_bin_path_str}' is in your PATH.")
-            print("You might need to open a new terminal session or run 'source ~/.bashrc' (or ~/.zshrc).")
+            print(
+                f"Please check your PATH. Make sure '{user_local_bin}' or '{cargo_bin_path_str}' is in your PATH."
+            )
+            print(
+                "You might need to open a new terminal session or run 'source ~/.bashrc' (or ~/.zshrc)."
+            )
             return
 
         try:
-            uv_version_result = subprocess.run(["uv", "--version"], check=True, capture_output=True, text=True)
+            uv_version_result = subprocess.run(
+                ["uv", "--version"], check=True, capture_output=True, text=True
+            )
             print(f"uv version: {uv_version_result.stdout.strip()}")
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             print(f"Error verifying uv version: {e}")
@@ -275,11 +336,19 @@ This is a comprehensive smart home laboratory environment using:
         venv_dir = self.project_root / ".venv"
         if venv_dir.exists():
             print(f"Existing virtual environment '{venv_dir}' found. Removing it...")
-            shutil.rmtree(venv_dir, ignore_errors=False) # Be explicit about removal failure
+            shutil.rmtree(
+                venv_dir, ignore_errors=False
+            )  # Be explicit about removal failure
 
         print(f"Creating new virtual environment in '{venv_dir}'...")
         try:
-            subprocess.run(["uv", "venv", str(venv_dir), "--seed"], cwd=self.project_root, check=True, capture_output=True, text=True)
+            subprocess.run(
+                ["uv", "venv", str(venv_dir), "--seed"],
+                cwd=self.project_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
             print("Virtual environment created successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error creating virtual environment: {e}")
@@ -293,18 +362,27 @@ This is a comprehensive smart home laboratory environment using:
         pyproject_path = self.project_root / "pyproject.toml"
         if not pyproject_path.exists():
             print(f"Error: pyproject.toml not found at {pyproject_path}.")
-            print("Please run this script from the project root or ensure pyproject.toml exists.")
+            print(
+                "Please run this script from the project root or ensure pyproject.toml exists."
+            )
             return
 
         print(f"Installing dependencies from {pyproject_path} into {python_exec}...")
         try:
             sync_result = subprocess.run(
                 ["uv", "pip", "sync", "--all-extras", "--python", python_exec],
-                cwd=self.project_root, check=True, capture_output=True, text=True
+                cwd=self.project_root,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             print("Dependencies installed successfully.")
-            if sync_result.stdout: print(f"Sync STDOUT:\n{sync_result.stdout}")
-            if sync_result.stderr: print(f"Sync STDERR:\n{sync_result.stderr}") # Should be empty on success usually
+            if sync_result.stdout:
+                print(f"Sync STDOUT:\n{sync_result.stdout}")
+            if sync_result.stderr:
+                print(
+                    f"Sync STDERR:\n{sync_result.stderr}"
+                )  # Should be empty on success usually
         except subprocess.CalledProcessError as e:
             print(f"Error installing dependencies: {e}")
             print(f"Stdout: {e.stdout}")
@@ -313,23 +391,38 @@ This is a comprehensive smart home laboratory environment using:
 
         print("--- Verifying Environment ---")
         try:
-            py_version_result = subprocess.run([python_exec, "--version"], check=True, capture_output=True, text=True)
-            print(f"Python version in virtual environment ({python_exec}): {py_version_result.stdout.strip()}")
+            py_version_result = subprocess.run(
+                [python_exec, "--version"], check=True, capture_output=True, text=True
+            )
+            print(
+                f"Python version in virtual environment ({python_exec}): {py_version_result.stdout.strip()}"
+            )
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             print(f"Error verifying Python version in venv: {e}")
             return
 
         print("Verifying pytest installation in virtual environment...")
         try:
-            pytest_version_result = subprocess.run([python_exec, "-m", "pytest", "--version"], check=True, capture_output=True, text=True)
+            pytest_version_result = subprocess.run(
+                [python_exec, "-m", "pytest", "--version"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
             print(f"pytest found: {pytest_version_result.stdout.strip()}")
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            print(f"Warning: pytest not found in the virtual environment after dependency installation: {e}")
-            print("Check 'pyproject.toml' and 'uv pip sync' output for errors if pytest was expected.")
+            print(
+                f"Warning: pytest not found in the virtual environment after dependency installation: {e}"
+            )
+            print(
+                "Check 'pyproject.toml' and 'uv pip sync' output for errors if pytest was expected."
+            )
 
         print("=== Environment Rebuild Script Finished ===")
         print("If all steps were successful, your environment should be ready.")
-        print(f"Activate the virtual environment by running: source {venv_dir / 'bin' / 'activate'}")
+        print(
+            f"Activate the virtual environment by running: source {venv_dir / 'bin' / 'activate'}"
+        )
 
     def create_development_shortcuts(self) -> None:
         """Create useful development shortcuts and aliases."""
@@ -346,6 +439,7 @@ This is a comprehensive smart home laboratory environment using:
 
 if __name__ == "__main__":
     import sys
+
     # Determine if initial uv validation should be skipped for rebuild
     skip_uv_validation = "--rebuild-full-env" in sys.argv
 
@@ -355,7 +449,7 @@ if __name__ == "__main__":
         command_to_run = "rebuild"
     elif "--setup-copilot" in sys.argv:
         command_to_run = "copilot"
-    elif "--create-shortcuts" in sys.argv: # Example for another command
+    elif "--create-shortcuts" in sys.argv:  # Example for another command
         command_to_run = "shortcuts"
 
     manager = DevEnvironmentManager(perform_uv_validation=not skip_uv_validation)
@@ -367,22 +461,24 @@ if __name__ == "__main__":
     elif command_to_run == "copilot":
         # Ensure uv is validated before running other commands if it was initially skipped
         if skip_uv_validation:
-             print("Explicitly validating UV environment before Copilot setup...")
-             try:
+            print("Explicitly validating UV environment before Copilot setup...")
+            try:
                 manager._validate_uv_environment()
-             except RuntimeError as e:
+            except RuntimeError as e:
                 print(f"UV validation failed: {e}")
-                print("Cannot proceed with Copilot setup without a valid UV environment.")
-                sys.exit(1) # Or handle more gracefully
+                print(
+                    "Cannot proceed with Copilot setup without a valid UV environment."
+                )
+                sys.exit(1)  # Or handle more gracefully
         print("Setting up optimal Copilot environment...")
         manager.setup_optimal_copilot_environment()
         # print("Copilot environment setup finished.") # Already printed within method
     elif command_to_run == "shortcuts":
         if skip_uv_validation:
-             print("Explicitly validating UV environment before creating shortcuts...")
-             try:
+            print("Explicitly validating UV environment before creating shortcuts...")
+            try:
                 manager._validate_uv_environment()
-             except RuntimeError as e:
+            except RuntimeError as e:
                 print(f"UV validation failed: {e}")
                 sys.exit(1)
         manager.create_development_shortcuts()
@@ -394,14 +490,24 @@ if __name__ == "__main__":
         print("  python scripts/dev-env-manager.py --create-shortcuts")
 
         # Potentially call _validate_uv_environment if no specific command args, to guide user
-        if not command_to_run and not skip_uv_validation: # if no command and validation wasn't skipped
+        if (
+            not command_to_run and not skip_uv_validation
+        ):  # if no command and validation wasn't skipped
             try:
                 print("\nChecking current environment status...")
                 manager._validate_uv_environment()
-                print("Current environment check passed (uv found, pyproject.toml exists).")
-                print("Virtual environment may or may not exist; specific commands handle that.")
+                print(
+                    "Current environment check passed (uv found, pyproject.toml exists)."
+                )
+                print(
+                    "Virtual environment may or may not exist; specific commands handle that."
+                )
             except RuntimeError as e:
                 print(f"Current environment check failed: {e}")
-                print("Consider running --rebuild-full-env if issues persist or if you want to start fresh.")
+                print(
+                    "Consider running --rebuild-full-env if issues persist or if you want to start fresh."
+                )
         elif not command_to_run and skip_uv_validation:
-             print("\nInfo: Initial UV validation was skipped due to --rebuild-full-env presence, but no specific command was run after it.")
+            print(
+                "\nInfo: Initial UV validation was skipped due to --rebuild-full-env presence, but no specific command was run after it."
+            )
