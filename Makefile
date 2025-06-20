@@ -79,12 +79,12 @@ pre-commit: lint test ## Run pre-commit checks
 # Coverage and advanced testing targets
 coverage: check-uv ## Generate comprehensive coverage report
 	@echo "📊 Generating coverage report..."
-	uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
+	uv run pytest tests/ --cov=homelab --cov=scripts --cov=infrastructure --cov-report=html --cov-report=term-missing --cov-report=json
 	@echo "✅ Coverage report generated in htmlcov/"
 
 coverage-check: check-uv ## Check coverage meets minimum requirements (90%)
 	@echo "📈 Checking coverage requirements..."
-	uv run pytest tests/ --cov=src --cov=scripts --cov=infrastructure --cov-fail-under=90
+	uv run pytest tests/ --cov=homelab --cov=scripts --cov=infrastructure --cov-fail-under=90
 	@echo "✅ Coverage requirements met"
 
 test-unit: check-uv ## Run unit tests only

@@ -20,7 +20,6 @@ dependencies = [
     "postgrest>=0.13.0",
     "pulumi>=3.95.0",
     "pulumi-kubernetes>=4.0.0",
-    "pytest-cov>=6.2.1",
     "psycopg2-binary>=2.9.9",  # Added psycopg2-binary
     "pika>=1.3.0",  # Added pika
 ]
@@ -83,11 +82,35 @@ addopts = [
     "--cov=infrastructure",
     "--cov-report=term-missing",
     "--cov-report=html",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=25",
     "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "-ra",
+    "--durations=10",
     "--disable-warnings",
 ]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 markers = [
-    "integration: mark a test as an integration test",
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (slower, may require external resources)",
+    "e2e: End-to-end tests (slowest, full system tests)",
+    "makefile: Tests for Makefile functionality",
+    "slow: Tests that take more than 2 seconds",
+    "network: Tests that require network connectivity",
+    "k8s: Tests that require Kubernetes/K3s cluster",
+    "supabase: Tests specific to Supabase functionality",
+    "backup: Tests for backup and restore functionality",
+    "security: Security-related tests",
+    "performance: Performance optimization tests",
     "asyncio: mark a test as asyncio-based",
 ]
 asyncio_mode = "auto"
+minversion = "7.0"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*PYTHONPATH.*:UserWarning",
+]

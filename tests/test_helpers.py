@@ -241,6 +241,15 @@ class TestHelpers:
             "service_count": 8,
         }
 
+    @staticmethod
+    def mock_kubectl_response(
+        command: str, returncode: int = 0, stdout: str = "", stderr: str = ""
+    ):
+        """Helper to mock kubectl responses.
+        Note: `command` argument is for context but not used in this simple mock.
+        """
+        return Mock(returncode=returncode, stdout=stdout, stderr=stderr)
+
 
 class LogCapture:
     """Utility for capturing and asserting log messages in tests."""
