@@ -3,7 +3,7 @@
   "packages": [
     "nodejs@20",
     "pnpm",
-    "python@3.11",
+    "uv",
     "rustup",
     "direnv",
     "just",
@@ -14,7 +14,7 @@
     "init_hook": [
       "if [ -f ./lib/env-loader.sh ]; then source ./lib/env-loader.sh shell; fi",
       "eval \"$(mise activate bash)\"",
-      "export PATH=\\\"$HOME/.cargo/bin:$HOME/.volta/bin:$PATH\\\""
+      "export PATH=\"$HOME/.cargo/bin:$HOME/.volta/bin:$PATH\""
     ],
     "scripts": {
       "doctor": [
