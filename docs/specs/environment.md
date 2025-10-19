@@ -63,6 +63,7 @@ Chezmoi bootstraps the host configuration → direnv evaluates `.envrc` and runs
 | **Policy enforcement**          | Uses `.envrc` allowlist to gate environment loading for trusted directories | Chezmoi installs the managed `.envrc` template and updates the allow list.        |
 | **Environment composition**     | Executes `lib/env-loader.sh` to merge secrets, `.env` overlays, and runtime hooks | Ensures Devbox, mise, and Just commands see a consistent environment.             |
 | **Developer ergonomics**        | Auto-loads/unloads project variables when entering/leaving the repo         | Keeps local shells in sync with Just/Nx workflows without manual sourcing.       |
+| **CI/CD bypass**                | Documented as a local-only helper; pipelines call `lib/env-loader.sh` directly | GitHub Actions and other CI jobs bootstrap without `direnv` dependencies.        |
 | **Fallback compatibility guard**| Warns when deprecated `scripts/load_env.sh` is invoked                       | Highlights migration path toward the new loader for legacy scripts.              |
 
 ---
@@ -151,13 +152,36 @@ Chezmoi bootstraps the host configuration → direnv evaluates `.envrc` and runs
 8. **Nx** executes builds/tests using dependency graph and caching.
 9. **pnpm / uv / Cargo** resolve and install dependencies.
 
+> **Automation Note:** CI/CD pipelines skip `direnv` and invoke `./lib/env-loader.sh` directly before running Just or Nx commands, ensuring non-interactive jobs have deterministic environments without additional dependencies.
+
+---
+
+## 🧭 Branch & Promotion Strategy
+
+- **main:** Production-ready branch. Protected; only merges from `stage` after validation. Tagged releases deploy from here.
+- **stage:** Pre-production validation. GitHub Actions runs full integration suites, destroys test infrastructure after approval, and promotes to `main` when green.
+- **dev:** Integration sandbox for feature branches. Lightweight checks (lint, unit tests) run on push, promoting to `stage` via pull request once features stabilize.
+- **Feature branches:** Short-lived branches forked from `dev`. Rebase frequently, rely on `just doctor` to verify local readiness, and open PRs targeting `dev`.
+- **Hotfix workflow:** Branch from `main`, apply targeted changes, run full CI, then merge back into both `main` and `stage` to keep branches aligned.
+
+---
+
+## 🔒 CI/CD Environment Loading Playbook
+
+1. Check out repo and restore cached Devbox/mise artifacts if available.
+2. Run `./lib/env-loader.sh ci` (idempotent mode) to export secrets and runtime variables without `direnv`.
+3. Launch Devbox or containerized shell for builds (`devbox run -- just build`), ensuring parity with local tooling.
+4. Execute Nx/Just targets with cache warming and artifact uploads enabled.
+5. On success, publish promotion artifacts (manifests, container images) and trigger next-branch workflows.
+
 ---
 
 ## ✅ Next Steps
 
-1. Template a Chezmoi-managed `.envrc` that delegates to `lib/env-loader.sh` and registers safe direnv permissions.
+1. Template a Chezmoi-managed `.envrc` that delegates to `lib/env-loader.sh` and registers safe direnv permissions (local-only).
 2. Add Volta and Cargo configs to Chezmoi templates.
 3. Extend `.mise.toml` to include Node, Python, and Rust toolchains.
 4. Update `nx.json` and `workspace.json` to recognize Cargo projects and Volta-managed Node builds.
-5. Create Just recipes wrapping Nx workflows (`build`, `test`, `lint`, `deploy`).
+5. Create Just recipes wrapping Nx workflows (`build`, `test`, `lint`, `deploy`), including branch-aware commands (`just promote-stage`, `just promote-main`).
 6. Include Volta and Cargo setup in `devbox.json` for reproducible environments.
+7. Author GitHub Actions workflows for `dev`, `stage`, and `main`, each using `lib/env-loader.sh` instead of `direnv`.
