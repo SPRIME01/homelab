@@ -1,15 +1,25 @@
 {
-    "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
-    "packages": [],
-    "shell": {
-      "init_hook": [
-        "echo 'Welcome to devbox!' > /dev/null"
-      ],
-      "scripts": {
-        "test": [
-          "echo \"Error: no test specified\" && exit 1"
-        ]
-      }
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
+  "packages": [
+    "nodejs@20",
+    "pnpm",
+    "python@3.11",
+    "rustup",
+    "direnv",
+    "just",
+    "mise",
+    "sops"
+  ],
+  "shell": {
+    "init_hook": [
+      "if [ -f ./lib/env-loader.sh ]; then source ./lib/env-loader.sh shell; fi",
+      "eval \"$(mise activate bash)\"",
+      "export PATH=\\\"$HOME/.cargo/bin:$HOME/.volta/bin:$PATH\\\""
+    ],
+    "scripts": {
+      "doctor": [
+        "just doctor"
+      ]
     }
   }
-  
+}

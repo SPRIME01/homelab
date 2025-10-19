@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "npmScope": "homelab",
   "namedInputs": {
     "default": [
       "{projectRoot}/**/*",
@@ -10,5 +11,26 @@
     ],
     "sharedGlobals": []
   },
-  "nxCloudId": "68f532e5c196565ec2fbf272"
+  "targetDefaults": {
+    "@nx/workspace:run-commands": {
+      "parallel": false
+    }
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "test"
+        ],
+        "useDaemonProcess": false
+      }
+    }
+  },
+  "affected": {
+    "defaultBase": "main"
+  },
+  "defaultProject": "env-check"
 }

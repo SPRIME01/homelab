@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "env-check",
+  "root": "apps/env-check",
+  "sourceRoot": "apps/env-check/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "node apps/env-check/src/index.js build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "node tools/tasks/lint-stub.js"
+      }
+    },
+    "test": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "node apps/env-check/tests/smoke.test.js"
+      }
+    },
+    "deploy": {
+      "executor": "@nx/workspace:run-commands",
+      "options": {
+        "command": "node apps/env-check/src/index.js deploy"
+      },
+      "dependsOn": ["build"]
+    }
+  },
+  "tags": ["type:utility"]
+}

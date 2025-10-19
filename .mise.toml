@@ -1,71 +1,15 @@
-The front-end to your dev env
 
-Usage: mise [OPTIONS] [TASK] [COMMAND]
+[env]
+NODE_ENV = "development"
+NX_DAEMON = "false"
+RUST_LOG = "info"
+UV_CACHE_DIR = ".cache/uv"
+PNPM_HOME = "~/.local/share/pnpm"
 
-Commands:
-  activate      Initializes mise in the current shell session
-  alias         Manage version aliases. [aliases: a]
-  backends      Manage backends [aliases: b]
-  bin-paths     List all the active runtime bin paths
-  cache         Manage the mise cache
-  completion    Generate shell completions
-  config        Manage config files [aliases: cfg]
-  deactivate    Disable mise for current shell session
-  doctor        Check mise installation for possible problems [aliases: dr]
-  en            Starts a new shell with the mise environment built from the current configuration
-  env           Exports env vars to activate mise a single time [aliases: e]
-  exec          Execute a command with tool(s) set [aliases: x]
-  fmt           Formats mise.toml
-  generate      Generate files for various tools/services [aliases: gen]
-  implode       Removes mise CLI and all related data
-  install       Install a tool version [aliases: i]
-  install-into  Install a tool version to a specific path
-  latest        Gets the latest available version for a plugin
-  link          Symlinks a tool version into mise [aliases: ln]
-  lock          Update lockfile checksums and URLs for all specified platforms
-  ls            List installed and active tool versions [aliases: list]
-  ls-remote     List runtime versions available for install.
-  mcp           [experimental] Run Model Context Protocol (MCP) server
-  outdated      Shows outdated tool versions
-  plugins       Manage plugins [aliases: p]
-  prune         Delete unused versions of tools
-  registry      List available tools to install
-  reshim        Creates new shims based on bin paths from currently installed tools.
-  run           Run task(s) [aliases: r]
-  search        Search for tools in the registry
-  self-update   Updates mise itself.
-  set           Set environment variables in mise.toml
-  settings      Manage settings
-  shell         Sets a tool version for the current session. [aliases: sh]
-  sync          Synchronize tools from other version managers with mise
-  tasks         Manage tasks [aliases: t]
-  test-tool     Test a tool installs and executes
-  tool          Gets information about a tool
-  tool-stub     Execute a tool stub
-  trust         Marks a config file as trusted
-  uninstall     Removes installed tool versions
-  unset         Remove environment variable(s) from the config file.
-  unuse         Removes installed tool versions from mise.toml [aliases: rm, remove]
-  upgrade       Upgrades outdated tools [aliases: up]
-  use           Installs a tool and adds the version to mise.toml. [aliases: u]
-  version       Display the version of mise [aliases: v]
-  watch         Run task(s) and watch for changes to rerun it [aliases: w]
-  where         Display the installation path for a tool
-  which         Shows the path that a tool's bin points to.
-  help          Print this message or the help of the given subcommand(s)
+[tools]
+node = "lts"
+python = "3.11"
+rust = "stable"
 
-Arguments:
-  [TASK]  Task to run
-
-Options:
-  -C, --cd <DIR>         Change directory before running command
-  -E, --env <ENV>        Set the environment for loading `mise.<ENV>.toml`
-  -j, --jobs <JOBS>      How many jobs to run in parallel [default: 8] [env: MISE_JOBS=]
-      --output <OUTPUT>  
-      --raw              Read/write directly to stdin/stdout/stderr instead of by line
-      --no-config        Do not load any config files
-  -y, --yes              Answer yes to all confirmation prompts
-  -q, --quiet            Suppress non-error messages
-      --silent           Suppress all task output and mise non-error messages
-  -v, --verbose...       Show extra output (use -vv for even more)
-  -h, --help             Print help (see more with '--help')
+[settings]
+legacy_version_file = false

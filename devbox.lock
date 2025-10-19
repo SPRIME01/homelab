@@ -1,0 +1,172 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "direnv": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#direnv",
+      "source": "nixpkg"
+    },
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2025-10-18T10:07:23Z",
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?lastModified=1760782043&narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D"
+    },
+    "just": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#just",
+      "source": "nixpkg"
+    },
+    "mise": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#mise",
+      "source": "nixpkg"
+    },
+    "nodejs@20": {
+      "last_modified": "2025-10-07T08:41:47Z",
+      "plugin_version": "0.0.2",
+      "resolved": "github:NixOS/nixpkgs/bce5fe2bb998488d8e7e7856315f90496723793c#nodejs_20",
+      "source": "devbox-search",
+      "version": "20.19.5",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/k1wbwbv4ay5p0dfkmm2qz3chg3c23f42-nodejs-20.19.5",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/lipks8i2dw4s81wyaqlahdf19pfgqks7-nodejs-20.19.5-dev"
+            },
+            {
+              "name": "libv8",
+              "path": "/nix/store/1hx50j9n60cm0kazmj9n0gj7wzp6is0m-nodejs-20.19.5-libv8"
+            }
+          ],
+          "store_path": "/nix/store/k1wbwbv4ay5p0dfkmm2qz3chg3c23f42-nodejs-20.19.5"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/cyqv11dn93ybhrksrphwrmak1l5199ga-nodejs-20.19.5",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/qicgj03jm0hxyhk799v7wql8jf8swin4-nodejs-20.19.5-dev"
+            },
+            {
+              "name": "libv8",
+              "path": "/nix/store/61yf0n966mcbyprv9qwrs29y5isvdpk9-nodejs-20.19.5-libv8"
+            }
+          ],
+          "store_path": "/nix/store/cyqv11dn93ybhrksrphwrmak1l5199ga-nodejs-20.19.5"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/yqhgrynw5hgj1nclvf40h8iw0dy1d6yl-nodejs-20.19.5",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/v92hpgd2fvmi0j87yjglm95cjygpsglk-nodejs-20.19.5-dev"
+            },
+            {
+              "name": "libv8",
+              "path": "/nix/store/080z17knsc75fl1y1lfh1fn4l8pk3pf6-nodejs-20.19.5-libv8"
+            }
+          ],
+          "store_path": "/nix/store/yqhgrynw5hgj1nclvf40h8iw0dy1d6yl-nodejs-20.19.5"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/f3bhgnrwww6xcb2blbj6z2yif0ix8k3b-nodejs-20.19.5",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/ky96wwga1a7h2djxngahmkzxclxi3rx1-nodejs-20.19.5-dev"
+            },
+            {
+              "name": "libv8",
+              "path": "/nix/store/4mw2pz4p0lhk6p7y6wc0nl7syz94i1r0-nodejs-20.19.5-libv8"
+            }
+          ],
+          "store_path": "/nix/store/f3bhgnrwww6xcb2blbj6z2yif0ix8k3b-nodejs-20.19.5"
+        }
+      }
+    },
+    "pnpm": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#pnpm",
+      "source": "nixpkg"
+    },
+    "python@3.11": {
+      "last_modified": "2025-10-10T13:35:32Z",
+      "plugin_version": "0.0.4",
+      "resolved": "github:NixOS/nixpkgs/870493f9a8cb0b074ae5b411b2f232015db19a65#python311",
+      "source": "devbox-search",
+      "version": "3.11.14",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/r4pwz6r9gg3s8hp7q4lxa3vsc16z7lvf-python3-3.11.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/r4pwz6r9gg3s8hp7q4lxa3vsc16z7lvf-python3-3.11.14"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hywi85qwhxssrh1dlyi45hg3c8k7vpkq-python3-3.11.14",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/51cn9w1078wr17ma32p9g38aa7kj0x6v-python3-3.11.14-debug"
+            }
+          ],
+          "store_path": "/nix/store/hywi85qwhxssrh1dlyi45hg3c8k7vpkq-python3-3.11.14"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/b6nxrxi3h8s59jpkw4g3hr4wcmy9y21m-python3-3.11.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/b6nxrxi3h8s59jpkw4g3hr4wcmy9y21m-python3-3.11.14"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ddiqchvpb8gq02q00k7rl0mb4izdigv9-python3-3.11.14",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/jqwy6yn9n0i2qw0ya94g3nbc21ywnz7l-python3-3.11.14-debug"
+            }
+          ],
+          "store_path": "/nix/store/ddiqchvpb8gq02q00k7rl0mb4izdigv9-python3-3.11.14"
+        }
+      }
+    },
+    "rustup": {
+      "plugin_version": "0.0.1",
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#rustup",
+      "source": "nixpkg"
+    },
+    "sops": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#sops",
+      "source": "nixpkg"
+    }
+  }
+}
