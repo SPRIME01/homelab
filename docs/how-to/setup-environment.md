@@ -44,7 +44,43 @@ flowchart TD
 ## ⚙️ Resulting System Integrity
 
 * **Single source of truth:** Chezmoi deploys `.envrc`, tool configs, and secrets scaffolding.
-* **Zero-drift environments:** direnv (local) + Devbox + mise ensure parity without manual exports.
+* **Zero-drift environments:** direnv (local) + Devbox + mise ensure parity without manual exports. For Python, prefer `uv` to manage interpreters and virtual environments; CI jobs should install or make `uv` available (Devbox packaging or pipx fallback) and create/activate a `.venv` pinned to Python 3.12 during bootstrap.
+
+### Recommended `.envrc` (safe, non-blocking)
+
+Use the following pattern in `.envrc` to eval Devbox's environment into your current shell rather than spawning an interactive `devbox shell` automatically. This keeps editor/CI behavior predictable while providing Devbox's PATH and init-hook effects.
+
+```bash
+# Local-only environment composition — do not use in CI/CD.
+if [[ -f "./lib/env-loader.sh" ]]; then
+  # shellcheck disable=SC1091
+  source ./lib/env-loader.sh local
+fi
+
+# Safely eval Devbox's direnv snippet (non-blocking)
+if command -v devbox >/dev/null 2>&1; then
+  _SAVED_OPTS="$(set +o)"
+  set +u
+  eval "$(devbox generate direnv --print-envrc 2>/dev/null)" || true
+  eval "$_SAVED_OPTS" || true
+  unset _SAVED_OPTS
+fi
+
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise direnv activate 2>/dev/null)" || true
+  if command -v use >/dev/null 2>&1; then
+    use mise 2>/dev/null || true
+  fi
+fi
+
+export NODE_ENV=${NODE_ENV:-development}
+export NX_DAEMON=${NX_DAEMON:-false}
+export RUST_LOG=${RUST_LOG:-info}
+export PYTHONPATH="$PWD"
+export UV_CACHE_DIR="$PWD/.cache/uv"
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+export PATH="$PNPM_HOME:$HOME/.volta/bin:$HOME/.cargo/bin:$PATH"
+```
 * **Polyglot builds:** Nx handles Node, Python, and Rust seamlessly.
 * **Idempotent automation:** CI/CD shells call `./lib/env-loader.sh` directly; Just targets remain reusable everywhere.
 * **Secure reproducibility:** SOPS manages all secrets, no plaintext leakage.

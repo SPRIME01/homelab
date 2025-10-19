@@ -170,6 +170,9 @@ Chezmoi bootstraps the host configuration → direnv evaluates `.envrc` and runs
 
 1. Check out repo and restore cached Devbox/mise artifacts if available.
 2. Run `./lib/env-loader.sh ci` (idempotent mode) to export secrets and runtime variables without `direnv`.
+    - CI should ensure a Python runtime is available and prefer `uv` for interpreter management. Best practice: install `uv` (via Devbox packaging or pipx fallback), use `uv python install 3.12` and create/activate a `.venv` pinned to Python 3.12 before running build/test steps.
+    - Locally, prefer evaluating Devbox's direnv snippet into your current shell rather than auto-spawning `devbox shell`. Use `devbox generate direnv --print-envrc` inside `.envrc` with a temporary `set +u` guard (see repo's `.envrc`) so Devbox's init hooks are applied non-interactively.
+    - CI should ensure a Python runtime is available and prefer `uv` for interpreter management. Best practice: install `uv` (via Devbox packaging or pipx fallback), use `uv python install 3.12` and create/activate a `.venv` pinned to Python 3.12 before running build/test steps.
 3. Launch Devbox or containerized shell for builds (`devbox run -- just build`), ensuring parity with local tooling.
 4. Execute Nx/Just targets with cache warming and artifact uploads enabled.
 5. On success, publish promotion artifacts (manifests, container images) and trigger next-branch workflows.

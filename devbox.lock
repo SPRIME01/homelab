@@ -3,7 +3,17 @@
   "packages": {
     "direnv": {
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#direnv",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/jrbkdan7rlzm91zq80x2jkymbipc35zp-direnv-2.37.1",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
       "last_modified": "2025-10-18T10:07:23Z",
@@ -11,11 +21,36 @@
     },
     "just": {
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#just",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "man",
+              "path": "/nix/store/zj6zgaqa4jr27g13z92dfbm927mgigys-just-1.43.0-man",
+              "default": true
+            },
+            {
+              "path": "/nix/store/g8lpgqmha8v0vqypvrm5y2w09ydwdcwp-just-1.43.0",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "mise": {
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#mise",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/8wfs2pzf0hra5kplb8snw8vkxdyzryqd-mise-2025.9.10",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "nodejs@20": {
       "last_modified": "2025-10-07T08:41:47Z",
@@ -100,20 +135,60 @@
     },
     "pnpm": {
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#pnpm",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/xrwlv0jjy2whjn74a0s0mk6a42nkqfaz-pnpm-10.18.3",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "rustup": {
       "plugin_version": "0.0.1",
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#rustup",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/x79fgd51264ssqjcv39hd4g9cd4j0s63-rustup-1.28.2",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "sops": {
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#sops",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/0l8a8crgcjck8yj6f4xg8jma0a9bhdr9-sops-3.11.0",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "uv": {
       "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#uv",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/jiwzxayklgiacpgj0fivzk7abp7gm6bm-uv-0.8.19",
+              "default": true
+            }
+          ]
+        }
+      }
     }
   }
 }

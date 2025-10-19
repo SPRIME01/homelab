@@ -14,7 +14,8 @@
     "init_hook": [
       "if [ -f ./lib/env-loader.sh ]; then source ./lib/env-loader.sh shell; fi",
       "eval \"$(mise activate bash)\"",
-      "export PATH=\"$HOME/.cargo/bin:$HOME/.volta/bin:$PATH\""
+      "export PATH=\"$HOME/.cargo/bin:$HOME/.volta/bin:$PATH\"",
+      "if command -v uv >/dev/null 2>&1; then \n  # Ensure Python 3.12 is available under uv (idempotent)\n  uv python install 3.12 >/dev/null 2>&1 || true\n  # Create a project-local venv using uv (or fallback to python -m venv)\n  if [ ! -d .venv ]; then \n    uv venv create .venv --python 3.12 >/dev/null 2>&1 || python -m venv .venv; \n  fi; \n  # Activate the venv if possible (no-op if activation fails)\n  uv venv activate .venv >/dev/null 2>&1 || source .venv/bin/activate >/dev/null 2>&1 || true; \nfi"
     ],
     "scripts": {
       "doctor": [

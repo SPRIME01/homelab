@@ -21,6 +21,25 @@ jobs:
         run: npm ci
       - name: Bootstrap environment
         run: ./lib/env-loader.sh ci
+      - name: Install uv & Python venv (CI)
+        run: |
+          if command -v uv >/dev/null 2>&1; then
+            echo "uv already available"
+          else
+            # Use pipx as fallback to install uv quickly if available
+            python3 -m pip install --user --upgrade pipx || true
+            python3 -m pipx ensurepath || true
+            python3 -m pipx install uv || true
+          fi
+          # Ensure Python 3.12 is present or available on runner
+          if python3.12 -V >/dev/null 2>&1; then
+            PYTHON_EXEC=python3.12
+          else
+            PYTHON_EXEC=python3
+          fi
+          uv python install 3.12 >/dev/null 2>&1 || true
+          uv venv .venv -p 3.12 --managed-python || uv venv .venv || python3 -m venv .venv || true
+          . .venv/bin/activate || true
       - name: Lint
         run: npx nx run-many --target=lint --all
       - name: Test

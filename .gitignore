@@ -52,6 +52,7 @@ __pycache__/
 *.pyo
 *.pyd
 venv/
+.venv/
 .env
 .env.*            # ignore environment files (keep .env.example committed)
 .python-version
