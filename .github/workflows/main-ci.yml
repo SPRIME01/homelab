@@ -22,21 +22,26 @@ jobs:
         run: ./lib/env-loader.sh ci
       - name: Install uv & Python venv (CI)
         run: |
-          if command -v uv >/dev/null 2>&1; then
-            echo "uv already available"
-          else
-            python3 -m pip install --user --upgrade pipx || true
-            python3 -m pipx ensurepath || true
-            python3 -m pipx install uv || true
-          fi
           if python3.12 -V >/dev/null 2>&1; then
             PYTHON_EXEC=python3.12
           else
             PYTHON_EXEC=python3
           fi
+          echo "PYTHON_EXEC=$PYTHON_EXEC" >> "$GITHUB_ENV"
+
+          # Install pipx using the chosen Python and ensure it's usable
+          $PYTHON_EXEC -m pip install --user --upgrade pipx || true
+          $PYTHON_EXEC -m pipx ensurepath || true
+          $PYTHON_EXEC -m pipx install uv || true
+
           uv python install 3.12 >/dev/null 2>&1 || true
-          uv venv .venv -p 3.12 --managed-python || uv venv .venv || python3 -m venv .venv || true
-          . .venv/bin/activate || true
+
+          if [ ! -d .venv ]; then
+            uv venv .venv --python 3.12 >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv || true
+          fi
+
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Lint
         run: npx nx run-many --target=lint --all
       - name: Test

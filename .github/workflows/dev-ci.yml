@@ -23,23 +23,31 @@ jobs:
         run: ./lib/env-loader.sh ci
       - name: Install uv & Python venv (CI)
         run: |
-          if command -v uv >/dev/null 2>&1; then
-            echo "uv already available"
-          else
-            # Use pipx as fallback to install uv quickly if available
-            python3 -m pip install --user --upgrade pipx || true
-            python3 -m pipx ensurepath || true
-            python3 -m pipx install uv || true
-          fi
-          # Ensure Python 3.12 is present or available on runner
+          # Pick a Python executable; export it for downstream steps
           if python3.12 -V >/dev/null 2>&1; then
             PYTHON_EXEC=python3.12
           else
             PYTHON_EXEC=python3
           fi
+          echo "PYTHON_EXEC=$PYTHON_EXEC" >> "$GITHUB_ENV"
+
+          # Install pipx with the chosen python and ensure it's on PATH
+          $PYTHON_EXEC -m pip install --user --upgrade pipx || true
+          $PYTHON_EXEC -m pipx ensurepath || true
+          # If pipx is available as a module, call it through python -m pipx
+          $PYTHON_EXEC -m pipx install uv || true
+
+          # Ensure Python 3.12 is installed under uv (idempotent)
           uv python install 3.12 >/dev/null 2>&1 || true
-          uv venv .venv -p 3.12 --managed-python || uv venv .venv || python3 -m venv .venv || true
-          . .venv/bin/activate || true
+
+          # Create a project-local venv using uv (fallback to $PYTHON_EXEC -m venv)
+          if [ ! -d .venv ]; then
+            uv venv .venv --python 3.12 >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv || true
+          fi
+
+          # Persist venv to subsequent steps by exporting to GITHUB_ENV and prepending PATH
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Lint
         run: npx nx run-many --target=lint --all
       - name: Test
