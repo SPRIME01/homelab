@@ -59,11 +59,11 @@ fi
 
 # Safely eval Devbox's direnv snippet (non-blocking)
 if command -v devbox >/dev/null 2>&1; then
-  _SAVED_OPTS="$(set +o)"
+  _HOMELAB_SAVED_OPTS="$(set +o)"
   set +u
   eval "$(devbox generate direnv --print-envrc 2>/dev/null)" || true
-  eval "$_SAVED_OPTS" || true
-  unset _SAVED_OPTS
+  eval "$_HOMELAB_SAVED_OPTS" || true
+  unset _HOMELAB_SAVED_OPTS
 fi
 
 if command -v mise >/dev/null 2>&1; then
