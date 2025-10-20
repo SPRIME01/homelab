@@ -67,10 +67,14 @@ if command -v devbox >/dev/null 2>&1; then
 fi
 
 if command -v mise >/dev/null 2>&1; then
+  _HOMELAB_SAVED_OPTS_MISE="$(set +o)"
+  set +u
   eval "$(mise direnv activate 2>/dev/null)" || true
   if command -v use >/dev/null 2>&1; then
     use mise 2>/dev/null || true
   fi
+  eval "$_HOMELAB_SAVED_OPTS_MISE" || true
+  unset _HOMELAB_SAVED_OPTS_MISE
 fi
 
 export NODE_ENV=${NODE_ENV:-development}
