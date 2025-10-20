@@ -12,7 +12,7 @@
     "sharedGlobals": []
   },
   "targetDefaults": {
-    "@nx/workspace:run-commands": {
+    "nx:run-commands": {
       "parallel": false
     }
   },

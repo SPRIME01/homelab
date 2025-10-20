@@ -21,7 +21,7 @@ flowchart TD
     G1 --> H[Applications / Services]
     G2 --> H
     G3 --> H
-````
+```
 
 **Flow Summary:**
 Chezmoi bootstraps the host configuration → direnv evaluates `.envrc` and runs `lib/env-loader.sh` to compose secrets and runtime hooks → Devbox provides isolated system toolchains → mise manages language runtimes → Volta ensures deterministic Node/TypeScript toolchains → SOPS handles secrets → Just runs developer commands → Nx orchestrates builds/tests → pnpm, uv, and Cargo handle per-language dependency management.

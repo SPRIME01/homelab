@@ -48,6 +48,11 @@ jobs:
           # Persist venv to subsequent steps by exporting to GITHUB_ENV and prepending PATH
           echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+          # Verify the virtual environment is properly activated
+          echo "Python executable: $(which python)"
+          echo "Python version: $(python --version)"
+          echo "Virtual environment: $VIRTUAL_ENV"
       - name: Lint
         run: npx nx run-many --target=lint --all
       - name: Test

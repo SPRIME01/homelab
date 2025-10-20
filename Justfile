@@ -31,14 +31,7 @@ ci-bootstrap:
 
 env-check:
         # Idempotent smoke check: bootstrap devbox, ensure uv/python venv, run lint+test
-        devbox install --tidy-lockfile || true
-        if command -v devbox >/dev/null 2>&1; then \
-            devbox run bash -lc "uv python install 3.12 >/dev/null 2>&1 || true; if [ ! -d .venv ]; then uv venv .venv --python 3.12 >/dev/null 2>&1 || python3 -m venv .venv; fi; source .venv/bin/activate >/dev/null 2>&1 || true"; \
-        else \
-            python3 -m venv .venv || true; source .venv/bin/activate || true; \
-        fi
-        npx nx run-many --target=lint --all
-        npx nx run-many --target=test --all
+        ./scripts/env-check.sh
 
 promote-stage:
     git push origin HEAD:stage

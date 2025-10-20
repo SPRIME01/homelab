@@ -6,25 +6,25 @@
   "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nx/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "node apps/env-check/src/index.js build"
       }
     },
     "lint": {
-      "executor": "@nx/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "node tools/tasks/lint-stub.js"
       }
     },
     "test": {
-      "executor": "@nx/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "node apps/env-check/tests/smoke.test.js"
       }
     },
     "deploy": {
-      "executor": "@nx/workspace:run-commands",
+      "executor": "nx:run-commands",
       "options": {
         "command": "node apps/env-check/src/index.js deploy"
       },
