@@ -83,6 +83,7 @@ export PATH="$PNPM_HOME:$HOME/.volta/bin:$HOME/.cargo/bin:$PATH"
 ```
 * **Polyglot builds:** Nx handles Node, Python, and Rust seamlessly.
 * **Idempotent automation:** CI/CD shells call `./lib/env-loader.sh` directly; Just targets remain reusable everywhere.
+  - Note: the repository's `scripts/env-check.sh` now runs `devbox install --tidy-lockfile` after ensuring `devbox` is available so package provisioning is idempotent whether `devbox` was pre-installed or installed by the script.
 * **Secure reproducibility:** SOPS manages all secrets, no plaintext leakage.
 * **Branch clarity:** `dev` → `stage` → `main` promotion path baked into recipes and workflows.
 

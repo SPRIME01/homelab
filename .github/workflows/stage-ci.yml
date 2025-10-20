@@ -29,14 +29,14 @@ jobs:
           fi
           echo "PYTHON_EXEC=$PYTHON_EXEC" >> "$GITHUB_ENV"
 
-          $PYTHON_EXEC -m pip install --user --upgrade pipx || true
-          $PYTHON_EXEC -m pipx ensurepath || true
-          $PYTHON_EXEC -m pipx install uv || true
+          $PYTHON_EXEC -m pip install --user --upgrade pipx
+          $PYTHON_EXEC -m pipx ensurepath || echo "⚠️ pipx ensurepath failed; PATH may need adjustment"
+          $PYTHON_EXEC -m pipx install uv
 
-          uv python install 3.12 >/dev/null 2>&1 || true
+          uv python install 3.12 >/dev/null 2>&1
 
           if [ ! -d .venv ]; then
-            uv venv .venv --python 3.12 >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv || true
+            uv venv .venv --python 3.12 >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv
           fi
 
           echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"

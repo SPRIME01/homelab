@@ -71,14 +71,18 @@ setup_devbox_environment() {
         # Verify devbox is now available
         if command_exists devbox; then
             echo "✅ devbox is now available"
-            # Now run the devbox install command
-            if ! devbox install --tidy-lockfile; then
-                echo "❌ Failed to run 'devbox install --tidy-lockfile'"
-                return 1
-            fi
         else
             echo "❌ devbox installation succeeded but binary is not in PATH"
             echo "💡 Try restarting your shell or manually adding ~/.local/bin to your PATH"
+            return 1
+        fi
+    fi
+
+    # Ensure devbox hooks and packages are installed (run idempotent install)
+    if command_exists devbox; then
+        echo "🔁 Running 'devbox install --tidy-lockfile' to ensure packages are present..."
+        if ! devbox install --tidy-lockfile; then
+            echo "❌ Failed to run 'devbox install --tidy-lockfile'"
             return 1
         fi
     fi
@@ -90,25 +94,35 @@ setup_devbox_environment() {
         # First install Python with uv
         if command -v uv >/dev/null 2>&1; then
             echo "Installing Python 3.12 with uv..."
-            devbox run -c "uv python install 3.12" >/dev/null 2>&1 || echo "⚠️ Failed to install Python 3.12 with uv"
+            if ! devbox run -c "uv python install 3.12" >/dev/null 2>&1; then
+                echo "❌ Failed to install Python 3.12 with uv"
+                echo "💡 Ensure 'uv' is available in the devbox environment or install uv locally"
+                exit 1
+            fi
         fi
 
         # Create virtual environment if it doesn't exist
         if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
             if command -v uv >/dev/null 2>&1; then
                 echo "Creating virtual environment with uv..."
-                devbox run -c "uv venv ${PROJECT_ROOT}/.venv --python 3.12" >/dev/null 2>&1 || echo "⚠️ Failed to create venv with uv"
+                if ! devbox run -c "uv venv ${PROJECT_ROOT}/.venv --python 3.12" >/dev/null 2>&1; then
+                    echo "❌ Failed to create venv with uv"
+                    exit 1
+                fi
             fi
 
             # Fallback to python3 if uv fails or venv still doesn't exist
             if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
                 echo "Creating virtual environment with python3..."
-                devbox run -c "python3 -m venv ${PROJECT_ROOT}/.venv" || echo "⚠️ Failed to create venv with python3"
+                if ! devbox run -c "python3 -m venv ${PROJECT_ROOT}/.venv"; then
+                    echo "❌ Failed to create venv with python3"
+                    exit 1
+                fi
             fi
         fi
 
-        # Verify virtual environment exists
-        if [ -d .venv ]; then
+        # Verify virtual environment exists (use project-root anchored path)
+        if [ -d "${PROJECT_ROOT}/.venv" ]; then
             echo "✅ Virtual environment found"
         else
             echo "❌ Failed to create virtual environment"
@@ -118,14 +132,17 @@ setup_devbox_environment() {
         # Fallback without devbox
         echo "⚠️ devbox not available, using system environment"
 
-        # Create virtual environment if it doesn't exist
-        if [ ! -d .venv ]; then
+        # Create virtual environment if it doesn't exist (project-root anchored)
+        if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
             echo "Creating virtual environment with python3..."
-            python3 -m venv .venv || echo "⚠️ Failed to create venv with python3"
+            if ! python3 -m venv "${PROJECT_ROOT}/.venv"; then
+                echo "❌ Failed to create venv with python3"
+                exit 1
+            fi
         fi
 
         # Verify virtual environment exists
-        if [ -d .venv ]; then
+        if [ -d "${PROJECT_ROOT}/.venv" ]; then
             echo "✅ Virtual environment found"
         else
             echo "❌ Failed to create virtual environment"
