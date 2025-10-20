@@ -28,23 +28,24 @@ jobs:
             PYTHON_EXEC=python3
           fi
           echo "PYTHON_EXEC=$PYTHON_EXEC" >> "$GITHUB_ENV"
-
           $PYTHON_EXEC -m pip install --user --upgrade pipx
           $PYTHON_EXEC -m pipx ensurepath || echo "⚠️ pipx ensurepath failed; PATH may need adjustment"
           $PYTHON_EXEC -m pipx install uv
 
-          uv python install 3.12 >/dev/null 2>&1
+          # Extract Python version from PYTHON_EXEC for uv commands (align with main CI)
+          PYTHON_VERSION=$($PYTHON_EXEC -V | cut -d' ' -f2 | cut -d'.' -f1,2)
+          uv python install "$PYTHON_VERSION" >/dev/null 2>&1
 
           if [ ! -d .venv ]; then
-            uv venv .venv --python 3.12 >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv
+            uv venv .venv --python "$PYTHON_VERSION" >/dev/null 2>&1 || "$PYTHON_EXEC" -m venv .venv
           fi
 
           echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
           # Verify the virtual environment is properly activated
-          echo "Python executable: $(which python)"
-          echo "Python version: $(python --version)"
+          echo "Python executable: $(which "$PYTHON_EXEC")"
+          echo "Python version: $("$PYTHON_EXEC" --version)"
           echo "Virtual environment: $VIRTUAL_ENV"
       - name: Lint
         run: npx nx run-many --target=lint --all

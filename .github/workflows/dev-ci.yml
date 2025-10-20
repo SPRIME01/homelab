@@ -32,17 +32,19 @@ jobs:
           echo "PYTHON_EXEC=$PYTHON_EXEC" >> "$GITHUB_ENV"
 
           # Install pipx with the chosen python and ensure it's on PATH
-          $PYTHON_EXEC -m pip install --user --upgrade pipx
-          $PYTHON_EXEC -m pipx ensurepath || echo "⚠️ pipx ensurepath failed; PATH may need adjustment"
+          # Note: `pipx ensurepath` is non-fatal in runners; warn but continue.
+          "$PYTHON_EXEC" -m pip install --user --upgrade pipx
+          "$PYTHON_EXEC" -m pipx ensurepath || echo "⚠️ pipx ensurepath failed; PATH may need adjustment"
           # If pipx is available as a module, call it through python -m pipx
-          $PYTHON_EXEC -m pipx install uv
+          "$PYTHON_EXEC" -m pipx install uv
 
-          # Ensure Python 3.12 is installed under uv (idempotent)
-          uv python install 3.12 >/dev/null 2>&1
+          # Ensure Python is installed under uv (idempotent)
+          PYTHON_VERSION=$("$PYTHON_EXEC" -V | cut -d' ' -f2 | cut -d'.' -f1,2)
+          uv python install "$PYTHON_VERSION" >/dev/null 2>&1
 
           # Create a project-local venv using uv (fallback to $PYTHON_EXEC -m venv)
           if [ ! -d .venv ]; then
-            uv venv .venv --python 3.12 >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv
+            uv venv .venv --python "$PYTHON_VERSION" >/dev/null 2>&1 || "$PYTHON_EXEC" -m venv .venv
           fi
 
           # Persist venv to subsequent steps by exporting to GITHUB_ENV and prepending PATH

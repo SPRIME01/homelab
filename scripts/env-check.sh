@@ -163,9 +163,9 @@ main() {
     cd "${PROJECT_ROOT}"
 
     # Check if nx is properly set up
-    if npx nx run-many --target=lint --all 2>/dev/null; then
+    if npx nx run-many --target=lint --all; then
         echo "✅ Lint checks passed"
-        if npx nx run-many --target=test --all 2>/dev/null; then
+        if npx nx run-many --target=test --all; then
             echo "✅ Test checks passed"
         else
             echo "⚠️ Test checks failed, but environment setup was successful"
