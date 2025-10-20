@@ -8,7 +8,8 @@
     "direnv",
     "just",
     "mise",
-    "sops"
+    "sops",
+    "vector"
   ],
   "shell": {
     "init_hook": [
@@ -20,6 +21,12 @@
     "scripts": {
       "doctor": [
         "just doctor"
+      ],
+      "vector": [
+        "vector --config ops/vector/vector.toml"
+      ],
+      "log-tail": [
+        "vector tap --config ops/vector/vector.toml"
       ]
     }
   }

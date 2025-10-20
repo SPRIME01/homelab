@@ -42,15 +42,31 @@ load_sops_env() {
 
 export HOMELAB_ENV_MODE="${MODE}"
 
+# Set HOMELAB_OBSERVE flag (default to 1, but allow override)
+export HOMELAB_OBSERVE="${HOMELAB_OBSERVE:-1}"
+
+# Set HOMELAB_LOG_TARGET based on HOMELAB_OBSERVE flag
+export HOMELAB_LOG_TARGET="${HOMELAB_LOG_TARGET:-${HOMELAB_OBSERVE:+vector}}"
+# Fallback to stdout when HOMELAB_OBSERVE is disabled
+if [[ -z "${HOMELAB_LOG_TARGET}" ]]; then
+  export HOMELAB_LOG_TARGET="stdout"
+fi
+
 case "${MODE}" in
   local)
     export HOMELAB_ENV_TARGET="developer-shell"
+    export HOMELAB_SERVICE="homelab"
+    export HOMELAB_ENVIRONMENT="development"
     ;;
   shell)
     export HOMELAB_ENV_TARGET="devbox-shell"
+    export HOMELAB_SERVICE="homelab"
+    export HOMELAB_ENVIRONMENT="development"
     ;;
   ci)
     export HOMELAB_ENV_TARGET="ci-pipeline"
+    export HOMELAB_SERVICE="homelab"
+    export HOMELAB_ENVIRONMENT="ci"
     export CI=true
     ;;
   *)

@@ -6,3 +6,7 @@ requires-python = ">=3.12"
 name = "homelab"
 version = "0.1.0"
 source = { virtual = "." }
+dependencies = []
+
+[package.metadata]
+requires-dist = []

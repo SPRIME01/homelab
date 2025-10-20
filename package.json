@@ -1,11 +1,12 @@
 {
   "name": "@temp-nx/source",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "scripts": {},
   "private": true,
   "dependencies": {
-    "empty": "0.10.1"
+    "empty": "0.10.1",
+    "pino": "^9.3.1"
   },
   "devDependencies": {
     "@nx/workspace": "^21.6.5",

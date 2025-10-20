@@ -23,12 +23,18 @@
         "command": "node apps/env-check/tests/smoke.test.js"
       }
     },
+    "log-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/logging/node/test.js"
+      }
+    },
     "deploy": {
       "executor": "nx:run-commands",
       "options": {
         "command": "node apps/env-check/src/index.js deploy"
       },
-      "dependsOn": ["build"]
+      "dependsOn": ["build", "log-smoke"]
     }
   },
   "tags": ["type:utility"]

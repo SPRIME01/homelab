@@ -1,0 +1,138 @@
+# Vector Configuration File
+# This configuration sets up Vector to collect, transform, and forward logs and metrics
+
+# =============================================================================
+# SOURCES
+# =============================================================================
+
+# OTLP source for receiving logs in OpenTelemetry format
+[sources.otlp_logs]
+type = "otlp"
+address = "0.0.0.0:4317"  # gRPC endpoint
+healthcheck = true
+
+# OTLP HTTP source for receiving logs via HTTP
+[sources.otlp_http_logs]
+type = "otlp"
+address = "0.0.0.0:4318"  # HTTP endpoint
+protocol = "http"
+healthcheck = true
+
+# =============================================================================
+# TRANSFORMS
+# =============================================================================
+
+# Parse JSON logs
+[transforms.parse_json]
+type = "remap"
+inputs = ["otlp_logs", "otlp_http_logs"]
+source = """
+. = parse_json!(.message)
+"""
+
+# Redact PII (email addresses, access tokens, session identifiers)
+[transforms.redact_pii]
+type = "remap"
+inputs = ["parse_json"]
+source = """
+# Redact email addresses
+.email = replace(.email, /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/, "REDACTED_EMAIL")
+
+# Redact access tokens
+if exists(.access_token) {
+  .access_token = "REDACTED_TOKEN"
+}
+
+# Redact API keys
+if exists(.api_key) {
+  .api_key = "REDACTED_KEY"
+}
+
+# Redact session identifiers
+if exists(.session_id) {
+  .session_id = "REDACTED_SESSION"
+}
+
+# Redact any field containing 'token', 'key', 'secret', or 'password'
+for_each(object_keys(.)) -> |key| {
+  if contains(string!(key), "token") || contains(string!(key), "key") || contains(string!(key), "secret") || contains(string!(key), "password") {
+    .[key] = "REDACTED_SENSITIVE"
+  }
+}
+
+# Add processing timestamp
+.processed_at = now()
+"""
+
+# Add metadata for OpenObserve
+[transforms.add_metadata]
+type = "remap"
+inputs = ["redact_pii"]
+source = """
+# Add source and environment metadata
+.source = "vector"
+.environment = get_env_var!("ENVIRONMENT", "development")
+
+# Ensure timestamp is in the correct format
+if !exists(.timestamp) {
+  .timestamp = now()
+}
+"""
+
+# Extract metrics from logs
+[transforms.extract_metrics]
+type = "remap"
+inputs = ["redact_pii"]
+source = """
+# Create metrics from log data
+if exists(.response_time) {
+  .metric_name = "response_time"
+  .metric_value = to_int!(.response_time)
+  .metric_type = "histogram"
+}
+
+if exists(.error_count) {
+  .metric_name = "error_count"
+  .metric_value = to_int!(.error_count)
+  .metric_type = "counter"
+}
+"""
+
+# =============================================================================
+# SINKS
+# =============================================================================
+
+# Sink for OpenObserve (logs)
+[sinks.openobserve]
+type = "otel_logs"
+inputs = ["add_metadata"]
+endpoint = "http://localhost:5080/otlp/v1/logs"
+healthcheck = true
+
+# Sink for GreptimeDB (metrics)
+[sinks.greptimedb]
+type = "prometheus_remote_write"
+inputs = ["extract_metrics"]
+endpoint = "http://localhost:4000/v1/prometheus/write"
+healthcheck = true
+
+# Local stdout sink for tailing logs
+[sinks.stdout]
+type = "console"
+inputs = ["add_metadata"]
+encoding = "json"
+
+# Optional: File sink for local log storage
+[sinks.file]
+type = "file"
+inputs = ["add_metadata"]
+path = "/tmp/vector-logs-%Y-%m-%d.log"
+rotation = "daily"
+
+# =============================================================================
+# INTERNAL METRICS
+# =============================================================================
+
+# Enable internal metrics
+[internal_metrics]
+type = "internal_metrics"

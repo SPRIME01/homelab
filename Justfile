@@ -38,3 +38,6 @@ promote-stage:
 
 promote-main:
     git push origin stage:main
+
+logging:
+    npx nx run-many --target=logging --all

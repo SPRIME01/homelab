@@ -189,6 +189,20 @@
           ]
         }
       }
+    },
+    "vector": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#vector",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/1d73f5w5ssspziiyqcqy4p1bqv6i2rfx-vector-0.50.0",
+              "default": true
+            }
+          ]
+        }
+      }
     }
   }
 }
