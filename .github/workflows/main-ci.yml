@@ -36,8 +36,11 @@ jobs:
           $PYTHON_EXEC -m pipx install uv
 
           # Extract Python version from PYTHON_EXEC for uv commands
-          PYTHON_VERSION=$($PYTHON_EXEC -V | cut -d' ' -f2 | cut -d'.' -f1,2)
-          uv python install $PYTHON_VERSION >/dev/null 2>&1
+          PYTHON_VERSION=$($PYTHON_EXEC -V | grep -oP '\d+\.\d+' | head -n1)
+          echo "Installing Python $PYTHON_VERSION with uv..."
+          if ! uv python install "$PYTHON_VERSION" 2>&1 | grep -v "already installed"; then
+            echo "⚠️ uv python install may have failed; proceeding with fallback"
+          fi
 
           if [ ! -d .venv ]; then
             uv venv .venv --python $PYTHON_VERSION >/dev/null 2>&1 || $PYTHON_EXEC -m venv .venv
