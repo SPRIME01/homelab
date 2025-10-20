@@ -28,8 +28,57 @@ setup_devbox_environment() {
         echo "✅ devbox is already installed"
     else
         echo "⚠️ devbox not found, attempting to install..."
-        if ! devbox install --tidy-lockfile; then
-            echo "❌ Failed to install devbox"
+
+        # Try different installation methods in order of preference
+        if command_exists brew; then
+            echo "📦 Installing devbox using Homebrew..."
+            if brew install devbox; then
+                echo "✅ devbox installed successfully via Homebrew"
+            else
+                echo "❌ Failed to install devbox via Homebrew"
+                return 1
+            fi
+        elif command_exists curl; then
+            echo "📦 Installing devbox using official installer..."
+            if curl -fsSL https://get.jetify.com/devbox | bash; then
+                echo "✅ devbox installed successfully via official installer"
+
+                # Update PATH to include devbox if it was installed to ~/.local/bin
+                if [[ -d "$HOME/.local/bin" ]] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+                    export PATH="$HOME/.local/bin:$PATH"
+                    echo "🔄 Updated PATH to include ~/.local/bin"
+                fi
+            else
+                echo "❌ Failed to install devbox via official installer"
+                return 1
+            fi
+        elif command_exists nix-env; then
+            echo "📦 Installing devbox using nix-env..."
+            if nix-env -iA nixpkgs.devbox; then
+                echo "✅ devbox installed successfully via nix-env"
+            else
+                echo "❌ Failed to install devbox via nix-env"
+                return 1
+            fi
+        else
+            echo "❌ No suitable installation method found. Please install devbox manually:"
+            echo "   - brew install devbox"
+            echo "   - curl -fsSL https://get.jetify.com/devbox | bash"
+            echo "   - nix-env -iA nixpkgs.devbox"
+            return 1
+        fi
+
+        # Verify devbox is now available
+        if command_exists devbox; then
+            echo "✅ devbox is now available"
+            # Now run the devbox install command
+            if ! devbox install --tidy-lockfile; then
+                echo "❌ Failed to run 'devbox install --tidy-lockfile'"
+                return 1
+            fi
+        else
+            echo "❌ devbox installation succeeded but binary is not in PATH"
+            echo "💡 Try restarting your shell or manually adding ~/.local/bin to your PATH"
             return 1
         fi
     fi
