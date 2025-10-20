@@ -92,7 +92,7 @@ setup_devbox_environment() {
     if command_exists devbox; then
         # Use devbox to run commands in its environment
         # First install Python with uv
-        if command -v uv >/dev/null 2>&1; then
+        if devbox run -c "command -v uv" >/dev/null 2>&1; then
             echo "Installing Python 3.12 with uv..."
             if ! devbox run -c "uv python install 3.12" >/dev/null 2>&1; then
                 echo "❌ Failed to install Python 3.12 with uv"
