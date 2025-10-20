@@ -103,7 +103,7 @@ setup_devbox_environment() {
 
         # Create virtual environment if it doesn't exist
         if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
-            if command -v uv >/dev/null 2>&1; then
+            if devbox run -c "command -v uv" >/dev/null 2>&1; then
                 echo "Creating virtual environment with uv..."
                 if ! devbox run -c "uv venv ${PROJECT_ROOT}/.venv --python 3.12" >/dev/null 2>&1; then
                     echo "❌ Failed to create venv with uv"
