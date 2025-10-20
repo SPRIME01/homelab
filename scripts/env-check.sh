@@ -45,16 +45,16 @@ setup_devbox_environment() {
         fi
 
         # Create virtual environment if it doesn't exist
-        if [ ! -d .venv ]; then
+        if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
             if command -v uv >/dev/null 2>&1; then
                 echo "Creating virtual environment with uv..."
-                devbox run -c "uv venv .venv --python 3.12" >/dev/null 2>&1 || echo "⚠️ Failed to create venv with uv"
+                devbox run -c "uv venv ${PROJECT_ROOT}/.venv --python 3.12" >/dev/null 2>&1 || echo "⚠️ Failed to create venv with uv"
             fi
 
             # Fallback to python3 if uv fails or venv still doesn't exist
-            if [ ! -d .venv ]; then
+            if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
                 echo "Creating virtual environment with python3..."
-                devbox run -c "python3 -m venv .venv" || echo "⚠️ Failed to create venv with python3"
+                devbox run -c "python3 -m venv ${PROJECT_ROOT}/.venv" || echo "⚠️ Failed to create venv with python3"
             fi
         fi
 
