@@ -64,6 +64,10 @@ jobs:
         run: chmod +x tests/test_vector_logger.sh tests/test_vector_logger_failure.sh tests/test_vector_logger_otlp.sh
       - name: Run logging tests (nx)
         run: npx nx run logging:test
+      - name: Run integration OTLP test
+        run: |
+          chmod +x tests/logging/test_integration_otlp_runner.sh
+          ./tests/logging/test_integration_otlp_runner.sh
 
   release:
     runs-on: ubuntu-latest

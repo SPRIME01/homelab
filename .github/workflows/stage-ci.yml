@@ -73,5 +73,9 @@ jobs:
         run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
       - name: Test
         run: npx nx run-many --target=test --all
+      - name: Run integration OTLP test
+        run: |
+          chmod +x tests/logging/test_integration_otlp_runner.sh
+          ./tests/logging/test_integration_otlp_runner.sh
       - name: Build
         run: npx nx run-many --target=build --all

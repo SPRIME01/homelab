@@ -112,6 +112,10 @@ jobs:
           python3 /tmp/vector_stub.py & echo $! > /tmp/vector_stub.pid
           # Wait for listener to come up
           for i in {1..10}; do curl -sS --fail http://127.0.0.1:45995/ >/dev/null 2>&1 && break || sleep 0.5; done
+      - name: Run integration OTLP test
+        run: |
+          chmod +x tests/logging/test_integration_otlp_runner.sh
+          ./tests/logging/test_integration_otlp_runner.sh
       - name: Test
         run: npx nx run-many --target=test --all
 

@@ -464,26 +464,19 @@ log_message() {
 }
 EOF
     )
-    echo "$log_entry" | jq -c .
+    # Print compact JSON to stdout (implementation avoids requiring jq)
+    echo "$log_entry"
 
-    # Forward to Vector via HTTP
+    # Forward to Vector via OTLP HTTP if curl is available. The implementation
+    # in `lib/logging.sh` constructs a minimal OTLP payload and posts to
+    # http://localhost:4318/v1/logs by default. The structured log JSON is
+    # placed in the `body.stringValue` field of the OTLP `logRecords` entry.
     if command -v curl >/dev/null 2>&1; then
-      curl -s -X POST http://localhost:4318/v1/logs \
-        -H "Content-Type: application/json" \
-        -d "{
-          \"resourceLogs\": [{
-            \"resource\": {},
-            \"scopeLogs\": [{
-              \"scope\": {},
-              \"logRecords\": [{
-                \"timeUnixNano\": \"$(date +%s%N)\",
-                \"severityNumber\": $(severity_number "$level"),
-                \"severityText\": \"$level\",
-                \"body\": {\"stringValue\": \"$log_entry\"}
-              }]
-            }]
-          }]
-        }" >/dev/null 2>&1 &
+      # A minimal example of the OTLP payload that the logger sends:
+      # {"resourceLogs":[{"resource":{},"scopeLogs":[{"scope":{},"logRecords":[{"timeUnixNano":"<ns>","severityNumber":9,"severityText":"info","body":{"stringValue":"<escaped-json>"}}]}]}]}
+      # The logger implements this payload construction without jq and posts it
+      # to the OTLP HTTP endpoint at /v1/logs.
+      : # forwarding is implemented inside lib/logging.sh
     fi
   else
     # Pretty output for local development

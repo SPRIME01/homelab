@@ -283,6 +283,33 @@ __log_build_pretty() {
     echo -e "$line"
 }
 
+# Build OTLP minimal JSON payload for a single log record.
+# Arguments:
+# 1: timeUnixNano
+# 2: severityNumber
+# 3: severityText
+# 4: body_string_value (escaped JSON string)
+__log_build_otlp_payload() {
+    local time_unix_nano="$1"
+    local severity_number="$2"
+    local severity_text="$3"
+    local body_string_value="$4"
+
+    # Construct the JSON payload without external dependencies.
+    printf '%s' "{\"resourceLogs\":[{\"resource\":{},\"scopeLogs\":[{\"scope\":{},\"logRecords\":[{\"timeUnixNano\":\"${time_unix_nano}\",\"severityNumber\":${severity_number},\"severityText\":\"${severity_text}\",\"body\":{\"stringValue\":\"${body_string_value}\"}}]}]}]}"
+}
+
+# Map log level to OTLP severity number
+severity_number() {
+    case "$1" in
+        "debug") echo "5" ;;
+        "info") echo "9" ;;
+        "warn") echo "13" ;;
+        "error") echo "17" ;;
+        *) echo "9" ;;
+    esac
+}
+
 # Core logging function
 __log() {
     local level="$1"
@@ -324,18 +351,35 @@ __log() {
         # Try to send to Vector, fail gracefully
         if command -v curl >/dev/null 2>&1; then
             # Use configurable endpoint with sensible timeout/exit-on-failure flags
-                    # Default to Vector's OTLP HTTP logs endpoint. Allow override via HOMELAB_VECTOR_ENDPOINT.
-                    # Vector is configured in ops/vector/vector.toml to accept OTLP HTTP on :4318 and parse JSON from
-                    # the top-level `.message` or `.body` fields. To ensure Vector's `parse_json(.message)` succeeds,
-                    # we wrap the structured log JSON as a string value under the `message` key.
-                    local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:4318/v1/logs}"
-                    local curl_output=""
-                    # Build wrapper payload: {"message":"<json_output as escaped string>"}
-                    local escaped_payload
-                    # __log_json_escape expects its value as an argument (not on stdin), so pass json_output directly.
-                    escaped_payload="$(__log_json_escape "$json_output")"
-                    local wrapper="{\"message\":\"${escaped_payload}\"}"
-                    if ! curl_output="$(printf '%s' "$wrapper" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
+            # Default to Vector's OTLP HTTP logs endpoint. Allow override via HOMELAB_VECTOR_ENDPOINT.
+            # We construct a minimal OTLP JSON payload (resourceLogs -> scopeLogs -> logRecords)
+            # and put the structured log JSON as a string in body.stringValue. This matches
+            # the transforms in ops/vector/vector.toml which look for .message or .body.
+            local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:4318/v1/logs}"
+            local curl_output=""
+
+            # Prepare timeUnixNano (portable fallback to python3 when needed)
+            local time_unix_nano
+            if time_unix_nano="$(date +%s%N 2>/dev/null)" && [ -n "$time_unix_nano" ]; then
+                :
+            elif command -v python3 >/dev/null 2>&1; then
+                time_unix_nano="$(python3 -c 'import time; print(int(time.time() * 1e9))' 2>/dev/null)"
+            else
+                # Fallback: seconds -> nanoseconds
+                local secs
+                secs="$(date +%s 2>/dev/null || printf '0')"
+                time_unix_nano="$((secs * 1000000000))"
+            fi
+
+            # Escape the structured JSON so it can be placed into a JSON string
+            local escaped_payload
+            escaped_payload="$(__log_json_escape "$json_output")"
+
+            # Build minimal OTLP JSON payload without depending on jq
+            local otlp_payload
+            otlp_payload="$(__log_build_otlp_payload "$time_unix_nano" "$(severity_number "$level")" "$level" "$escaped_payload")"
+
+            if ! curl_output="$(printf '%s' "$otlp_payload" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
                 echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2
                 if [ -n "$curl_output" ]; then
                     echo "$curl_output" >&2
