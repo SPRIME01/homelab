@@ -172,7 +172,7 @@ function buildLogEntry(object) {
   const contextKeys = Object.keys(object).filter(
     key => !RESERVED_FIELDS.has(key) && key !== MESSAGE_FIELD && key !== 'context'
   );
-  
+
   for (const key of contextKeys) {
     if (object[key] !== undefined) {
       object.context[key] = object[key];

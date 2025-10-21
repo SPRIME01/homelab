@@ -1,17 +1,19 @@
 {
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "logging",
-  "root": "tools",
-  "sourceRoot": "tools",
-  "projectType": "application",
-  "targets": {
-    "check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node tools/tasks/logging-check.js"
-      },
-      "outputs": []
-    }
-  },
-  "tags": ["type:tooling"]
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "name": "logging",
+    "root": "tools",
+    "sourceRoot": "tools",
+    "projectType": "application",
+    "targets": {
+        "check": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node tools/tasks/logging-check.js"
+            },
+            "outputs": []
+        }
+    },
+    "tags": [
+        "type:tooling"
+    ]
 }
