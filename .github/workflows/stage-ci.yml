@@ -11,6 +11,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Devbox
+        run: |
+          curl -fsSL https://jetpack.io/devbox/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -22,6 +26,10 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Bootstrap environment
         run: ./lib/env-loader.sh ci
       - name: Install uv & Python venv (CI)
@@ -51,6 +59,14 @@ jobs:
           echo "Python executable: $(which "$PYTHON_EXEC")"
           echo "Python version: $("$PYTHON_EXEC" --version)"
           echo "Virtual environment: $VIRTUAL_ENV"
+      - name: Activate Python virtual environment
+        run: |
+          source .venv/bin/activate
+          echo "Activated virtual environment"
+      - name: Ensure pipx tools are in PATH
+        run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "Added $HOME/.local/bin to PATH"
       - name: Lint
         run: npx nx run-many --target=lint --all
       - name: Test

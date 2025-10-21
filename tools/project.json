@@ -11,6 +11,27 @@
                 "command": "node tools/tasks/logging-check.js"
             },
             "outputs": []
+        },
+        "logging": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node tools/tasks/logging-check.js"
+            },
+            "outputs": []
+        },
+        "build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "echo 'Building tools project...'"
+            },
+            "outputs": []
+        },
+        "deploy": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "echo 'Deploying tools project...'"
+            },
+            "outputs": []
         }
     },
     "tags": [
