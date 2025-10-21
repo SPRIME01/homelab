@@ -121,7 +121,7 @@ test_node_logger() {
     log_info "Testing Node.js logger implementation..."
 
     # Change to tools/logging directory
-    cd "$PROJECT_ROOT/tools/logging"
+    cd "$PROJECT_ROOT/tools/logging" || { log_fail "Failed to cd to $PROJECT_ROOT/tools/logging"; return 1; }
 
     # Test JSON output
     local node_output
@@ -159,7 +159,7 @@ test_python_logger() {
     log_info "Testing Python logger implementation..."
 
     # Change to tools/logging directory
-    cd "$PROJECT_ROOT/tools/logging"
+    cd "$PROJECT_ROOT/tools/logging" || { log_fail "Failed to cd to $PROJECT_ROOT/tools/logging"; return 1; }
 
     # Test JSON output
     local python_output
@@ -194,7 +194,7 @@ test_shell_logger() {
     log_info "Testing Shell logger implementation..."
 
     # Change to tools directory
-    cd "$PROJECT_ROOT/tools/logging"
+    cd "$PROJECT_ROOT/tools/logging" || { log_fail "Failed to cd to $PROJECT_ROOT/tools/logging"; return 1; }
 
     # Test JSON output
     local shell_output
@@ -384,7 +384,7 @@ test_pipeline_e2e() {
 
     # Test that all implementations can write to the same file
     if command -v node >/dev/null 2>&1; then
-        cd "$PROJECT_ROOT/tools/logging/node"
+        cd "$PROJECT_ROOT/tools/logging/node" || { log_fail "Failed to cd to $PROJECT_ROOT/tools/logging/node"; return 1; }
         HOMELAB_LOG_TARGET=stdout HOMELAB_SERVICE=test HOMELAB_ENVIRONMENT=test node -e "
             const logger = require('./logger');
             logger.info('Node.js test message');
@@ -392,7 +392,7 @@ test_pipeline_e2e() {
     fi
 
     if command -v python3 >/dev/null 2>&1; then
-        cd "$PROJECT_ROOT/tools/logging/python"
+        cd "$PROJECT_ROOT/tools/logging/python" || { log_fail "Failed to cd to $PROJECT_ROOT/tools/logging/python"; return 1; }
         HOMELAB_LOG_TARGET=stdout HOMELAB_SERVICE=test HOMELAB_ENVIRONMENT=test PYTHONPATH=. python3 -c "from logger import logger; logger.info('Python test message')" >> "$test_log_file" 2>/dev/null || true
     fi
 
@@ -408,12 +408,9 @@ test_pipeline_e2e() {
 
         if [ "$log_count" -gt 0 ]; then
             log_pass "End-to-end pipeline - logs written"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
         else
             log_fail "End-to-end pipeline - no logs written"
-            TESTS_FAILED=$((TESTS_FAILED + 1))
         fi
-        TESTS_RUN=$((TESTS_RUN + 1))
 
         # Clean up
         rm -f "$test_log_file"

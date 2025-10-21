@@ -429,11 +429,12 @@ try:
 
                     for field in key_fields:
                         if field in node_json and field in python_json:
+                            tests_run += 1  # Increment for every field comparison
                             if node_json[field] == python_json[field]:
                                 print(f"    ✅ {field} matches")
+                                tests_passed += 1  # Increment only on successful comparison
                             else:
                                 print(f"    ❌ {field} differs: Node={node_json[field]}, Python={python_json[field]}")
-                                tests_run += 1
                         else:
                             print(f"    ⚠️  {field} missing in one of the outputs")
 

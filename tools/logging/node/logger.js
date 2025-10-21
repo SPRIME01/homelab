@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Writable } = require('stream');
 const pino = require('pino');
+const crypto = require('crypto');
 
 // -----------------------------------------------------------------------------
 // Configuration helpers
@@ -11,7 +12,10 @@ let eventIdCounter = 0;
 
 function generateEventId() {
   eventIdCounter += 1;
-  return `evt_${Date.now()}_${eventIdCounter}`;
+  const timestamp = Date.now();
+  const pid = process.pid;
+  const randomBytes = crypto.randomBytes(4).toString('hex');
+  return `evt_${timestamp}_${pid}_${randomBytes}_${eventIdCounter}`;
 }
 
 function getVersion() {

@@ -15,6 +15,7 @@ import sys
 import threading
 import traceback
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -464,6 +465,7 @@ class LoggerUtils:
     @staticmethod
     def with_span(span_context: Dict[str, str]):
         def decorator(fn):
+            @wraps(fn)
             def wrapper(*args, **kwargs):
                 trace_id = span_context.get("trace_id")
                 span_id = span_context.get("span_id")

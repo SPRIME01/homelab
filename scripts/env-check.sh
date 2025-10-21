@@ -11,6 +11,8 @@ if [[ -f "${PROJECT_ROOT}/lib/logging.sh" ]]; then
     # shellcheck disable=SC1091
     source "${PROJECT_ROOT}/lib/logging.sh"
 else
+    # Bootstrap error: logging.sh is not available yet, so we must use echo as an exception
+    # This is the only place in the script where we use raw echo/exit instead of structured logging
     echo "ERROR: Could not find logging.sh at ${PROJECT_ROOT}/lib/logging.sh" >&2
     exit 1
 fi
@@ -110,7 +112,7 @@ setup_devbox_environment() {
             if ! devbox run -c "uv python install 3.12" >/dev/null 2>&1; then
                 log_error "Failed to install Python 3.12 with uv" "component=python" "tool=uv" "version=3.12" "status=failed"
                 log_info "Ensure 'uv' is available in the devbox environment or install uv locally" "component=python" "suggestion=uv_availability"
-                exit 1
+                return 1
             fi
         fi
 
@@ -120,7 +122,7 @@ setup_devbox_environment() {
                 log_info "Creating virtual environment with uv..." "component=python" "action=create_venv" "tool=uv"
                 if ! devbox run -c "uv venv ${PROJECT_ROOT}/.venv --python 3.12" >/dev/null 2>&1; then
                     log_error "Failed to create venv with uv" "component=python" "action=create_venv" "tool=uv" "status=failed"
-                    exit 1
+                    return 1
                 fi
             fi
 
@@ -129,7 +131,7 @@ setup_devbox_environment() {
                 log_info "Creating virtual environment with python3..." "component=python" "action=create_venv" "tool=python3"
                 if ! devbox run -c "python3 -m venv ${PROJECT_ROOT}/.venv"; then
                     log_error "Failed to create venv with python3" "component=python" "action=create_venv" "tool=python3" "status=failed"
-                    exit 1
+                    return 1
                 fi
             fi
         fi
@@ -139,7 +141,7 @@ setup_devbox_environment() {
             log_info "Virtual environment found" "component=python" "action=verify_venv" "status=success" "path=${PROJECT_ROOT}/.venv"
         else
             log_error "Failed to create virtual environment" "component=python" "action=verify_venv" "status=failed"
-            exit 1
+            return 1
         fi
     else
         # Fallback without devbox
@@ -150,7 +152,7 @@ setup_devbox_environment() {
             log_info "Creating virtual environment with python3..." "component=python" "action=create_venv" "tool=python3" "fallback=system"
             if ! python3 -m venv "${PROJECT_ROOT}/.venv"; then
                 log_error "Failed to create venv with python3" "component=python" "action=create_venv" "tool=python3" "fallback=system" "status=failed"
-                exit 1
+                return 1
             fi
         fi
 
@@ -159,7 +161,7 @@ setup_devbox_environment() {
             log_info "Virtual environment found" "component=python" "action=verify_venv" "status=success" "path=${PROJECT_ROOT}/.venv" "fallback=system"
         else
             log_error "Failed to create virtual environment" "component=python" "action=verify_venv" "status=failed" "fallback=system"
-            exit 1
+            return 1
         fi
     fi
 }
@@ -167,7 +169,10 @@ setup_devbox_environment() {
 # Main execution
 main() {
     # Setup devbox environment
-    setup_devbox_environment
+    if ! setup_devbox_environment; then
+        log_error "Failed to setup devbox environment" "component=env-check" "status=setup_failed"
+        exit 1
+    fi
 
     log_info "Environment setup complete" "component=env-check" "status=setup_complete"
     log_info "Running lint and test checks..." "component=env-check" "action=run_checks"

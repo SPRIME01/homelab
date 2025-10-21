@@ -324,15 +324,34 @@ test_metric_sampling() {
     local query_result
     query_result=$(curl -sS --connect-timeout 5 --max-time 10 --fail "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=increase(high_frequency_metric_total[1m])" 2>&1)
 
+    # Use assert helpers to check the results
     if [[ -n "$query_result" && "$query_result" != *"error"* ]]; then
         # Check that we have some metrics but not all 20
-        if [[ "$query_result" == *"value"* ]]; then
-            echo "✅ PASS: High-frequency metrics were sampled"
-            TESTS_PASSED=$((TESTS_PASSED + 1))
+        assert_contains "$query_result" "value" "High-frequency metrics were sampled"
+
+        # Extract count value if available
+        local count_value
+        if command -v jq >/dev/null 2>&1; then
+            count_value=$(echo "$query_result" | jq -r '.data.result[0].value[1]' 2>/dev/null)
         else
-            echo "❌ FAIL: No high-frequency metrics found after sampling"
+            # Fallback to parsing without jq
+            count_value=$(echo "$query_result" | grep -o '"value":\["[^"]*","[^"]*"\]' | sed 's/"value":\["[^"]*","//;s/"\]//')
         fi
-        TESTS_RUN=$((TESTS_RUN + 1))
+
+        # Check if we got a valid numeric value and it's less than sent (20)
+        if [[ -n "$count_value" ]] && [[ "$count_value" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+            # Convert to integer for comparison
+            local count_int=${count_value%.*}
+            if [[ $count_int -lt 20 ]]; then
+                echo "✅ PASS: Sampling reduced metric count from 20 to $count_int"
+                TESTS_PASSED=$((TESTS_PASSED + 1))
+            else
+                echo "❌ FAIL: Expected fewer than 20 metrics after sampling, got $count_int"
+            fi
+            TESTS_RUN=$((TESTS_RUN + 1))
+        else
+            echo "⚠️  WARNING: Could not extract numeric count from response"
+        fi
     else
         echo "❌ Failed to query sampled metrics from GreptimeDB"
         echo "Response: $query_result"
@@ -345,8 +364,8 @@ test_metric_sampling() {
 test_metric_retention() {
     echo "🧪 Testing metric retention..."
 
-    # Send a metric with a specific timestamp
-    local old_timestamp=$(date -d '1 hour ago' +%s)
+    # Send a metric with a specific timestamp (portable across macOS/BSD and Linux)
+    local old_timestamp=$(($(date +%s) - 3600))
 
     # Construct JSON safely using jq to avoid injection issues
     local retention_json
@@ -428,12 +447,9 @@ test_metric_retention() {
 
     if [[ -n "$query_result" && "$query_result" != *"error"* ]]; then
         assert_contains "$query_result" "retention_test_metric" "Retention test metric found"
-        echo "✅ PASS: Metric retention is working correctly"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
     else
         echo "⚠️  WARNING: Retention test metric not found (might be expected if retention policy is aggressive)"
     fi
-    TESTS_RUN=$((TESTS_RUN + 1))
 
     echo "Metric retention test completed."
 }
@@ -454,14 +470,44 @@ test_metric_aggregation() {
     local query_result
     query_result=$(curl -sS --connect-timeout 5 --max-time 10 --fail "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=avg(aggregation_test)" 2>&1)
 
-    if [[ -n "$query_result" && "$query_result" != *"error"* && "$query_result" == *"30"* ]]; then
-        echo "✅ PASS: Metric aggregation working correctly (avg = 30)"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-    else
-        echo "❌ FAIL: Metric aggregation not working as expected"
-        echo "Response: $query_result"
-    fi
     TESTS_RUN=$((TESTS_RUN + 1))
+
+    if [[ -n "$query_result" && "$query_result" != *"error"* ]]; then
+        # Extract the numeric value using jq
+        local avg_value
+        if command -v jq >/dev/null 2>&1; then
+            avg_value=$(echo "$query_result" | jq -r '.data.result[0].value[1]' 2>/dev/null)
+        else
+            # Fallback to parsing without jq
+            avg_value=$(echo "$query_result" | grep -o '"value":\["[^"]*","[^"]*"\]' | sed 's/"value":\["[^"]*","//;s/"\]//')
+        fi
+
+        # Check if we got a valid numeric value and compare with expected average (30) with tolerance
+        if [[ -n "$avg_value" ]] && [[ "$avg_value" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+            # Calculate difference with tolerance of ±0.1
+            local diff=$(echo "$avg_value - 30" | bc 2>/dev/null || echo "$avg_value - 30" | awk '{print $1}')
+            local abs_diff=${diff#-}
+
+            # Compare with tolerance (0.1)
+            if (( $(echo "$abs_diff <= 0.1" | bc 2>/dev/null || echo "$abs_diff <= 0.1" | awk '{print ($1 <= 0.1) ? 1 : 0}') )); then
+                echo "✅ PASS: Metric aggregation working correctly (avg = $avg_value)"
+                TESTS_PASSED=$((TESTS_PASSED + 1))
+                return 0
+            else
+                echo "❌ FAIL: Metric aggregation value ($avg_value) not within expected range (30 ± 0.1)"
+                echo "Response: $query_result"
+                return 1
+            fi
+        else
+            echo "❌ FAIL: Could not extract valid numeric value from response"
+            echo "Response: $query_result"
+            return 1
+        fi
+    else
+        echo "❌ FAIL: Metric aggregation query failed or returned error"
+        echo "Response: $query_result"
+        return 1
+    fi
 
     echo "Metric aggregation test completed."
 }

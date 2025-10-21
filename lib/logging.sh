@@ -160,13 +160,17 @@ __log_build_json() {
     local timestamp="$(__log_get_timestamp)"
     local json_message="$(__log_json_escape "$message")"
 
+    local escaped_service="$(__log_json_escape "$HOMELAB_SERVICE")"
+    local escaped_environment="$(__log_json_escape "$HOMELAB_ENVIRONMENT")"
+    local escaped_version="$(__log_json_escape "$HOMELAB_VERSION")"
+
     local root_fields=(
         "\"timestamp\":\"$timestamp\""
         "\"level\":\"$level\""
         "\"message\":\"$json_message\""
-        "\"service\":\"$HOMELAB_SERVICE\""
-        "\"environment\":\"$HOMELAB_ENVIRONMENT\""
-        "\"version\":\"$HOMELAB_VERSION\""
+        "\"service\":\"$escaped_service\""
+        "\"environment\":\"$escaped_environment\""
+        "\"version\":\"$escaped_version\""
         "\"category\":\"application\""
         "\"event_id\":\"$event_id\""
     )
