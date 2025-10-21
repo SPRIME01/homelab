@@ -19,6 +19,13 @@
             },
             "outputs": []
         },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "./tests/test_vector_logger.sh && ./tests/test_vector_logger_failure.sh && ./tests/test_vector_logger_otlp.sh"
+            },
+            "outputs": []
+        },
         "build": {
             "executor": "nx:run-commands",
             "options": {

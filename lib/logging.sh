@@ -324,9 +324,18 @@ __log() {
         # Try to send to Vector, fail gracefully
         if command -v curl >/dev/null 2>&1; then
             # Use configurable endpoint with sensible timeout/exit-on-failure flags
-            local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:8682/ingest}"
-            local curl_output=""
-            if ! curl_output="$(printf '%s' "$json_output" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
+                    # Default to Vector's OTLP HTTP logs endpoint. Allow override via HOMELAB_VECTOR_ENDPOINT.
+                    # Vector is configured in ops/vector/vector.toml to accept OTLP HTTP on :4318 and parse JSON from
+                    # the top-level `.message` or `.body` fields. To ensure Vector's `parse_json(.message)` succeeds,
+                    # we wrap the structured log JSON as a string value under the `message` key.
+                    local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:4318/v1/logs}"
+                    local curl_output=""
+                    # Build wrapper payload: {"message":"<json_output as escaped string>"}
+                    local escaped_payload
+                    # __log_json_escape expects its value as an argument (not on stdin), so pass json_output directly.
+                    escaped_payload="$(__log_json_escape "$json_output")"
+                    local wrapper="{\"message\":\"${escaped_payload}\"}"
+                    if ! curl_output="$(printf '%s' "$wrapper" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
                 echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2
                 if [ -n "$curl_output" ]; then
                     echo "$curl_output" >&2

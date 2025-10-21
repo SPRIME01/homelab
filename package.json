@@ -2,7 +2,11 @@
   "name": "@temp-nx/source",
   "version": "0.1.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "test": "npx nx run-many --target=test --all",
+    "test:logging": "nx run logging:test",
+    "test:logging:direct": "./tests/test_vector_logger.sh && ./tests/test_vector_logger_failure.sh && ./tests/test_vector_logger_otlp.sh"
+  },
   "private": true,
   "dependencies": {
     "empty": "0.10.1",

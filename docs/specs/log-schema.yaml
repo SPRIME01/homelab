@@ -56,8 +56,8 @@ required_fields:
 
   - name: "trace_id"
     type: "string"
-    description: "OpenTelemetry trace identifier for distributed tracing"
-    example: "4f3a8f9d2f8d4f1c"
+    description: "OpenTelemetry trace identifier for distributed tracing (16 bytes / 32 hex chars)"
+    example: "4f3a8f9d2f8d4f1c7a1d3c92f6ab2e11"
 
   - name: "span_id"
     type: "string"
@@ -185,8 +185,8 @@ validation_rules:
     pattern: "^[a-z0-9-]+-\\d+$"
 
   - rule: "trace_id_format"
-    description: "Trace ID must be a 16-character hexadecimal string"
-    pattern: "^[a-f0-9]{16}$"
+    description: "Trace ID must be a 32-character hexadecimal string (16 bytes in hex)"
+    pattern: "^[a-f0-9]{32}$"
 
   - rule: "span_id_format"
     description: "Span ID must be a 16-character hexadecimal string"
