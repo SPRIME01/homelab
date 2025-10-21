@@ -43,27 +43,48 @@ type = "remap"
 inputs = ["parse_json"]
 source = """
 # Redact email addresses
-.email = replace(.email, /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/, "REDACTED_EMAIL")
+.if is_string(.email) {
+  .email = replace(.email, /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/, "REDACTED_EMAIL")
+}
 
-# Redact access tokens
+# Redact access tokens (guard if string)
 if exists(.access_token) {
-  .access_token = "REDACTED_TOKEN"
+  if is_string(.access_token) {
+    .access_token = "REDACTED_TOKEN"
+  } else {
+    # Non-string tokens: replace with generic placeholder
+    .access_token = "REDACTED_TOKEN"
+  }
 }
 
-# Redact API keys
+# Redact API keys (guard if string)
 if exists(.api_key) {
-  .api_key = "REDACTED_KEY"
+  if is_string(.api_key) {
+    .api_key = "REDACTED_KEY"
+  } else {
+    .api_key = "REDACTED_KEY"
+  }
 }
 
-# Redact session identifiers
+# Redact session identifiers (guard if string)
 if exists(.session_id) {
-  .session_id = "REDACTED_SESSION"
+  if is_string(.session_id) {
+    .session_id = "REDACTED_SESSION"
+  } else {
+    .session_id = "REDACTED_SESSION"
+  }
 }
 
 # Redact any field containing 'token', 'key', 'secret', or 'password'
 for_each(object_keys(.)) -> |key| {
+  # Only attempt to redact if the key name matches sensitive substrings
   if contains(string!(key), "token") || contains(string!(key), "key") || contains(string!(key), "secret") || contains(string!(key), "password") {
-    .[key] = "REDACTED_SENSITIVE"
+    # If the value is a string, redact it; otherwise replace with a placeholder
+    if is_string(.[key]) {
+      .[key] = "REDACTED_SENSITIVE"
+    } else {
+      .[key] = "REDACTED_SENSITIVE"
+    }
   }
 }
 
