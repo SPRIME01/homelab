@@ -26,7 +26,7 @@
     "log-smoke": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node tools/logging/node/test.js"
+        "command": "node tools/logging/test_node_logger.js"
       }
     },
     "deploy": {
