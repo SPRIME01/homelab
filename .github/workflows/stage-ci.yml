@@ -69,6 +69,8 @@ jobs:
           echo "Added $HOME/.local/bin to PATH"
       - name: Lint
         run: npx nx run-many --target=lint --all
+      - name: Set UV_CACHE_DIR
+        run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
       - name: Test
         run: npx nx run-many --target=test --all
       - name: Build
