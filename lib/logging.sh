@@ -74,25 +74,38 @@ __log_get_version() {
 # Generate a monotonic event ID
 __log_generate_event_id() {
     HOMELAB_EVENT_ID_COUNTER=$((HOMELAB_EVENT_ID_COUNTER + 1))
-    timestamp_ms=$(date +%s%3N)
+    local timestamp_ms=""
+
+    if command -v python3 >/dev/null 2>&1; then
+        timestamp_ms="$(python3 -c 'import time; print(int(time.time() * 1000))' 2>/dev/null)"
+    fi
+
+    if [ -z "$timestamp_ms" ]; then
+        if timestamp_ms="$(date +%s%3N 2>/dev/null)"; then
+            :
+        else
+            local seconds
+            seconds="$(date +%s 2>/dev/null || printf '0')"
+            timestamp_ms="$((seconds * 1000))"
+        fi
+    fi
+
     echo "evt_${timestamp_ms}_${HOMELAB_EVENT_ID_COUNTER}"
 }
 
 # Get ISO-8601 UTC timestamp
 __log_get_timestamp() {
-    # Try Python for UTC ISO8601 with milliseconds first
+    local gnu_timestamp
+    if gnu_timestamp="$(date -u +"%Y-%m-%dT%H:%M:%S.%3NZ" 2>/dev/null)"; then
+        echo "$gnu_timestamp"
+        return 0
+    fi
+
     if command -v python3 >/dev/null 2>&1; then
         python3 -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z")' 2>/dev/null && return 0
     fi
 
-    # Fallback to date command
-    # Try to use date with GNU format, fallback to BSD format
-    if date -u +"%Y-%m-%dT%H:%M:%S.%3NZ" 2>/dev/null; then
-        return 0
-    else
-        # BSD date format (macOS) - safe ISO8601 without milliseconds
-        date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null
-    fi
+    date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null
 }
 
 # Escape JSON string
@@ -101,18 +114,39 @@ __log_json_escape() {
 
     # Try jq first (most reliable)
     if command -v jq >/dev/null 2>&1; then
-        echo -n "$str" | jq -Rs . 2>/dev/null | sed 's/^"//;s/"$//' && return 0
+        printf '%s' "$str" | jq -Rs . 2>/dev/null | sed 's/^"//;s/"$//' | tr -d '\n' && return 0
     fi
 
     # Try python3 next
     if command -v python3 >/dev/null 2>&1; then
-        echo -n "$str" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()), end="")' 2>/dev/null | sed 's/^"//;s/"$//' && return 0
+        printf '%s' "$str" | python3 - 2>/dev/null <<'PY'
+import json
+import sys
+
+value = sys.stdin.read()
+encoded = json.dumps(value, ensure_ascii=False)
+sys.stdout.write(encoded[1:-1])
+PY
+        return 0
     fi
 
-    # Fallback to comprehensive sed/perl escape
-    # Escape backslashes first, then quotes, then control characters
-    echo -n "$str" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\r' | sed 's/\\n$//' | \
-    sed 's/\t/\\t/g; s/\b/\\b/g; s/\f/\\f/g; s/\r/\\r/g'
+    # Fallback: use perl for comprehensive escaping of control characters
+    if command -v perl >/dev/null 2>&1; then
+        printf '%s' "$str" | perl -C -0pe '
+            s/\\/\\\\/g;
+            s/"/\\"/g;
+            s/\t/\\t/g;
+            s/\r/\\r/g;
+            s/\n/\\n/g;
+            s/\f/\\f/g;
+            s/\b/\\b/g;
+            s/([\x00-\x1F])/sprintf("\\u%04x", ord($1))/ge;
+        ' | tr -d '\n'
+        return 0
+    fi
+
+    # Last resort: minimal POSIX escaping
+    printf '%s' "$str" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e $'s/\t/\\\\t/g' -e $'s/\r/\\\\r/g' -e $'s/\n/\\\\n/g' | tr -d '\n'
 }
 
 # Build JSON log entry
@@ -126,20 +160,19 @@ __log_build_json() {
     local timestamp="$(__log_get_timestamp)"
     local json_message="$(__log_json_escape "$message")"
 
-    # Start building JSON
-    local json="{"
-    json+="\"timestamp\":\"$timestamp\","
-    json+="\"level\":\"$level\","
-    json+="\"message\":\"$json_message\","
-    json+="\"service\":\"$HOMELAB_SERVICE\","
-    json+="\"environment\":\"$HOMELAB_ENVIRONMENT\","
-    json+="\"version\":\"$HOMELAB_VERSION\","
-    json+="\"category\":\"application\","
-    json+="\"event_id\":\"$event_id\","
-    json+="\"context\":{}"
+    local root_fields=(
+        "\"timestamp\":\"$timestamp\""
+        "\"level\":\"$level\""
+        "\"message\":\"$json_message\""
+        "\"service\":\"$HOMELAB_SERVICE\""
+        "\"environment\":\"$HOMELAB_ENVIRONMENT\""
+        "\"version\":\"$HOMELAB_VERSION\""
+        "\"category\":\"application\""
+        "\"event_id\":\"$event_id\""
+    )
 
-    # Parse additional fields
-    local context_started=false
+    local context_entries=()
+
     for field in "${additional_fields[@]}"; do
         if [[ "$field" == *"="* ]]; then
             local key="${field%%=*}"
@@ -147,28 +180,42 @@ __log_build_json() {
 
             # Check if this is a root-level field
             case "$key" in
-                request_id|user_hash|source|duration_ms|status_code|tags|trace_id|span_id|category)
-                    json+=",\"$key\":\"$(__log_json_escape "$value")\""
+                category)
+                    local escaped_value="$(__log_json_escape "$value")"
+                    local replaced=false
+                    for i in "${!root_fields[@]}"; do
+                        if [[ "${root_fields[$i]}" == "\"category\":"* ]]; then
+                            root_fields[$i]="\"category\":\"$escaped_value\""
+                            replaced=true
+                            break
+                        fi
+                    done
+                    if [ "$replaced" = false ]; then
+                        root_fields+=("\"category\":\"$escaped_value\"")
+                    fi
+                    ;;
+                request_id|user_hash|source|duration_ms|status_code|tags|trace_id|span_id)
+                    root_fields+=("\"$key\":\"$(__log_json_escape "$value")\"")
                     ;;
                 *)
-                    # Add to context
-                    if [ "$context_started" = false ]; then
-                        json+=",\"context\":{"
-                        context_started=true
-                    else
-                        json+=","
-                    fi
-                    json+="\"$key\":\"$(__log_json_escape "$value")\""
+                    context_entries+=("\"$key\":\"$(__log_json_escape "$value")\"")
                     ;;
             esac
         fi
     done
 
-    if [ "$context_started" = true ]; then
-        json+="}"
+    if [ "${#context_entries[@]}" -gt 0 ]; then
+        local context_body
+        context_body="$(IFS=,; echo "${context_entries[*]}")"
+        root_fields+=("\"context\":{${context_body}}")
+    else
+        root_fields+=("\"context\":{}")
     fi
 
+    local json="{"
+    json+="$(IFS=,; echo "${root_fields[*]}")"
     json+="}"
+
     echo "$json"
 }
 
@@ -259,24 +306,28 @@ __log() {
     # Generate event ID
     local event_id="$(__log_generate_event_id)"
 
+    local json_output="$(__log_build_json "$level" "$message" "$event_id" "${additional_fields[@]}")"
+
     # Output based on target
     if [ "$HOMELAB_USE_PRETTY_PRINT" = true ]; then
         __log_build_pretty "$level" "$message" "$event_id" "${additional_fields[@]}"
     else
-        __log_build_json "$level" "$message" "$event_id" "${additional_fields[@]}"
+        echo "$json_output"
     fi
 
     # Route to Vector if needed
     if [ "$HOMELAB_LOG_TARGET" = "vector" ]; then
-        local json_output="$(__log_build_json "$level" "$message" "$event_id" "${additional_fields[@]}")"
         # Try to send to Vector, fail gracefully
         if command -v curl >/dev/null 2>&1; then
             # Use configurable endpoint with sensible timeout/exit-on-failure flags
             local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:8682/ingest}"
-            echo "$json_output" | curl -sS --connect-timeout 5 --max-time 10 --fail -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1 || {
-                # Log the failure but don't exit
+            local curl_output=""
+            if ! curl_output="$(printf '%s' "$json_output" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
                 echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2
-            } &
+                if [ -n "$curl_output" ]; then
+                    echo "$curl_output" >&2
+                fi
+            fi
         fi
     fi
 }

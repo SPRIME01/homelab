@@ -59,69 +59,77 @@ logger.withSpan(
   }
 );
 
-// HTTP request/response logging
-app.use((req, res, next) => {
-  const start = Date.now();
-
+// HTTP request/response logging with cleanup and error handling
+const safely = (label, fn) => {
   try {
-    logger.logRequest(req);
-  } catch (error) {
-    console.error('Failed to log request:', error);
-  }
-
-  // Listen for both 'finish' and 'close' events
-  const logResponse = () => {
-    try {
-      const duration = Date.now() - start;
-      logger.logResponse(req, res, duration);
-    } catch (error) {
-      console.error('Failed to log response:', error);
+    const result = fn();
+    if (result && typeof result.then === 'function') {
+      result.catch((error) => console.error(`Failed to ${label}:`, error));
     }
+  } catch (error) {
+    console.error(`Failed to ${label}:`, error);
+  }
+};
+
+app.use((req, res, next) => {
+  const startedAt = process.hrtime.bigint();
+
+  safely('log request', () => logger.logRequest(req));
+
+  const cleanup = () => {
+    res.removeListener('finish', onFinish);
+    res.removeListener('close', onClose);
+    res.removeListener('error', onError);
   };
 
-  res.on('finish', logResponse);
-  res.on('close', logResponse);
+  const onFinish = () => {
+    safely('log response', () => {
+      const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+      return logger.logResponse(req, res, durationMs);
+    });
+    cleanup();
+  };
 
-  // Handle stream errors
-  res.on('error', (error) => {
-    console.error('Response stream error:', error);
-    try {
-      logger.logError(error, {
+  const onClose = () => {
+    safely('log aborted response', () => {
+      const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+      return logger.logResponse(req, res, durationMs, { event: 'connection-closed' });
+    });
+    cleanup();
+  };
+
+  const onError = (streamError) => {
+    safely('log stream error', () =>
+      logger.logError(streamError, {
         request_id: req.id,
         context: {
           method: req.method,
           url: req.url
         }
-      });
-    } catch (logError) {
-      console.error('Failed to log stream error:', logError);
-    }
-  });
+      })
+    );
+    cleanup();
+  };
 
-  // Clean up listeners to prevent memory leaks
-  res.on('finish', () => {
-    res.removeListener('finish', logResponse);
-    res.removeListener('close', logResponse);
-  });
+  res.once('finish', onFinish);
+  res.once('close', onClose);
+  res.once('error', onError);
 
   next();
 });
 
-// Error handling middleware to pair with request logging
+// Error handling middleware paired with the request logger
 app.use((error, req, res, next) => {
-  try {
+  safely('log handler error', () =>
     logger.logError(error, {
       request_id: req.id,
       context: {
         method: req.method,
         url: req.url
       }
-    });
-  } catch (logError) {
-    console.error('Failed to log error:', logError);
-  }
+    })
+  );
 
-  // Continue with your error handling
   res.status(500).json({ error: 'Internal server error' });
 });
 
@@ -133,6 +141,8 @@ try {
 }
 ```
 
+The `cleanup()` helper removes listeners after each request to prevent leaks, and the `safely()` wrapper surfaces failed log writes via `console.error`—swap this with a retry queue or alerting hook if you need stronger durability guarantees.
+
 ## Configuration
 
 The logger reads configuration from the following environment variables:
@@ -141,6 +151,7 @@ The logger reads configuration from the following environment variables:
 - `HOMELAB_ENVIRONMENT`: The environment (default: 'development')
 - `HOMELAB_LOG_TARGET`: The log target (default: 'stdout')
 - `HOMELAB_LOG_LEVEL`: The log level (default: 'info')
+- `SERVICE_VERSION`: Service version injected by CI/CD (fallback reads package.json)
 
 ## Log Schema
 

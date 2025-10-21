@@ -159,6 +159,8 @@ roles = ["write"]
 
 ## Environment Configurations
 
+> 🚨 **SECURITY WARNING**: Never commit credentials or plaintext secrets (for example `OPENOBSERVE_USER`, `OPENOBSERVE_PASSWORD`, `GREPTIMEDB_USER`, `GREPTIMEDB_PASSWORD`). Always load them from a managed secret store in your runtime or CI/CD pipeline, rotate them regularly, and audit access.
+
 ### Development Environment
 
 ```bash
@@ -332,6 +334,28 @@ healthcheck = true
 
 ```javascript
 // In tools/logging/node/logger.js
+const fs = require('fs');
+const path = require('path');
+
+function resolveServiceVersion() {
+  if (process.env.SERVICE_VERSION) {
+    return process.env.SERVICE_VERSION;
+  }
+
+  try {
+    const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      const raw = fs.readFileSync(packageJsonPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      return parsed.version || '0.0.0';
+    }
+  } catch (error) {
+    // Fallback handled below
+  }
+
+  return '0.0.0';
+}
+
 const logger = require('pino')({
   level: process.env.LOG_LEVEL || 'info',
   formatters: {
@@ -344,13 +368,7 @@ const logger = require('pino')({
         message: object.msg,
         service: process.env.HOMELAB_SERVICE || 'unknown',
         environment: process.env.HOMELAB_ENVIRONMENT || 'unknown',
-        version: process.env.SERVICE_VERSION || (() => {
-          try {
-            return require('../../../package.json').version;
-          } catch (error) {
-            return '0.0.0';
-          }
-        })(),
+        version: resolveServiceVersion(),
         category: object.category || 'app',
         event_id: `${process.env.HOMELAB_SERVICE || 'unknown'}-${process.pid}-${Math.random().toString(36).substr(2, 9)}`,
         trace_id: object.traceId,
@@ -366,18 +384,14 @@ const logger = require('pino')({
       options: {
         url: process.env.VECTOR_ENDPOINT || 'http://localhost:4317',
         serviceName: process.env.HOMELAB_SERVICE,
-        serviceVersion: process.env.SERVICE_VERSION || (() => {
-          try {
-            return require('../../../package.json').version;
-          } catch (error) {
-            return '0.0.0';
-          }
-        })()
+        serviceVersion: resolveServiceVersion()
       }
     }
   })
 });
 ```
+
+When running in CI/CD, export `SERVICE_VERSION` alongside the package artifacts so downstream services (Vector, OpenTelemetry exporters, etc.) can trust consistent version metadata. Local development shells should source `SERVICE_VERSION` via `.env` or the environment loader script instead of calling `require('../../../package.json')` directly.
 
 ### Python Client Configuration
 

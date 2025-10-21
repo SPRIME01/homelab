@@ -270,8 +270,10 @@ test_sink_wiring() {
         "inputs = \[\"add_metadata\"\]" "OpenObserve sink is wired to add_metadata transform"
 
     # GreptimeDB should receive from extract_metrics
-    assert_contains "$(grep -A 5 '\[sinks.greptimedb\]' "$VECTOR_CONFIG_FILE")" \
-        "inputs = \[\"extract_metrics\"\]" "GreptimeDB sink is wired to extract_metrics transform"
+    local greptimedb_inputs
+    greptimedb_inputs="$(grep -A 5 '\[sinks.greptimedb\]' "$VECTOR_CONFIG_FILE")"
+    assert_contains "$greptimedb_inputs" "\"extract_metrics\"" "GreptimeDB sink consumes metrics extracted from logs"
+    assert_contains "$greptimedb_inputs" "\"internal_metrics\"" "GreptimeDB sink consumes Vector internal metrics"
 
     # Stdout should receive from add_metadata
     assert_contains "$(grep -A 5 '\[sinks.stdout\]' "$VECTOR_CONFIG_FILE")" \

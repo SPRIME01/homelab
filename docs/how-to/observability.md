@@ -129,6 +129,8 @@ pkill -SIGKILL -f "/usr/local/bin/vector"
    vector tap --config ops/vector/vector.toml --inputs-of otlp_logs --input test.json
    ```
 
+   > ℹ️ The `vector tap` command requires the Vector API to be enabled; ensure the `[api]` section is configured in `ops/vector/vector.toml` and points to an accessible address.
+
 3. Apply changes with rolling restart:
    ```bash
    # For production environments with multiple Vector instances

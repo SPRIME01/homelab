@@ -19,6 +19,49 @@ GREPTIMEDB_PROMETHEUS="http://localhost:4000/v1/prometheus"
 TESTS_RUN=0
 TESTS_PASSED=0
 
+json_escape() {
+    local value="$1"
+
+    if command -v jq >/dev/null 2>&1; then
+        jq -Rs . <<<"$value" 2>/dev/null | sed 's/^"//;s/"$//' | tr -d '\n' && return 0
+    fi
+
+    if command -v perl >/dev/null 2>&1; then
+        printf '%s' "$value" | perl -0pe '
+            s/\\/\\\\/g;
+            s/"/\\"/g;
+            s/\t/\\t/g;
+            s/\r/\\r/g;
+            s/\n/\\n/g;
+            s/\f/\\f/g;
+            s/\b/\\b/g;
+            s/([\x00-\x1F])/sprintf("\\u%04x", ord($1))/ge;
+        ' | tr -d '\n'
+        return 0
+    fi
+
+    printf '%s' "$value" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e $'s/\t/\\\\t/g' -e $'s/\r/\\\\r/g' -e $'s/\n/\\\\n/g' | tr -d '\n'
+}
+
+get_timestamp_ns() {
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - <<'PY'
+import time
+print(time.time_ns())
+PY
+        return 0
+    fi
+
+    if timestamp="$(date +%s%N 2>/dev/null)"; then
+        echo "$timestamp"
+        return 0
+    fi
+
+    local seconds
+    seconds="$(date +%s 2>/dev/null || printf '0')"
+    echo "${seconds}000000000"
+}
+
 # Helper functions for testing
 assert_contains() {
     local actual="$1"
@@ -83,13 +126,16 @@ send_metric_log() {
 
     # Construct JSON safely using jq to avoid injection issues
     local json_payload
+    local timestamp_ns
+    timestamp_ns="$(get_timestamp_ns)"
+
     if command -v jq >/dev/null 2>&1; then
         json_payload=$(jq -n \
             --arg service "$service" \
             --arg metric_name "$metric_name" \
             --arg metric_value "$metric_value" \
             --arg metric_unit "$metric_unit" \
-            --arg timestamp "$(date +%s%N)" \
+            --arg timestamp "$timestamp_ns" \
             '{
                 resourceLogs: [{
                     resource: {
@@ -117,34 +163,78 @@ send_metric_log() {
                     }]
                 }]
             }')
+    elif command -v python3 >/dev/null 2>&1; then
+        json_payload=$(python3 - "$service" "$metric_name" "$metric_value" "$metric_unit" "$timestamp_ns" <<'PY'
+import json
+import sys
+
+service, metric_name, metric_value, metric_unit, timestamp = sys.argv[1:6]
+
+payload = {
+    "resourceLogs": [{
+        "resource": {
+            "attributes": [{
+                "key": "service.name",
+                "value": {"stringValue": service}
+            }]
+        },
+        "scopeLogs": [{
+            "scope": {},
+            "logRecords": [{
+                "timeUnixNano": timestamp,
+                "severityNumber": 9,
+                "severityText": "INFO",
+                "body": {
+                    "stringValue": f"Metric: {metric_name}={metric_value} {metric_unit}"
+                },
+                "attributes": [
+                    {"key": "metric_name", "value": {"stringValue": metric_name}},
+                    {"key": "metric_value", "value": {"stringValue": metric_value}},
+                    {"key": "metric_unit", "value": {"stringValue": metric_unit}},
+                    {"key": "metric_type", "value": {"stringValue": "counter"}}
+                ]
+            }]
+        }]
+    }]
+}
+
+print(json.dumps(payload))
+PY
+)
     else
-        # Fallback to manual JSON construction (less safe)
+        # Fallback to manual JSON construction with basic escaping
+        local esc_service esc_name esc_value esc_unit
+        esc_service="$(json_escape "$service")"
+        esc_name="$(json_escape "$metric_name")"
+        esc_value="$(json_escape "$metric_value")"
+        esc_unit="$(json_escape "$metric_unit")"
+
         json_payload="{
             \"resourceLogs\": [{
                 \"resource\": {
                     \"attributes\": [{
                         \"key\": \"service.name\",
-                        \"value\": {\"stringValue\": \"$service\"}
+                        \"value\": {\"stringValue\": \"$esc_service\"}
                     }]
                 },
                 \"scopeLogs\": [{
                     \"scope\": {},
                     \"logRecords\": [{
-                        \"timeUnixNano\": \"$(date +%s%N)\",
+                        \"timeUnixNano\": \"$timestamp_ns\",
                         \"severityNumber\": 9,
                         \"severityText\": \"INFO\",
                         \"body\": {
-                            \"stringValue\": \"Metric: $metric_name=$metric_value $metric_unit\"
+                            \"stringValue\": \"Metric: $esc_name=$esc_value $esc_unit\"
                         },
                         \"attributes\": [{
                             \"key\": \"metric_name\",
-                            \"value\": {\"stringValue\": \"$metric_name\"}
+                            \"value\": {\"stringValue\": \"$esc_name\"}
                         }, {
                             \"key\": \"metric_value\",
-                            \"value\": {\"stringValue\": \"$metric_value\"}
+                            \"value\": {\"stringValue\": \"$esc_value\"}
                         }, {
                             \"key\": \"metric_unit\",
-                            \"value\": {\"stringValue\": \"$metric_unit\"}
+                            \"value\": {\"stringValue\": \"$esc_unit\"}
                         }, {
                             \"key\": \"metric_type\",
                             \"value\": {\"stringValue\": \"counter\"}
@@ -155,10 +245,14 @@ send_metric_log() {
         }"
     fi
 
-    curl -sS --connect-timeout 5 --max-time 10 --fail \
+    if ! printf '%s' "$json_payload" | curl -sS --connect-timeout 2 --max-time 5 --fail \
         -X POST "$VECTOR_OTLP_HTTP/v1/logs" \
         -H "Content-Type: application/json" \
-        -d "$json_payload" > /dev/null
+        --data-binary @- > /dev/null; then
+        echo "❌ Failed to send metric payload to Vector" >&2
+        TESTS_FAILED=true
+        return 1
+    fi
 
     echo "✅ Sent metric: $metric_name"
 }
