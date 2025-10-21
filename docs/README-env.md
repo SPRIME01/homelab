@@ -234,7 +234,9 @@ To reset environment to default values:
 
 ```bash
 # Clear all HOMELAB_* variables
-unset $(env | grep HOMELAB_ | cut -d= -f1)
+for var in $(env | grep HOMELAB_ | cut -d= -f1); do
+  unset "$var"
+done
 
 # Reload environment
 source lib/env-loader.sh
