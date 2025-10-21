@@ -1,13 +1,7 @@
 {
   "version": 2,
   "projects": {
-    "env-check": "apps/env-check"
-  },
-  "targets": {
-    "logging": {
-      "executor": "./tools/tasks/logging-check.js",
-      "outputs": [],
-      "options": {}
-    }
+    "env-check": "apps/env-check",
+    "logging": "tools"
   }
 }

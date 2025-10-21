@@ -1,8 +1,8 @@
 ---
 description: Transform high-level intents into execution-grade agent prompts by analyzing the codebase and auto-filling all specification fields. Read-only scan first; propose precise plans with files, paths, tests, and risks.
-tools: ['workspace', 'codebase search', 'file read', 'symbol lookup']
-agent: GitHub Copilot Chat (VS Code)
-output_location: '.tmp/aiprompts/{timestamp}-{task-slug}.yaml'
+tools: ['search', 'Nx Mcp Server/*', 'Exa Search/*', 'Memory Tool/*', 'Context7/*', 'Ref/*', 'todos', 'usages', 'think']
+model: GPT-5 mini (copilot)
+
 ---
 
 # Intent Translator — Operating Rules for GitHub Copilot

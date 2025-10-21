@@ -58,7 +58,7 @@ const OPTIONAL_ROOT_FIELDS = [
 
 const RESERVED_FIELDS = new Set([
   'level',
-  'msg',
+  'msg',  // Pino's default message field (we renamed to 'message' via messageKey)
   'message',
   'timestamp',
   'service',
@@ -144,59 +144,55 @@ function serializeError(error) {
 }
 
 function buildLogEntry(object) {
-  const messageValue =
-    object.msg !== undefined
-      ? object.msg
-      : object.message !== undefined
-        ? object.message
-        : object[MESSAGE_FIELD];
+  // Message is now in 'message' field due to messageKey configuration
+  const messageValue = object.message !== undefined ? object.message : object[MESSAGE_FIELD] || '';
 
-  const entry = {
-    timestamp: new Date().toISOString(),
-    level: object.level,
-    message: messageValue !== undefined ? messageValue : '',
-    service: object.service || config.service,
-    environment: object.environment || config.environment,
-    version: object.version || config.version,
-    category: object.category || 'application',
-    event_id: object.event_id || generateEventId(),
-    trace_id: object.trace_id,
-    span_id: object.span_id,
-    context: {}
-  };
+  // Build the structured log entry by modifying the object in place
+  object.timestamp = new Date().toISOString();
+  object.message = messageValue;
+  object.service = object.service || config.service;
+  object.environment = object.environment || config.environment;
+  object.version = object.version || config.version;
+  object.category = object.category || 'application';
+  object.event_id = object.event_id || generateEventId();
 
+  // Handle optional root fields
   for (const field of OPTIONAL_ROOT_FIELDS) {
-    if (object[field] !== undefined) {
-      entry[field] = object[field];
+    if (object[field] === undefined) {
+      delete object[field];
     }
   }
 
-  if (object.context && typeof object.context === 'object') {
-    entry.context = { ...object.context };
+  // Initialize context if not present
+  if (!object.context || typeof object.context !== 'object') {
+    object.context = {};
   }
 
-  for (const key of Object.keys(object)) {
-    if (RESERVED_FIELDS.has(key)) {
-      continue;
+  // Move non-reserved fields to context
+  const contextKeys = Object.keys(object).filter(
+    key => !RESERVED_FIELDS.has(key) && key !== MESSAGE_FIELD && key !== 'context'
+  );
+  
+  for (const key of contextKeys) {
+    if (object[key] !== undefined) {
+      object.context[key] = object[key];
+      delete object[key];
     }
-    const value = object[key];
-    if (value !== undefined) {
-      entry.context[key] = value;
-    }
   }
 
-  if (!entry.context || Object.keys(entry.context).length === 0) {
-    entry.context = {};
+  // Clean up trace/span if undefined
+  if (object.trace_id === undefined) {
+    delete object.trace_id;
+  }
+  if (object.span_id === undefined) {
+    delete object.span_id;
   }
 
-  if (entry.trace_id === undefined) {
-    delete entry.trace_id;
-  }
-  if (entry.span_id === undefined) {
-    delete entry.span_id;
-  }
+  // Explicitly delete the internal message field used by wrapped methods
+  delete object[MESSAGE_FIELD];
+  delete object.msg;  // Clean up any lingering msg field
 
-  return entry;
+  return object;
 }
 
 const LEVEL_COLORS = {
@@ -375,6 +371,7 @@ const baseLogger = pino(
     level: config.logLevel,
     base: null,
     timestamp: false,
+    messageKey: 'message',  // Rename Pino's default 'msg' field to 'message'
     formatters: {
       level: (label) => ({ level: label }),
       bindings: () => ({}),

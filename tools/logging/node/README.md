@@ -153,6 +153,17 @@ The logger reads configuration from the following environment variables:
 - `HOMELAB_LOG_LEVEL`: The log level (default: 'info')
 - `SERVICE_VERSION`: Service version injected by CI/CD (fallback reads package.json)
 
+### Internal Implementation Notes
+
+The logger is built on Pino with custom formatters to enforce the Homelab log schema:
+
+- **messageKey**: Set to `'message'` instead of Pino's default `'msg'` to match the schema
+- **formatters.log**: Transforms Pino's log object to add required fields (timestamp, service, environment, etc.) and moves non-reserved fields into a `context` object
+- **formatters.level**: Outputs the level as a string label (e.g., `"info"`) instead of Pino's default numeric value
+- **formatters.bindings**: Returns an empty object to exclude Pino's default bindings (pid, hostname) from the output
+
+The logger uses a custom `MESSAGE_FIELD` symbol (`__structured_message`) internally to distinguish between the user-provided message and Pino's internal message handling, ensuring clean output that matches the schema.
+
 ## Log Schema
 
 All log entries include the following required fields:
