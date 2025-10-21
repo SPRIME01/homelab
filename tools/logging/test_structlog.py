@@ -112,18 +112,42 @@ try:
 
         try:
             # Run the Node.js script
-            result = subprocess.run(
-                ['node', temp_script],
-                cwd=os.path.dirname(os.path.abspath(__file__)),
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
+            try:
+                result = subprocess.run(
+                    ['node', temp_script],
+                    cwd=os.path.dirname(os.path.abspath(__file__)),
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+            except FileNotFoundError:
+                raise Exception("Node.js is not installed or not in PATH")
+            except subprocess.TimeoutExpired:
+                raise Exception("Node.js script timed out after 10 seconds")
+
+            # Check return code and surface stderr if non-zero
+            if result.returncode != 0:
+                error_msg = f"Node.js script failed with exit code {result.returncode}"
+                if result.stderr:
+                    error_msg += f"\nStderr: {result.stderr}"
+                if result.stdout:
+                    error_msg += f"\nStdout: {result.stdout}"
+                raise Exception(error_msg)
 
             # Return only the JSON lines
             lines = result.stdout.strip().split('\n')
             json_lines = [line for line in lines if line.strip().startswith('{')]
-            return json_lines[0] if json_lines else ""
+
+            if not json_lines:
+                # If no JSON lines found, raise with captured output
+                error_msg = "No JSON output found from Node.js script"
+                if result.stdout:
+                    error_msg += f"\nStdout: {result.stdout}"
+                if result.stderr:
+                    error_msg += f"\nStderr: {result.stderr}"
+                raise Exception(error_msg)
+
+            return json_lines[0]
         finally:
             # Clean up
             os.unlink(temp_script)
@@ -345,28 +369,28 @@ try:
         print("🧪 Testing Node.js vs Python byte-for-byte comparison...")
         global tests_run, tests_passed
 
-        # Test data for comparison
+        # Test data for comparison - using factories that return functions to avoid closing over old logger
         test_cases = [
             {
                 "name": "Basic info log",
                 "service": "test-service",
                 "environment": "test",
                 "node_code": 'testLogger.info("Test message", { test: true });',
-                "python_code": lambda: logger.info("Test message", test=True)
+                "python_factory": lambda: lambda logger: logger.info("Test message", test=True)
             },
             {
                 "name": "Log with category",
                 "service": "test-service",
                 "environment": "test",
                 "node_code": 'testLogger.withCategory("database").info("Database operation");',
-                "python_code": lambda: LoggerUtils.with_category("database").info("Database operation")
+                "python_factory": lambda: lambda logger: LoggerUtils.with_category("database").info("Database operation")
             },
             {
                 "name": "Log with trace",
                 "service": "test-service",
                 "environment": "test",
                 "node_code": 'testLogger.withTrace("trace-123", "span-456").info("Operation with trace");',
-                "python_code": lambda: LoggerUtils.bind_trace("trace-123", "span-456").info("Operation with trace")
+                "python_factory": lambda: lambda logger: LoggerUtils.bind_trace("trace-123", "span-456").info("Operation with trace")
             }
         ]
 
@@ -385,10 +409,11 @@ try:
             import importlib
             import logger
             importlib.reload(logger)
-            from logger import logger as test_logger
+            from logger import logger as test_logger, LoggerUtils
 
-            # Get Python output
-            python_output = capture_stdout(test_case['python_code'])
+            # Get Python output using the factory with the reloaded logger
+            python_code_factory = test_case['python_factory']()
+            python_output = capture_stdout(lambda: python_code_factory(test_logger))
 
             # Parse JSON from both outputs
             node_lines = [line for line in node_output.strip().split('\n') if line.strip().startswith('{')]
@@ -413,19 +438,17 @@ try:
                             print(f"    ⚠️  {field} missing in one of the outputs")
 
                     # Compare context structure
+                    tests_run += 1  # Increment for this check
                     if 'context' in node_json and 'context' in python_json:
                         node_context_keys = set(node_json['context'].keys())
                         python_context_keys = set(python_json['context'].keys())
 
-                        if node_context_keys == python_context_keys:
+                        ok = (node_context_keys == python_context_keys)
+                        if ok:
                             print(f"    ✅ Context keys match")
+                            tests_passed += 1
                         else:
                             print(f"    ❌ Context keys differ: Node={node_context_keys}, Python={python_context_keys}")
-                            tests_run += 1
-                            tests_passed -= 1  # Adjust for the extra test run
-
-                    tests_passed += 1  # Count this as a passed test if we got here
-                    tests_run += 1
 
                 except json.JSONDecodeError as e:
                     print(f"    ❌ Failed to parse JSON: {e}")

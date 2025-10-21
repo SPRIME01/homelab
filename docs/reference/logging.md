@@ -1,6 +1,6 @@
 # Logging System Reference
 
-This reference guide provides detailed information about the logging system configuration, including port bindings, credentials, and environment-specific settings for Vector in production and staging environments.
+This reference guide provides detailed information about the logging system configuration, including port bindings, credentials, and environment-specific settings for Vector in development, staging, and production environments.
 
 ## Table of Contents
 
@@ -77,6 +77,8 @@ endpoint = "http://localhost:5080/otlp/v1/logs"
 # auth.password = "${OPENOBSERVE_PASSWORD}"
 ```
 
+> ⚠️ **SECURITY WARNING**: Credentials must never be hardcoded or committed to version control. Always source credentials from a secure secret store (e.g., HashiCorp Vault, AWS Secrets Manager, Kubernetes secrets).
+
 Environment variables:
 - `OPENOBSERVE_USER`: Username for OpenObserve (if required)
 - `OPENOBSERVE_PASSWORD`: Password for OpenObserve (if required)
@@ -93,6 +95,8 @@ endpoint = "http://localhost:4000/v1/prometheus/write"
 # auth.user = "${GREPTIMEDB_USER}"
 # auth.password = "${GREPTIMEDB_PASSWORD}"
 ```
+
+> ⚠️ **SECURITY WARNING**: Credentials must never be hardcoded or committed to version control. Always source credentials from a secure secret store (e.g., HashiCorp Vault, AWS Secrets Manager, Kubernetes secrets).
 
 Environment variables:
 - `GREPTIMEDB_USER`: Username for GreptimeDB (if required)
@@ -113,7 +117,7 @@ auth: {
 
   # Default admin user (created on first start)
   root_user: "admin",
-  root_password: "complexpassword123",
+  root_password: "CHANGE_THIS_STRONG_PASSWORD",  # Use a strong, unique password
 
   # JWT settings (if using JWT)
   jwt_secret: "${JWT_SECRET}",
@@ -151,6 +155,8 @@ password_hash = "hashed_password"
 roles = ["write"]
 ```
 
+> ⚠️ **SECURITY WARNING**: Credentials must never be hardcoded or committed to version control. Always source credentials from a secure secret store (e.g., HashiCorp Vault, AWS Secrets Manager, Kubernetes secrets).
+
 ## Environment Configurations
 
 ### Development Environment
@@ -161,6 +167,7 @@ export HOMELAB_OBSERVE=1
 export HOMELAB_LOG_TARGET=vector
 export HOMELAB_ENVIRONMENT=developer-shell
 export ENVIRONMENT=development
+export VECTOR_ENDPOINT="http://localhost:4317"
 
 # Vector configuration uses default ports
 # OpenObserve: http://localhost:5080
@@ -179,6 +186,7 @@ export ENVIRONMENT=staging
 # Staging-specific endpoints
 export OPENOBSERVE_ENDPOINT="https://logs-staging.example.com"
 export GREPTIMEDB_ENDPOINT="https://metrics-staging.example.com"
+export VECTOR_ENDPOINT="https://vector-staging.example.com:4317"
 export OPENOBSERVE_USER="${OBSERVE_STAGING_USER}"
 export OPENOBSERVE_PASSWORD="${OBSERVE_STAGING_PASSWORD}"
 export GREPTIMEDB_USER="${GREPTIME_STAGING_USER}"
@@ -240,6 +248,7 @@ export ENVIRONMENT=production
 # Production-specific endpoints
 export OPENOBSERVE_ENDPOINT="https://logs.example.com"
 export GREPTIMEDB_ENDPOINT="https://metrics.example.com"
+export VECTOR_ENDPOINT="https://vector.example.com:4317"
 export OPENOBSERVE_USER="${OBSERVE_PROD_USER}"
 export OPENOBSERVE_PASSWORD="${OBSERVE_PROD_PASSWORD}"
 export GREPTIMEDB_USER="${GREPTIME_PROD_USER}"
@@ -335,7 +344,13 @@ const logger = require('pino')({
         message: object.msg,
         service: process.env.HOMELAB_SERVICE || 'unknown',
         environment: process.env.HOMELAB_ENVIRONMENT || 'unknown',
-        version: require('../../../package.json').version,
+        version: process.env.SERVICE_VERSION || (() => {
+          try {
+            return require('../../../package.json').version;
+          } catch (error) {
+            return '0.0.0';
+          }
+        })(),
         category: object.category || 'app',
         event_id: `${process.env.HOMELAB_SERVICE || 'unknown'}-${process.pid}-${Math.random().toString(36).substr(2, 9)}`,
         trace_id: object.traceId,
@@ -349,9 +364,15 @@ const logger = require('pino')({
     transport: {
       target: 'pino-opentelemetry-transport',
       options: {
-        url: 'http://localhost:4317',
+        url: process.env.VECTOR_ENDPOINT || 'http://localhost:4317',
         serviceName: process.env.HOMELAB_SERVICE,
-        serviceVersion: require('../../../package.json').version
+        serviceVersion: process.env.SERVICE_VERSION || (() => {
+          try {
+            return require('../../../package.json').version;
+          } catch (error) {
+            return '0.0.0';
+          }
+        })()
       }
     }
   })

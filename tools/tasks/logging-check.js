@@ -62,13 +62,16 @@ function checkRequiredFiles() {
 function checkNodeLogger() {
   console.log("🔍 Checking Node.js logger schema...");
 
+  // Store original state
+  const originalCwd = process.cwd();
+  const originalWrite = process.stdout.write;
+
   try {
     // Test that the Node logger can be loaded
     const loggerPath = resolve(PROJECT_ROOT, "tools/logging/node/logger.js");
     const loggerDir = resolve(PROJECT_ROOT, "tools/logging/node");
 
     // Change to node logger directory to ensure relative paths work
-    const originalCwd = process.cwd();
     process.chdir(loggerDir);
 
     // Load and test the logger
@@ -78,7 +81,6 @@ function checkNodeLogger() {
     const testLogger = logger.createLogger({ category: "test" });
 
     // Capture output by temporarily hijacking console.log
-    const originalWrite = process.stdout.write;
     let logOutput = "";
     process.stdout.write = (chunk) => {
       logOutput += chunk.toString();
@@ -87,12 +89,6 @@ function checkNodeLogger() {
 
     // Log a test message
     testLogger.info("Test message", { test_field: "test_value" });
-
-    // Restore stdout
-    process.stdout.write = originalWrite;
-
-    // Restore original working directory
-    process.chdir(originalCwd);
 
     // Parse the JSON output to verify schema
     const logEntry = JSON.parse(logOutput);
@@ -105,12 +101,24 @@ function checkNodeLogger() {
       }
     }
 
+    // Check optional fields are valid if present
+    for (const field in logEntry) {
+      if (!REQUIRED_SCHEMA_FIELDS.includes(field) && !OPTIONAL_ROOT_FIELDS.includes(field)) {
+        errors.push(`Node.js logger contains unexpected field: ${field}`);
+        return false;
+      }
+    }
+
     console.log("✅ Node.js logger schema verification passed");
     return true;
 
   } catch (error) {
     errors.push(`Node.js logger schema verification failed: ${error.message}`);
     return false;
+  } finally {
+    // Always restore process state
+    process.stdout.write = originalWrite;
+    process.chdir(originalCwd);
   }
 }
 
@@ -157,8 +165,6 @@ function checkShellLogger() {
   console.log("🔍 Checking Shell logger schema...");
 
   try {
-    const testScriptPath = resolve(PROJECT_ROOT, "tools/logging/test_shell_logger.sh");
-
     // Run the shell test script to verify the logger
     const output = execSync(`bash -c "source ./lib/logging.sh && log_info 'Test message' 'test_field=value'"`, {
       cwd: PROJECT_ROOT,

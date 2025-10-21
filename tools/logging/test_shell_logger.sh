@@ -268,8 +268,22 @@ test_version_detection() {
     local output
     output=$(log_info "Version test" 2>&1)
 
+    # Get the expected version dynamically from package.json
+    local expected_version="0.0.0"
+    if [ -f "$PROJECT_ROOT/package.json" ]; then
+        if command -v jq >/dev/null 2>&1; then
+            expected_version=$(jq -r '.version // "0.0.0"' "$PROJECT_ROOT/package.json" 2>/dev/null)
+        else
+            # Fallback to grep/sed if jq is not available
+            expected_version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$PROJECT_ROOT/package.json" | sed -E 's/.*"([^"]*)".*/\1/' 2>/dev/null)
+            if [ -z "$expected_version" ]; then
+                expected_version="0.0.0"
+            fi
+        fi
+    fi
+
     # Should detect version from package.json
-    assert_contains "$output" '"version":"0.0.0"' "Detects version from package.json"
+    assert_contains "$output" "\"version\":\"$expected_version\"" "Detects version from package.json"
 
     echo "Version detection tests completed."
 }

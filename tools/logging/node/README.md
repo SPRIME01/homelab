@@ -16,14 +16,24 @@ A structured logging helper for Node.js applications in the Homelab ecosystem, b
 
 ## Installation
 
+The logger module is located at `./tools/logging/node/logger.js` relative to the project root. The logger is a singleton that must be imported but not instantiated.
+
 ```bash
 npm install pino pino-pretty
 ```
 
+Required environment variables (set in your shell or .env file):
+- `HOMELAB_SERVICE`: Service name (default: 'unknown-service')
+- `HOMELAB_ENVIRONMENT`: Environment (default: 'development')
+- `HOMELAB_LOG_TARGET`: Log target (default: 'stdout')
+- `HOMELAB_LOG_LEVEL`: Log level (default: 'info')
+- `LOG_LEVEL`: Alternative log level setting
+- `NODE_ENV`: Node environment (affects pretty printing)
+
 ## Usage
 
 ```javascript
-const { logger } = require('./tools/logging/node/logger');
+const { logger } = require('./tools/logging/node');
 
 // Basic logging
 logger.info('Application started');
@@ -53,14 +63,66 @@ logger.withSpan(
 app.use((req, res, next) => {
   const start = Date.now();
 
-  logger.logRequest(req);
+  try {
+    logger.logRequest(req);
+  } catch (error) {
+    console.error('Failed to log request:', error);
+  }
 
+  // Listen for both 'finish' and 'close' events
+  const logResponse = () => {
+    try {
+      const duration = Date.now() - start;
+      logger.logResponse(req, res, duration);
+    } catch (error) {
+      console.error('Failed to log response:', error);
+    }
+  };
+
+  res.on('finish', logResponse);
+  res.on('close', logResponse);
+
+  // Handle stream errors
+  res.on('error', (error) => {
+    console.error('Response stream error:', error);
+    try {
+      logger.logError(error, {
+        request_id: req.id,
+        context: {
+          method: req.method,
+          url: req.url
+        }
+      });
+    } catch (logError) {
+      console.error('Failed to log stream error:', logError);
+    }
+  });
+
+  // Clean up listeners to prevent memory leaks
   res.on('finish', () => {
-    const duration = Date.now() - start;
-    logger.logResponse(req, res, duration);
+    res.removeListener('finish', logResponse);
+    res.removeListener('close', logResponse);
   });
 
   next();
+});
+
+// Error handling middleware to pair with request logging
+app.use((error, req, res, next) => {
+  try {
+    logger.logError(error, {
+      request_id: req.id,
+      context: {
+        method: req.method,
+        url: req.url
+      }
+    });
+  } catch (logError) {
+    console.error('Failed to log error:', logError);
+  }
+
+  // Continue with your error handling
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Error logging

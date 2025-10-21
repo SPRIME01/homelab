@@ -60,7 +60,7 @@ check_vector_binary() {
     echo "🔍 Checking Vector binary..."
 
     if command -v "$VECTOR_BIN" &> /dev/null; then
-        echo "✅ Vector binary found at: $(which $VECTOR_BIN)"
+        echo "✅ Vector binary found at: $(which "$VECTOR_BIN")"
         return 0
     else
         echo "❌ Vector binary not found. Please install Vector or ensure it's in PATH"
@@ -136,7 +136,7 @@ test_vrl_parsing() {
             # Extract VRL source for this transform
             local vrl_source
             vrl_source=$(awk -v transform="$transform_name" '
-                /^\[transforms\.' transform '\]/ { in_transform=1; next }
+                $0 == "[transforms." transform "]" { in_transform=1; next }
                 in_transform && /^\[transforms\./ { in_transform=0 }
                 in_transform && /source = """/ {
                     in_source=1; next

@@ -87,16 +87,53 @@ function serializeError(error) {
     return null;
   }
 
+  const visited = new WeakSet();
+
+  function serializeValue(value) {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    if (typeof value !== 'object') {
+      return value;
+    }
+
+    if (visited.has(value)) {
+      return "[Circular]";
+    }
+
+    visited.add(value);
+
+    try {
+      if (Array.isArray(value)) {
+        return value.map(serializeValue);
+      }
+
+      const result = {};
+      for (const key of Object.keys(value)) {
+        result[key] = serializeValue(value[key]);
+      }
+      return result;
+    } catch (e) {
+      return "[Error accessing property]";
+    }
+  }
+
   const serialized = {
     name: error.name || 'Error',
     message: error.message || String(error),
     stack: error.stack
   };
 
-  for (const key of Object.keys(error)) {
-    if (!(key in serialized)) {
-      serialized[key] = error[key];
+  // Add enumerable own properties with circular reference protection
+  try {
+    for (const key of Object.keys(error)) {
+      if (!(key in serialized)) {
+        serialized[key] = serializeValue(error[key]);
+      }
     }
+  } catch (e) {
+    // If we can't access properties, continue with what we have
   }
 
   return serialized;
@@ -272,9 +309,17 @@ function wrapLogMethods(pinoLogger) {
     const original = method.bind(pinoLogger);
 
     const wrapped = (arg1, arg2) => {
-      const bindings = typeof pinoLogger.bindings === 'function'
-        ? pinoLogger.bindings()
-        : {};
+      let bindings = {};
+      try {
+        if (typeof pinoLogger.bindings === 'function') {
+          bindings = pinoLogger.bindings() || {};
+        } else if (pinoLogger.bindings && typeof pinoLogger.bindings === 'object') {
+          bindings = pinoLogger.bindings;
+        }
+      } catch (e) {
+        // Fall back to empty object if bindings access fails
+        bindings = {};
+      }
 
       const isObjectArg =
         arg1 !== null &&
@@ -386,6 +431,29 @@ function createLoggerUtils(currentLogger) {
     logRequest(req = {}, additionalContext = {}) {
       const headers = req.headers || {};
       const requestId = req.id || headers['x-request-id'] || headers['X-Request-Id'];
+
+      // Build case-insensitive header blacklist
+      const headerBlacklist = new Set([
+        'authorization',
+        'cookie',
+        'set-cookie',
+        'x-api-key',
+        'api-key',
+        'proxy-authorization',
+        'authentication'
+      ]);
+
+      // Sanitize headers
+      const sanitizedHeaders = {};
+      for (const key of Object.keys(headers)) {
+        const lowerKey = key.toLowerCase();
+        if (headerBlacklist.has(lowerKey)) {
+          sanitizedHeaders[key] = '[REDACTED]';
+        } else {
+          sanitizedHeaders[key] = headers[key];
+        }
+      }
+
       currentLogger.info(
         {
           request_id: requestId,
@@ -393,6 +461,7 @@ function createLoggerUtils(currentLogger) {
             method: req.method,
             url: req.url,
             userAgent: headers['user-agent'] || headers['User-Agent'],
+            headers: sanitizedHeaders,
             ...additionalContext
           }
         },

@@ -80,20 +80,39 @@ __log_generate_event_id() {
 
 # Get ISO-8601 UTC timestamp
 __log_get_timestamp() {
+    # Try Python for UTC ISO8601 with milliseconds first
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z")' 2>/dev/null && return 0
+    fi
+
+    # Fallback to date command
     # Try to use date with GNU format, fallback to BSD format
     if date -u +"%Y-%m-%dT%H:%M:%S.%3NZ" 2>/dev/null; then
         return 0
     else
-        # BSD date format (macOS)
-        date -u +"%Y-%m-%dT%H:%M:%S.%3NZ" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ"
+        # BSD date format (macOS) - safe ISO8601 without milliseconds
+        date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null
     fi
 }
 
 # Escape JSON string
 __log_json_escape() {
     local str="$1"
-    # Escape backslashes, quotes, newlines, tabs, and control characters
-    echo "$str" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\r' | sed 's/\\n$//'
+
+    # Try jq first (most reliable)
+    if command -v jq >/dev/null 2>&1; then
+        echo -n "$str" | jq -Rs . 2>/dev/null | sed 's/^"//;s/"$//' && return 0
+    fi
+
+    # Try python3 next
+    if command -v python3 >/dev/null 2>&1; then
+        echo -n "$str" | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()), end="")' 2>/dev/null | sed 's/^"//;s/"$//' && return 0
+    fi
+
+    # Fallback to comprehensive sed/perl escape
+    # Escape backslashes first, then quotes, then control characters
+    echo -n "$str" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\r' | sed 's/\\n$//' | \
+    sed 's/\t/\\t/g; s/\b/\\b/g; s/\f/\\f/g; s/\r/\\r/g'
 }
 
 # Build JSON log entry
@@ -252,7 +271,12 @@ __log() {
         local json_output="$(__log_build_json "$level" "$message" "$event_id" "${additional_fields[@]}")"
         # Try to send to Vector, fail gracefully
         if command -v curl >/dev/null 2>&1; then
-            echo "$json_output" | curl -s -X POST -H "Content-Type: application/json" -d @- http://localhost:8682/ingest >/dev/null 2>&1 &
+            # Use configurable endpoint with sensible timeout/exit-on-failure flags
+            local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:8682/ingest}"
+            echo "$json_output" | curl -sS --connect-timeout 5 --max-time 10 --fail -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1 || {
+                # Log the failure but don't exit
+                echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2
+            } &
         fi
     fi
 }

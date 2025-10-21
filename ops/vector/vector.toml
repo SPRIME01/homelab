@@ -27,7 +27,14 @@ healthcheck = true
 type = "remap"
 inputs = ["otlp_logs", "otlp_http_logs"]
 source = """
-. = parse_json!(.message)
+# Check for both .message and .body before parsing
+if exists(.message) {
+  .parsed = parse_json(.message) ?? .message
+} else if exists(.body) {
+  .parsed = parse_json(.body) ?? .body
+}
+
+# Preserve metadata and original event structure
 """
 
 # Redact PII (email addresses, access tokens, session identifiers)
@@ -112,7 +119,7 @@ healthcheck = true
 # Sink for GreptimeDB (metrics)
 [sinks.greptimedb]
 type = "prometheus_remote_write"
-inputs = ["extract_metrics"]
+inputs = ["extract_metrics", "internal_metrics"]
 endpoint = "http://localhost:4000/v1/prometheus/write"
 healthcheck = true
 
@@ -133,6 +140,6 @@ rotation = "daily"
 # INTERNAL METRICS
 # =============================================================================
 
-# Enable internal metrics
-[internal_metrics]
+# Enable internal metrics as a source
+[sources.internal_metrics]
 type = "internal_metrics"

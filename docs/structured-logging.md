@@ -142,7 +142,7 @@ Logs are processed by Vector for transformation and routing:
 
 ### PII Redaction
 
-Vector automatically redates sensitive information:
+Vector automatically redacts sensitive information:
 - Email addresses: `user@example.com` → `REDACTED_EMAIL`
 - Access tokens: `token123` → `REDACTED_TOKEN`
 - API keys: `key123` → `REDACTED_KEY`

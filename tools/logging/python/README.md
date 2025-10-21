@@ -96,8 +96,6 @@ The logger reads configuration from environment variables:
 - `version`: Service version from pyproject.toml
 - `category`: Log category (default: "application")
 - `event_id`: Monotonic event ID (auto-generated)
-- `trace_id`: Trace ID (optional)
-- `span_id`: Span ID (optional)
 - `context`: Additional context object
 
 ### Optional Fields
@@ -108,6 +106,8 @@ The logger reads configuration from environment variables:
 - `duration_ms`: Duration in milliseconds
 - `status_code`: HTTP status code
 - `tags`: Array of tags
+- `trace_id`: OpenTelemetry trace identifier for distributed tracing
+- `span_id`: OpenTelemetry span identifier for distributed tracing
 
 ## OpenTelemetry Integration
 

@@ -72,10 +72,6 @@ required_fields:
         type: "string"
         description: "Operational mode"
         example: "deploy"
-      duration_ms:
-        type: "integer"
-        description: "Duration in milliseconds"
-        example: 322
       missing_env:
         type: "array"
         items:

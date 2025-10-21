@@ -75,11 +75,11 @@ devbox run vector
 # Start Vector with custom configuration file
 vector --config /path/to/custom/vector.toml
 
-# Stop Vector gracefully
-pkill -SIGTERM vector
+# Stop Vector gracefully (precise targeting)
+pkill -SIGTERM -f "/usr/local/bin/vector"
 
 # Force stop (emergency only)
-pkill -SIGKILL vector
+pkill -SIGKILL -f "/usr/local/bin/vector"
 ```
 
 ### Upgrading Vector
@@ -109,8 +109,8 @@ pkill -SIGKILL vector
    # Verify new instance is healthy
    curl -f http://localhost:14318/health
 
-   # Stop old instance
-   pkill -SIGTERM "vector.*4317"
+   # Stop old instance (precise targeting)
+   pkill -SIGTERM -f "vector.*4317" || systemctl stop vector
    ```
 
 ### Configuration Changes
@@ -126,7 +126,7 @@ pkill -SIGKILL vector
    echo '{"message": "test", "email": "user@example.com"}' > test.json
 
    # Test transform
-   vector tap --config ops/vector/vector.toml --input test.json
+   vector tap --config ops/vector/vector.toml --inputs-of otlp_logs --input test.json
    ```
 
 3. Apply changes with rolling restart:
@@ -195,8 +195,8 @@ echo '{"new_field": "value"}' | vector tap --config ops/vector/vector.toml
 # Start GreptimeDB
 greptimedb serve --config ops/greptime/config.toml
 
-# Stop GreptimeDB gracefully
-pkill -SIGTERM greptimedb
+# Stop GreptimeDB gracefully (precise targeting)
+pkill -SIGTERM -f "/usr/local/bin/greptimedb" || systemctl stop greptimedb
 
 # Check status
 curl -f http://localhost:4000/health
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS metrics (
   name STRING TAG,
   value DOUBLE,
   INSTANCE TAG
-) ENGINE = Mitochondria
+) ENGINE = metric
 WITH (
   retention = '30d'
 );
@@ -272,15 +272,19 @@ curl -X POST http://localhost:4000/v1/sql \
    cd observability-dashboard
 
    # Define metrics in metrics.yaml
-   cat > metrics.yaml << EOF
-   metrics:
+   cat > metrics/response_time.yaml << EOF
+   type: metrics_view
+   table: metrics
+   time_column: timestamp
+   measures:
      - name: response_time
-       type: histogram
-       table: metrics
-       time_column: timestamp
-       value_column: value
-       filters:
-         name: response_time
+       expression: "value"
+       aggregation: "avg"
+   dimensions:
+     - name: name
+       expression: "name"
+   filters:
+     - name: response_time
    EOF
 
    # Start Rill Developer

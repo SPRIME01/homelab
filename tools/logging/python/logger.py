@@ -7,8 +7,10 @@ the Node.js logger and powers the end-to-end structured logging tests.
 
 from __future__ import annotations
 
+import contextvars
 import json
 import os
+import re
 import sys
 import threading
 import traceback
@@ -76,9 +78,43 @@ def get_version() -> str:
 
 
 def serialize_error(error: Optional[BaseException]) -> Optional[Dict[str, Any]]:
-    """Convert an exception into a serialisable dictionary."""
+    """Convert an exception into a serialisable dictionary.
+
+    Uses an allowlist approach for safety and redacts sensitive information.
+    Only copies attributes that are explicitly allowed and safe for logging.
+    """
     if not error:
         return None
+
+    # Allowlist of safe attributes to copy from the exception
+    # These attributes are generally safe to log and don't contain sensitive data
+    SAFE_ATTRIBUTES = [
+        "args",      # Exception arguments
+        "code",      # Exception code (often used in HTTP/API errors)
+        "errno",     # System error number
+        "message",   # Error message
+        "filename",  # Source filename (if applicable)
+        "lineno",    # Line number in source file (if applicable)
+    ]
+
+    # Patterns that might indicate sensitive information
+    SENSITIVE_PATTERNS = [
+        r'password', r'passwd', r'pwd',
+        r'token', r'key', r'secret',
+        r'credential', r'auth',
+        r'ssn', r'social_security',
+        r'credit_card', r'cc_number',
+        r'account_number', r'account_num',
+    ]
+
+    def _redact_sensitive_data(value: Any) -> Any:
+        """Check if a value matches sensitive patterns and redact if needed."""
+        if isinstance(value, str):
+            # Check for sensitive patterns (case insensitive)
+            for pattern in SENSITIVE_PATTERNS:
+                if re.search(pattern, value, re.IGNORECASE):
+                    return "[REDACTED]"
+        return value
 
     serialized: Dict[str, Any] = {
         "name": type(error).__name__,
@@ -87,8 +123,14 @@ def serialize_error(error: Optional[BaseException]) -> Optional[Dict[str, Any]]:
 
     if hasattr(error, "__dict__"):
         for key, value in error.__dict__.items():
-            if not key.startswith("_"):
-                serialized[key] = value
+            # Skip private attributes (starting with "_")
+            if key.startswith("_"):
+                continue
+
+            # Only include attributes in our allowlist
+            if key in SAFE_ATTRIBUTES:
+                # Redact sensitive data in the value
+                serialized[key] = _redact_sensitive_data(value)
 
     stack = "".join(
         traceback.format_exception(error.__class__, error, error.__traceback__)
@@ -163,7 +205,7 @@ class StructuredLogger:
             service=service or self.config["service"],
             environment=environment or self.config["environment"],
             version=version or self.config["version"],
-            category=category or "application",
+            category=category or "app",
         )
 
     def bind(self, **bindings: Any) -> "StructuredLogger":
@@ -282,7 +324,7 @@ class StructuredLogger:
             "service": self.bindings.get("service", self.config["service"]),
             "environment": self.bindings.get("environment", self.config["environment"]),
             "version": self.bindings.get("version", self.config["version"]),
-            "category": self.bindings.get("category", "application"),
+            "category": self.bindings.get("category", "app"),
             "event_id": extra.pop("event_id", generate_event_id()),
         }
 
@@ -340,7 +382,7 @@ class StructuredLogger:
         parts.append(self._apply_color(level.upper(), LEVEL_COLORS.get(level, "")))
         if service:
             parts.append(self._apply_color(service, COLOR_BOLD))
-        if category and category != "application":
+        if category and category != "app":
             parts.append(category)
 
         trace_id = entry.get("trace_id")
@@ -373,13 +415,22 @@ class StructuredLogger:
 # Global logger and utilities
 # -----------------------------------------------------------------------------
 
+# Context variable to store the current logger
+_current_logger: contextvars.ContextVar[Optional[StructuredLogger]] = contextvars.ContextVar(
+    "current_logger", default=None
+)
+
+def get_logger() -> StructuredLogger:
+    """Get the current logger from context or return the default logger."""
+    return _current_logger.get() or logger
+
 logger = StructuredLogger(
     config,
     {
         "service": config["service"],
         "environment": config["environment"],
         "version": config["version"],
-        "category": "application",
+        "category": "app",
     },
     pretty=use_pretty,
     colorize=use_pretty and sys.stdout.isatty(),
@@ -417,12 +468,11 @@ class LoggerUtils:
                 trace_id = span_context.get("trace_id")
                 span_id = span_context.get("span_id")
                 span_logger = logger.bind_trace(trace_id, span_id)
-                original_logger = globals().get("logger")
-                globals()["logger"] = span_logger
+                token = _current_logger.set(span_logger)
                 try:
                     return fn(*args, **kwargs)
                 finally:
-                    globals()["logger"] = original_logger
+                    _current_logger.reset(token)
 
             return wrapper
 
@@ -461,4 +511,4 @@ warn = logger.warn
 error = logger.error
 
 
-__all__ = ["logger", "LoggerUtils", "config", "serialize_error", "generate_event_id"]
+__all__ = ["logger", "LoggerUtils", "config", "serialize_error", "generate_event_id", "get_logger"]

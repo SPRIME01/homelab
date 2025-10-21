@@ -3,7 +3,8 @@
 # Test script for the metrics pipeline
 # Validates Vector → GreptimeDB ingestion, sampling rules, and retention
 
-set -e
+# Global failure flag
+TESTS_FAILED=false
 
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,7 +64,7 @@ check_service_health() {
 
     echo "🔍 Checking $service_name health at $health_url..."
 
-    if curl -s "$health_url" > /dev/null 2>&1; then
+    if curl -sS --connect-timeout 5 --max-time 10 --fail "$health_url" > /dev/null 2>&1; then
         echo "✅ $service_name is healthy"
         return 0
     else
@@ -80,9 +81,45 @@ send_metric_log() {
 
     echo "📤 Sending metric log: $metric_name=$metric_value $metric_unit"
 
-    curl -X POST "$VECTOR_OTLP_HTTP/v1/logs" \
-        -H "Content-Type: application/json" \
-        -d "{
+    # Construct JSON safely using jq to avoid injection issues
+    local json_payload
+    if command -v jq >/dev/null 2>&1; then
+        json_payload=$(jq -n \
+            --arg service "$service" \
+            --arg metric_name "$metric_name" \
+            --arg metric_value "$metric_value" \
+            --arg metric_unit "$metric_unit" \
+            --arg timestamp "$(date +%s%N)" \
+            '{
+                resourceLogs: [{
+                    resource: {
+                        attributes: [{
+                            key: "service.name",
+                            value: {stringValue: $service}
+                        }]
+                    },
+                    scopeLogs: [{
+                        scope: {},
+                        logRecords: [{
+                            timeUnixNano: $timestamp,
+                            severityNumber: 9,
+                            severityText: "INFO",
+                            body: {
+                                stringValue: ("Metric: \($metric_name)=\($metric_value) \($metric_unit)")
+                            },
+                            attributes: [
+                                {key: "metric_name", value: {stringValue: $metric_name}},
+                                {key: "metric_value", value: {stringValue: $metric_value}},
+                                {key: "metric_unit", value: {stringValue: $metric_unit}},
+                                {key: "metric_type", value: {stringValue: "counter"}}
+                            ]
+                        }]
+                    }]
+                }]
+            }')
+    else
+        # Fallback to manual JSON construction (less safe)
+        json_payload="{
             \"resourceLogs\": [{
                 \"resource\": {
                     \"attributes\": [{
@@ -115,8 +152,13 @@ send_metric_log() {
                     }]
                 }]
             }]
-        }" \
-        -s > /dev/null
+        }"
+    fi
+
+    curl -sS --connect-timeout 5 --max-time 10 --fail \
+        -X POST "$VECTOR_OTLP_HTTP/v1/logs" \
+        -H "Content-Type: application/json" \
+        -d "$json_payload" > /dev/null
 
     echo "✅ Sent metric: $metric_name"
 }
@@ -156,7 +198,7 @@ test_metric_ingestion() {
     echo "🔍 Querying GreptimeDB for metrics..."
 
     local query_result
-    query_result=$(curl -s "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=test_requests_total" 2>&1)
+    query_result=$(curl -sS --connect-timeout 5 --max-time 10 --fail "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=test_requests_total" 2>&1)
 
     if [[ -n "$query_result" && "$query_result" != *"error"* ]]; then
         assert_contains "$query_result" "test_requests_total" "Metric found in GreptimeDB"
@@ -186,7 +228,7 @@ test_metric_sampling() {
 
     # Query to see if sampling was applied (should have fewer metrics than sent)
     local query_result
-    query_result=$(curl -s "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=increase(high_frequency_metric_total[1m])" 2>&1)
+    query_result=$(curl -sS --connect-timeout 5 --max-time 10 --fail "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=increase(high_frequency_metric_total[1m])" 2>&1)
 
     if [[ -n "$query_result" && "$query_result" != *"error"* ]]; then
         # Check that we have some metrics but not all 20
@@ -212,9 +254,40 @@ test_metric_retention() {
     # Send a metric with a specific timestamp
     local old_timestamp=$(date -d '1 hour ago' +%s)
 
-    curl -X POST "$VECTOR_OTLP_HTTP/v1/logs" \
-        -H "Content-Type: application/json" \
-        -d "{
+    # Construct JSON safely using jq to avoid injection issues
+    local retention_json
+    if command -v jq >/dev/null 2>&1; then
+        retention_json=$(jq -n \
+            --arg timestamp "$(($old_timestamp * 1000000000))" \
+            '{
+                resourceLogs: [{
+                    resource: {
+                        attributes: [{
+                            key: "service.name",
+                            value: {stringValue: "retention-test-service"}
+                        }]
+                    },
+                    scopeLogs: [{
+                        scope: {},
+                        logRecords: [{
+                            timeUnixNano: $timestamp,
+                            severityNumber: 9,
+                            severityText: "INFO",
+                            body: {
+                                stringValue: "Retention test metric"
+                            },
+                            attributes: [
+                                {key: "metric_name", value: {stringValue: "retention_test_metric"}},
+                                {key: "metric_value", value: {stringValue: "1"}},
+                                {key: "metric_unit", value: {stringValue: "count"}}
+                            ]
+                        }]
+                    }]
+                }]
+            }')
+    else
+        # Fallback to manual JSON construction
+        retention_json="{
             \"resourceLogs\": [{
                 \"resource\": {
                     \"attributes\": [{
@@ -244,15 +317,20 @@ test_metric_retention() {
                     }]
                 }]
             }]
-        }" \
-        -s > /dev/null
+        }"
+    fi
+
+    curl -sS --connect-timeout 5 --max-time 10 --fail \
+        -X POST "$VECTOR_OTLP_HTTP/v1/logs" \
+        -H "Content-Type: application/json" \
+        -d "$retention_json" > /dev/null
 
     # Wait for processing
     sleep 5
 
     # Query for the metric with time range
     local query_result
-    query_result=$(curl -s "$GREPTIMEDB_PROMETHEUS/api/v1/query_range?query=retention_test_metric&start=$((old_timestamp - 300))&end=$(date +%s)&step=60" 2>&1)
+    query_result=$(curl -sS --connect-timeout 5 --max-time 10 --fail "$GREPTIMEDB_PROMETHEUS/api/v1/query_range?query=retention_test_metric&start=$((old_timestamp - 300))&end=$(date +%s)&step=60" 2>&1)
 
     if [[ -n "$query_result" && "$query_result" != *"error"* ]]; then
         assert_contains "$query_result" "retention_test_metric" "Retention test metric found"
@@ -280,7 +358,7 @@ test_metric_aggregation() {
 
     # Query for aggregated metrics
     local query_result
-    query_result=$(curl -s "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=avg(aggregation_test)" 2>&1)
+    query_result=$(curl -sS --connect-timeout 5 --max-time 10 --fail "$GREPTIMEDB_PROMETHEUS/api/v1/query?query=avg(aggregation_test)" 2>&1)
 
     if [[ -n "$query_result" && "$query_result" != *"error"* && "$query_result" == *"30"* ]]; then
         echo "✅ PASS: Metric aggregation working correctly (avg = 30)"
@@ -298,16 +376,25 @@ test_metric_aggregation() {
 echo "🚀 Starting metrics pipeline tests..."
 echo
 
-test_vector_greptime_connectivity
-echo
-test_metric_ingestion
-echo
-test_metric_sampling
-echo
-test_metric_retention
-echo
-test_metric_aggregation
-echo
+# Helper function to run a test and capture exit status
+run_test() {
+    local test_function="$1"
+    echo "Running: $test_function"
+
+    if $test_function; then
+        echo "✅ $test_function completed successfully"
+    else
+        echo "❌ $test_function failed"
+        TESTS_FAILED=true
+    fi
+    echo
+}
+
+run_test test_vector_greptime_connectivity
+run_test test_metric_ingestion
+run_test test_metric_sampling
+run_test test_metric_retention
+run_test test_metric_aggregation
 
 # Print summary
 echo "📊 Test Summary:"
@@ -315,10 +402,10 @@ echo "   Tests run: $TESTS_RUN"
 echo "   Tests passed: $TESTS_PASSED"
 echo "   Tests failed: $((TESTS_RUN - TESTS_PASSED))"
 
-if [ $TESTS_PASSED -eq $TESTS_RUN ]; then
-    echo "🎉 All tests passed!"
-    exit 0
-else
+if [ "$TESTS_FAILED" = true ] || [ $TESTS_PASSED -ne $TESTS_RUN ]; then
     echo "💥 Some tests failed!"
     exit 1
+else
+    echo "🎉 All tests passed!"
+    exit 0
 fi
