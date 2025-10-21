@@ -14,8 +14,15 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Devbox
         run: |
-          curl -fsSL https://jetpack.io/devbox/install.sh | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          # Attempt to download Devbox installer; if unavailable, skip without failing the job
+          DEVBOX_URL="https://jetpack.io/devbox/install.sh"
+          echo "Checking Devbox installer at $DEVBOX_URL"
+          if curl --head --silent --fail "$DEVBOX_URL" >/dev/null 2>&1; then
+            curl -fsSL "$DEVBOX_URL" | sh
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          else
+            echo "Devbox installer not available at $DEVBOX_URL - skipping Devbox install"
+          fi
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -79,5 +86,41 @@ jobs:
         run: npx nx run-many --target=lint --all
       - name: Set UV_CACHE_DIR
         run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
+      - name: Start vector HTTP stub
+        run: |
+          cat > /tmp/vector_stub.py <<'PY'
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          import threading, sys
+          class Handler(BaseHTTPRequestHandler):
+              def do_POST(self):
+                  length = int(self.headers.get('content-length', 0))
+                  body = self.rfile.read(length)
+                  # record requests to file for debugging
+                  with open('/tmp/vector_received.log', 'ab') as f:
+                      f.write(body + b'\n')
+                  self.send_response(200)
+                  self.end_headers()
+              def log_message(self, fmt, *args):
+                  return
+          server = HTTPServer(('127.0.0.1', 45995), Handler)
+          try:
+              server.serve_forever()
+          except KeyboardInterrupt:
+              pass
+          PY
+          # Run in background and persist pid so we can kill it after tests
+          python3 /tmp/vector_stub.py & echo $! > /tmp/vector_stub.pid
+          # Wait for listener to come up
+          for i in {1..10}; do curl -sS --fail http://127.0.0.1:45995/ >/dev/null 2>&1 && break || sleep 0.5; done
       - name: Test
         run: npx nx run-many --target=test --all
+
+      - name: Stop vector HTTP stub and show received logs
+        if: always()
+        run: |
+          if [ -f /tmp/vector_stub.pid ]; then
+            kill "$(cat /tmp/vector_stub.pid)" || true
+            rm -f /tmp/vector_stub.pid
+          fi
+          echo "---- contents of /tmp/vector_received.log ----"
+          [ -f /tmp/vector_received.log ] && sed -n '1,200p' /tmp/vector_received.log || echo "(no requests received)"
