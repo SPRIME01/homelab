@@ -91,33 +91,45 @@ except Exception as e:
     print('BODY:', body)
     sys.exit(3)
 
-if 'message' not in outer:
-    print('FAIL: outer JSON missing "message" field')
+# Check for OTLP structure
+if 'resourceLogs' not in outer:
+    print('FAIL: outer JSON missing "resourceLogs" field')
     print(outer)
     sys.exit(4)
 
-inner_raw = outer['message']
+try:
+    rl = outer['resourceLogs'][0]
+    sl = rl['scopeLogs'][0]
+    lr = sl['logRecords'][0]
+    if 'body' not in lr or 'stringValue' not in lr['body']:
+        print('FAIL: body.stringValue missing')
+        sys.exit(5)
+except Exception as e:
+    print('FAIL: unexpected payload structure', e)
+    sys.exit(6)
+
+inner_raw = lr['body']['stringValue']
 if not isinstance(inner_raw, str):
-    print('FAIL: outer["message"] is not a string')
+    print('FAIL: body.stringValue is not a string')
     print(type(inner_raw), inner_raw)
-    sys.exit(5)
+    sys.exit(7)
 
 try:
     inner = json.loads(inner_raw)
 except Exception as e:
     print('FAIL: inner message is not valid JSON:', e)
     print('INNER RAW:', inner_raw)
-    sys.exit(6)
+    sys.exit(8)
 
 if inner.get('level') != 'info':
     print('FAIL: inner.level != info, got:', inner.get('level'))
-    sys.exit(7)
+    sys.exit(9)
 
 if inner.get('message') != 'test message from shell test':
     print('FAIL: inner.message mismatch, got:', inner.get('message'))
-    sys.exit(8)
+    sys.exit(10)
 
-print('OK: payload wrapper and inner JSON look correct')
+print('OK: OTLP payload and inner JSON look correct')
 PY
 
 exit 0

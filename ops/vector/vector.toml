@@ -27,11 +27,25 @@ healthcheck = true
 type = "remap"
 inputs = ["otlp_logs", "otlp_http_logs"]
 source = """
-# Check for both .message and .body before parsing
-if exists(.message) {
+# Check for OTLP body.stringValue first (for OTLP logs)
+if exists(.body) && exists(.body.stringValue) {
+  .parsed = parse_json(.body.stringValue) ?? .body.stringValue
+}
+# Check for regular .message field (for non-OTLP logs)
+else if exists(.message) {
   .parsed = parse_json(.message) ?? .message
-} else if exists(.body) {
+}
+# Check for .body field (for other log formats)
+else if exists(.body) {
   .parsed = parse_json(.body) ?? .body
+}
+
+# If we successfully parsed JSON, merge it to the top level
+if exists(.parsed) && is_object(.parsed) {
+  # Merge parsed fields to top level, but preserve existing fields
+  . = merge(., .parsed)
+  # Remove the temporary parsed field
+  del(.parsed)
 }
 
 # Preserve metadata and original event structure

@@ -281,15 +281,20 @@ __log_build_pretty() {
 # 1: timeUnixNano
 # 2: severityNumber
 # 3: severityText
-# 4: body_string_value (escaped JSON string)
+# 4: body_json_value (structured JSON object)
 __log_build_otlp_payload() {
     local time_unix_nano="$1"
     local severity_number="$2"
     local severity_text="$3"
-    local body_string_value="$4"
+    local body_json_value="$4"
+
+    # We need to embed the structured JSON as a string in the OTLP body.stringValue
+    # But we need to escape it properly to avoid double-stringification
+    local escaped_body
+    escaped_body="$(__log_json_escape "$body_json_value")"
 
     # Construct the JSON payload without external dependencies.
-    printf '%s' "{\"resourceLogs\":[{\"resource\":{},\"scopeLogs\":[{\"scope\":{},\"logRecords\":[{\"timeUnixNano\":\"${time_unix_nano}\",\"severityNumber\":${severity_number},\"severityText\":\"${severity_text}\",\"body\":{\"stringValue\":\"${body_string_value}\"}}]}]}]}"
+    printf '%s' "{\"resourceLogs\":[{\"resource\":{},\"scopeLogs\":[{\"scope\":{},\"logRecords\":[{\"timeUnixNano\":\"${time_unix_nano}\",\"severityNumber\":${severity_number},\"severityText\":\"${severity_text}\",\"body\":{\"stringValue\":\"${escaped_body}\"}}]}]}]}"
 }
 
 # Map log level to OTLP severity number
@@ -364,13 +369,10 @@ __log() {
                 time_unix_nano="$((secs * 1000000000))"
             fi
 
-            # Escape the structured JSON so it can be placed into a JSON string
-            local escaped_payload
-            escaped_payload="$(__log_json_escape "$json_output")"
-
             # Build minimal OTLP JSON payload without depending on jq
+            # We'll pass the structured JSON directly without double-stringifying
             local otlp_payload
-            otlp_payload="$(__log_build_otlp_payload "$time_unix_nano" "$(severity_number "$level")" "$level" "$escaped_payload")"
+            otlp_payload="$(__log_build_otlp_payload "$time_unix_nano" "$(severity_number "$level")" "$level" "$json_output")"
 
             if ! curl_output="$(printf '%s' "$otlp_payload" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
                 echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2

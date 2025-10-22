@@ -1,58 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Integration test runner for OTLP payload (clean copy)
+# Integration test runner for OTLP payload
 ROOT_DIR=$(cd "$(dirname "$0")/../../" && pwd)
 TMPDIR=$(mktemp -d)
-PY_SERVER="$TMPDIR/server.py"
-PAYLOAD_FILE="$TMPDIR/payload.json"
-DONE_FILE="$TMPDIR/done"
 
-PORT=$(python3 - <<'PY'
-import socket
-s=socket.socket()
-s.bind(('127.0.0.1',0))
-port=s.getsockname()[1]
-s.close()
-print(port)
-PY
-)
+# Use fixed ports that match our mock receiver
+PORTS=(43215 51417)
+PAYLOAD_FILES=()
+DONE_FILES=()
 
-cat > "$PY_SERVER" <<'PY'
-import http.server
-import socketserver
-import sys
-from pathlib import Path
+# Create payload and done files for each port
+for port in "${PORTS[@]}"; do
+  PAYLOAD_FILES+=("$TMPDIR/payload_${port}.json")
+  DONE_FILES+=("$TMPDIR/done_${port}")
+done
 
-PORT = int(sys.argv[1])
-PAYLOAD_FILE = sys.argv[2]
-DONE_FILE = sys.argv[3]
-
-class Handler(http.server.BaseHTTPRequestHandler):
-    def do_POST(self):
-        length = int(self.headers.get('content-length', 0))
-        body = self.rfile.read(length)
-        Path(PAYLOAD_FILE).write_bytes(body)
-        Path(DONE_FILE).write_text('1')
-        self.send_response(200)
-        self.end_headers()
-
-    def log_message(self, format, *args):
-        return
-
-with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
-    httpd.serve_forever()
-PY
-
-python3 "$PY_SERVER" "$PORT" "$PAYLOAD_FILE" "$DONE_FILE" &
-SERVER_PID=$!
+# Ensure the mock receiver payload directory exists
+PAYLOAD_DIR="/tmp/otlp-test"
+mkdir -p "$PAYLOAD_DIR"
 
 cleanup() {
-  kill "$SERVER_PID" 2>/dev/null || true
   rm -rf "$TMPDIR"
 }
 trap cleanup EXIT
 
+# Test with the first port
+PORT=${PORTS[0]}
 export HOMELAB_VECTOR_ENDPOINT="http://127.0.0.1:$PORT"
 
 source "$ROOT_DIR/lib/logging.sh"
@@ -60,14 +34,26 @@ export HOMELAB_LOG_TARGET=vector
 
 log_info "integration test" "integration=true"
 
+# Wait for payload to be received by the mock receiver
 SECS=0
-while [ ! -f "$DONE_FILE" ] && [ $SECS -lt 6 ]; do
-  sleep 1
-  SECS=$((SECS+1))
+RECEIVED=false
+for port in "${PORTS[@]}"; do
+  PAYLOAD_FILE="${PAYLOAD_DIR}/payload_${port}.json"
+  DONE_FILE="${PAYLOAD_DIR}/done_${port}"
+
+  while [ ! -f "$DONE_FILE" ] && [ $SECS -lt 6 ]; do
+    sleep 1
+    SECS=$((SECS+1))
+  done
+
+  if [ -f "$PAYLOAD_FILE" ]; then
+    RECEIVED=true
+    break
+  fi
 done
 
-if [ ! -f "$PAYLOAD_FILE" ]; then
-  echo "FAIL: Server did not receive a payload"
+if [ "$RECEIVED" = false ]; then
+  echo "FAIL: Server did not receive a payload on any of the ports"
   exit 2
 fi
 
@@ -100,4 +86,14 @@ except Exception as e:
 print('PASS: integration OTLP payload received and valid')
 PY
 
-python3 "$PY_VALIDATOR" "$PAYLOAD_FILE"
+# Find which port received the payload and validate it
+for port in "${PORTS[@]}"; do
+  PAYLOAD_FILE="${PAYLOAD_DIR}/payload_${port}.json"
+  if [ -f "$PAYLOAD_FILE" ]; then
+    python3 "$PY_VALIDATOR" "$PAYLOAD_FILE"
+    exit 0
+  fi
+done
+
+echo "FAIL: No valid payload found"
+exit 2
