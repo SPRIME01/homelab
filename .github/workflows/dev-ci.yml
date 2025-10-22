@@ -88,7 +88,11 @@ jobs:
         run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
       - name: Start mock OTLP receiver
         run: |
+          set -x
+          echo "Python executable: $(which python3)"
           echo "Python version: $(python3 --version)"
+          echo "PWD: $(pwd)"
+          echo "Listing tests/logging:"; ls -la tests/logging || true
           echo "Starting mock OTLP receiver..."
           mkdir -p /tmp/otlp-test
           chmod +x tests/logging/mock_otlp_receiver.py
@@ -97,16 +101,19 @@ jobs:
           echo $RECEIVER_PID > /tmp/otlp-test/receiver.pid
           echo "Mock receiver started with PID: $RECEIVER_PID"
 
-          # Wait for the receiver to be ready (up to 10 seconds)
-          for i in {1..10}; do
+          # Wait for the receiver to be ready (up to 30 seconds)
+          for i in {1..30}; do
             if grep -q "All servers started" /tmp/otlp-receiver.log 2>/dev/null; then
               echo "Mock receiver is ready!"
-              cat /tmp/otlp-receiver.log
+              sed -n '1,200p' /tmp/otlp-receiver.log || true
               break
             fi
-            if [ $i -eq 10 ]; then
-              echo "ERROR: Mock receiver did not start within 10 seconds"
-              cat /tmp/otlp-receiver.log || echo "No log file found"
+            if [ $i -eq 30 ]; then
+              echo "ERROR: Mock receiver did not start within 30 seconds"
+              echo "--- /tmp/otlp-receiver.log (tail) ---"
+              tail -n +1 /tmp/otlp-receiver.log || echo "No log file found"
+              echo "--- /tmp/otlp-test contents ---"
+              ls -la /tmp/otlp-test || true
               exit 1
             fi
             sleep 1
@@ -121,21 +128,32 @@ jobs:
       - name: Stop mock OTLP receiver and show received logs
         if: always()
         run: |
+          set -x || true
+          echo "---- Dumping receiver log ----"
+          if [ -f /tmp/otlp-receiver.log ]; then
+            sed -n '1,200p' /tmp/otlp-receiver.log || true
+          else
+            echo "No /tmp/otlp-receiver.log found"
+          fi
+
+          echo "---- Received payloads ----"
+          if ls /tmp/otlp-test/payload_*.json 1> /dev/null 2>&1; then
+            for f in /tmp/otlp-test/payload_*.json; do
+              echo "File: $f"
+              head -n 200 "$f" || true
+            done
+          else
+            echo "No payload files found in /tmp/otlp-test"
+            ls -la /tmp/otlp-test || true
+          fi
+
           if [ -f /tmp/otlp-test/receiver.pid ]; then
             PID=$(cat /tmp/otlp-test/receiver.pid)
+            echo "Killing receiver PID: $PID"
             if kill -0 $PID 2>/dev/null; then
-              kill $PID
+              kill $PID || true
               sleep 1
-              if kill -0 $PID 2>/dev/null; then
-                kill -9 $PID
-              fi
+              kill -9 $PID || true
             fi
           fi
           pkill -f "mock_otlp_receiver.py" || true
-          echo "---- Received payloads ----"
-          for f in /tmp/otlp-test/payload_*.json; do
-            if [ -f "$f" ]; then
-              echo "File: $f"
-              head -n 20 "$f" || true
-            fi
-          done
