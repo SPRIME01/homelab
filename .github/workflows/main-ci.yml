@@ -48,6 +48,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -60,6 +71,14 @@ jobs:
       - name: Install minimal deps
         run: |
           python -m pip install --upgrade pip
+      - name: Start mock OTLP receiver
+        run: |
+          mkdir -p /tmp/otlp-test
+          chmod +x tests/logging/mock_otlp_receiver.py
+          python3 tests/logging/mock_otlp_receiver.py --ports 43215 51417 --payload-dir /tmp/otlp-test --pid-file /tmp/otlp-test/pids.txt &
+          echo $! > /tmp/otlp-test/receiver.pid
+          # Wait for the receiver to be ready
+          sleep 2
       - name: Make tests executable
         run: chmod +x tests/test_vector_logger.sh tests/test_vector_logger_failure.sh tests/test_vector_logger_otlp.sh
       - name: Run logging tests (nx)
@@ -68,6 +87,20 @@ jobs:
         run: |
           chmod +x tests/logging/test_integration_otlp_runner.sh
           ./tests/logging/test_integration_otlp_runner.sh
+      - name: Stop mock OTLP receiver
+        if: always()
+        run: |
+          if [ -f /tmp/otlp-test/receiver.pid ]; then
+            PID=$(cat /tmp/otlp-test/receiver.pid)
+            if kill -0 $PID 2>/dev/null; then
+              kill $PID
+              sleep 1
+              if kill -0 $PID 2>/dev/null; then
+                kill -9 $PID
+              fi
+            fi
+          fi
+          pkill -f "mock_otlp_receiver.py" || true
 
   release:
     runs-on: ubuntu-latest
@@ -138,6 +171,18 @@ jobs:
         run: npx nx run-many --target=lint --all
       - name: Set UV_CACHE_DIR
         run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
+      - name: Setup Python for tests
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Start mock OTLP receiver
+        run: |
+          mkdir -p /tmp/otlp-test
+          chmod +x tests/logging/mock_otlp_receiver.py
+          python3 tests/logging/mock_otlp_receiver.py --ports 43215 51417 --payload-dir /tmp/otlp-test --pid-file /tmp/otlp-test/pids.txt &
+          echo $! > /tmp/otlp-test/receiver.pid
+          # Wait for the receiver to be ready
+          sleep 2
       - name: Test
         run: npx nx run-many --target=test --all
       - name: Logging Check
@@ -146,3 +191,17 @@ jobs:
         run: npx nx run-many --target=build --all
       - name: Deploy
         run: npx nx run-many --target=deploy --all
+      - name: Stop mock OTLP receiver
+        if: always()
+        run: |
+          if [ -f /tmp/otlp-test/receiver.pid ]; then
+            PID=$(cat /tmp/otlp-test/receiver.pid)
+            if kill -0 $PID 2>/dev/null; then
+              kill $PID
+              sleep 1
+              if kill -0 $PID 2>/dev/null; then
+                kill -9 $PID
+              fi
+            fi
+          fi
+          pkill -f "mock_otlp_receiver.py" || true

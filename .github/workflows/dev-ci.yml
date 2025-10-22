@@ -86,32 +86,14 @@ jobs:
         run: npx nx run-many --target=lint --all
       - name: Set UV_CACHE_DIR
         run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
-      - name: Start vector HTTP stub
+      - name: Start mock OTLP receiver
         run: |
-          cat > /tmp/vector_stub.py <<'PY'
-          from http.server import BaseHTTPRequestHandler, HTTPServer
-          import threading, sys
-          class Handler(BaseHTTPRequestHandler):
-              def do_POST(self):
-                  length = int(self.headers.get('content-length', 0))
-                  body = self.rfile.read(length)
-                  # record requests to file for debugging
-                  with open('/tmp/vector_received.log', 'ab') as f:
-                      f.write(body + b'\n')
-                  self.send_response(200)
-                  self.end_headers()
-              def log_message(self, fmt, *args):
-                  return
-          server = HTTPServer(('127.0.0.1', 45995), Handler)
-          try:
-              server.serve_forever()
-          except KeyboardInterrupt:
-              pass
-          PY
-          # Run in background and persist pid so we can kill it after tests
-          python3 /tmp/vector_stub.py & echo $! > /tmp/vector_stub.pid
-          # Wait for listener to come up
-          for i in {1..10}; do curl -sS --fail http://127.0.0.1:45995/ >/dev/null 2>&1 && break || sleep 0.5; done
+          mkdir -p /tmp/otlp-test
+          chmod +x tests/logging/mock_otlp_receiver.py
+          python3 tests/logging/mock_otlp_receiver.py --ports 43215 51417 --payload-dir /tmp/otlp-test --pid-file /tmp/otlp-test/pids.txt &
+          echo $! > /tmp/otlp-test/receiver.pid
+          # Wait for the receiver to be ready
+          sleep 2
       - name: Run integration OTLP test
         run: |
           chmod +x tests/logging/test_integration_otlp_runner.sh
@@ -119,12 +101,24 @@ jobs:
       - name: Test
         run: npx nx run-many --target=test --all
 
-      - name: Stop vector HTTP stub and show received logs
+      - name: Stop mock OTLP receiver and show received logs
         if: always()
         run: |
-          if [ -f /tmp/vector_stub.pid ]; then
-            kill "$(cat /tmp/vector_stub.pid)" || true
-            rm -f /tmp/vector_stub.pid
+          if [ -f /tmp/otlp-test/receiver.pid ]; then
+            PID=$(cat /tmp/otlp-test/receiver.pid)
+            if kill -0 $PID 2>/dev/null; then
+              kill $PID
+              sleep 1
+              if kill -0 $PID 2>/dev/null; then
+                kill -9 $PID
+              fi
+            fi
           fi
-          echo "---- contents of /tmp/vector_received.log ----"
-          [ -f /tmp/vector_received.log ] && sed -n '1,200p' /tmp/vector_received.log || echo "(no requests received)"
+          pkill -f "mock_otlp_receiver.py" || true
+          echo "---- Received payloads ----"
+          for f in /tmp/otlp-test/payload_*.json; do
+            if [ -f "$f" ]; then
+              echo "File: $f"
+              head -n 20 "$f" || true
+            fi
+          done

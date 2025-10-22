@@ -27,7 +27,7 @@ trap cleanup EXIT
 
 # Test with the first port
 PORT=${PORTS[0]}
-export HOMELAB_VECTOR_ENDPOINT="http://127.0.0.1:$PORT"
+export HOMELAB_VECTOR_ENDPOINT="http://127.0.0.1:$PORT/v1/logs"
 
 source "$ROOT_DIR/lib/logging.sh"
 export HOMELAB_LOG_TARGET=vector
