@@ -89,4 +89,7 @@ load_sops_env "${PROJECT_ROOT}/.env.sops"
 
 export PATH="${PROJECT_ROOT}/node_modules/.bin:${PATH}"
 export UV_CACHE_DIR="${PROJECT_ROOT}/.cache/uv"
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+export PATH="${PNPM_HOME}:${PATH}"
+
 mkdir -p "${UV_CACHE_DIR}"

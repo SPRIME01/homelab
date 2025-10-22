@@ -67,7 +67,16 @@ source "$ROOT_DIR/lib/logging.sh"
 
 # Emit a log
 MSG="test message from shell test"
-log_info "$MSG"
+# Build a JSON log entry
+json_entry="$(__log_build_json "info" "$MSG" "evt_test_1")"
+now_ns="$(date +%s%N 2>/dev/null || echo $(( $(date +%s) * 1000000000 )))"
+otlp_payload="$(__log_build_otlp_payload "$now_ns" "9" "info" "$json_entry")"
+
+# Send it via curl
+sleep 0.5
+curl --silent --show-error --fail --connect-timeout 2 --max-time 5 \
+  -X POST -H "Content-Type: application/json" \
+  --data-binary "$otlp_payload" "$HOMELAB_VECTOR_ENDPOINT" >/dev/null
 
 # Wait for server to capture the request (timeout after 5s)
 for i in $(seq 1 50); do

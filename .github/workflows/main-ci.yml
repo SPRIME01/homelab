@@ -89,18 +89,33 @@ jobs:
           pnpm -v
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Setup Python
+      - name: Setup Python for uv
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: "pip-cache-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}"
-      - name: Install minimal deps
+          python-version: '3.12'
+      - name: Install and configure uv
         run: |
-          python -m pip install --upgrade pip
+          set -euo pipefail
+          python -m pip install --user --upgrade pipx
+          python -m pipx ensurepath
+          export PATH="$HOME/.local/bin:$PATH"
+          pipx install uv
+          uv venv .venv --python 3.12
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: Verify Python venv
+        run: |
+          set -euo pipefail
+          which python
+          python --version
+      - name: Install Python dependencies
+        run: |
+          set -euo pipefail
+          uv pip install -r requirements.txt
+      - name: Install Python dependencies
+        run: |
+          set -euo pipefail
+          uv pip install -r requirements.txt
       - name: Start mock OTLP receiver
         run: |
           set -x
@@ -216,53 +231,27 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Bootstrap environment
         run: ./lib/env-loader.sh ci
-      - name: Install uv & Python venv (CI)
-        run: |
-          if python3.12 -V >/dev/null 2>&1; then
-            PYTHON_EXEC=python3.12
-          else
-            PYTHON_EXEC=python3
-          fi
-          echo "PYTHON_EXEC=$PYTHON_EXEC" >> "$GITHUB_ENV"
-
-          # Install pipx using the chosen Python and ensure it's usable
-          # Note: `pipx ensurepath` can be non-fatal in runners because it may
-          # not be able to modify login shell profiles; we warn but continue.
-          "$PYTHON_EXEC" -m pip install --user --upgrade pipx
-          "$PYTHON_EXEC" -m pipx ensurepath || echo "⚠️ pipx ensurepath failed; PATH may need adjustment"
-          "$PYTHON_EXEC" -m pipx install uv
-
-          # Extract Python version from PYTHON_EXEC for uv commands (keeps workflow aligned with runner Python)
-          PYTHON_VERSION=$("$PYTHON_EXEC" -V | cut -d' ' -f2 | cut -d'.' -f1,2)
-          uv python install "$PYTHON_VERSION" >/dev/null 2>&1
-
-          if [ ! -d .venv ]; then
-            uv venv .venv --python "$PYTHON_VERSION" >/dev/null 2>&1 || "$PYTHON_EXEC" -m venv .venv
-          fi
-
-          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
-          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
-
-          # Verify the virtual environment is properly activated
-          echo "Python executable: $(which "$PYTHON_EXEC")"
-          echo "Python version: $("$PYTHON_EXEC" --version)"
-          echo "Virtual environment: $VIRTUAL_ENV"
-      - name: Activate Python virtual environment
-        run: |
-          source .venv/bin/activate
-          echo "Activated virtual environment"
-      - name: Ensure pipx tools are in PATH
-        run: |
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "Added $HOME/.local/bin to PATH"
-      - name: Lint
-        run: npx nx run-many --target=lint --all
-      - name: Set UV_CACHE_DIR
-        run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
-      - name: Setup Python for tests
+      - name: Setup Python for uv
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.12'
+      - name: Install and configure uv
+        run: |
+          set -euo pipefail
+          python -m pip install --user --upgrade pipx
+          python -m pipx ensurepath
+          export PATH="$HOME/.local/bin:$PATH"
+          pipx install uv
+          uv venv .venv --python 3.12
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: Verify Python venv
+        run: |
+          set -euo pipefail
+          which python
+          python --version
+      - name: Lint
+        run: npx nx run-many --target=lint --all
       - name: Start mock OTLP receiver
         run: |
           echo "Python version: $(python3 --version)"
