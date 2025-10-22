@@ -27,6 +27,21 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
+      - name: Ensure pnpm is available
+        run: |
+          set -euo pipefail
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "pnpm not found — enabling via corepack"
+            if command -v corepack >/dev/null 2>&1; then
+              corepack enable || true
+              corepack prepare pnpm@9 --activate || true
+            fi
+          fi
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "corepack failed to activate pnpm; installing globally"
+            npm install -g pnpm@9
+          fi
+          echo "pnpm version: $(pnpm -v)"
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

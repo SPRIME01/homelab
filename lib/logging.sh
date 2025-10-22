@@ -297,6 +297,91 @@ __log_build_otlp_payload() {
     printf '%s' "{\"resourceLogs\":[{\"resource\":{},\"scopeLogs\":[{\"scope\":{},\"logRecords\":[{\"timeUnixNano\":\"${time_unix_nano}\",\"severityNumber\":${severity_number},\"severityText\":\"${severity_text}\",\"body\":{\"stringValue\":\"${escaped_body}\"}}]}]}]}"
 }
 
+# Construct the HTTP payload used when forwarding structured logs to Vector.
+# Ensures a top-level "message" field and a nested body.stringValue copy
+# of the structured JSON to keep compatibility with OTLP-style transforms.
+__log_send_to_vector_http() {
+    local level="$1"
+    local message="$2"
+    local json_output="$3"
+    local event_id="$4"
+
+    local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:4318/v1/logs}"
+
+    local payload=""
+
+    if command -v python3 >/dev/null 2>&1; then
+        payload="$(
+            LOG_LEVEL="$level" \
+            LOG_MESSAGE="$message" \
+            LOG_STRUCT="$json_output" \
+            LOG_EVENT_ID="$event_id" \
+            LOG_SERVICE="$HOMELAB_SERVICE" \
+            LOG_ENVIRONMENT="$HOMELAB_ENVIRONMENT" \
+            LOG_VERSION="$HOMELAB_VERSION" \
+            python3 - <<'PY'
+import json
+import os
+from datetime import datetime, timezone
+
+level = os.environ.get("LOG_LEVEL", "info")
+message = os.environ.get("LOG_MESSAGE", "")
+event_id = os.environ.get("LOG_EVENT_ID") or ""
+service = os.environ.get("LOG_SERVICE", "unknown-service")
+environment = os.environ.get("LOG_ENVIRONMENT", "development")
+version = os.environ.get("LOG_VERSION", "0.0.0")
+
+try:
+    log_struct = json.loads(os.environ.get("LOG_STRUCT", "{}"))
+except json.JSONDecodeError:
+    log_struct = {}
+
+timestamp = log_struct.get("timestamp")
+if not timestamp:
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+payload = dict(log_struct)
+payload.setdefault("service", service)
+payload.setdefault("environment", environment)
+payload.setdefault("version", version)
+payload["timestamp"] = timestamp
+payload["level"] = level
+payload["message"] = message
+payload.setdefault("category", "application")
+if event_id:
+    payload["event_id"] = event_id
+payload["body"] = {"stringValue": json.dumps(log_struct, ensure_ascii=False)}
+
+print(json.dumps(payload, ensure_ascii=False))
+PY
+        )"
+    fi
+
+    if [ -z "$payload" ]; then
+        local escaped_message
+        escaped_message="$(__log_json_escape "$message")"
+        local escaped_body
+        escaped_body="$(__log_json_escape "$json_output")"
+        local escaped_service
+        escaped_service="$(__log_json_escape "$HOMELAB_SERVICE")"
+        local escaped_environment
+        escaped_environment="$(__log_json_escape "$HOMELAB_ENVIRONMENT")"
+        local escaped_version
+        escaped_version="$(__log_json_escape "$HOMELAB_VERSION")"
+        local escaped_event_id
+        escaped_event_id="$(__log_json_escape "$event_id")"
+        local timestamp="$(__log_get_timestamp)"
+        local escaped_timestamp
+        escaped_timestamp="$(__log_json_escape "$timestamp")"
+
+        payload="{\"timestamp\":\"$escaped_timestamp\",\"level\":\"$level\",\"message\":\"$escaped_message\",\"service\":\"$escaped_service\",\"environment\":\"$escaped_environment\",\"version\":\"$escaped_version\",\"category\":\"application\",\"event_id\":\"$escaped_event_id\",\"body\":{\"stringValue\":\"$escaped_body\"},\"log\":$json_output}"
+    fi
+
+    if ! printf '%s' "$payload" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" --data-binary @- "$vector_endpoint" 2>&1 >/dev/null; then
+        echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2
+    fi
+}
+
 # Map log level to OTLP severity number
 severity_number() {
     case "$1" in
@@ -345,42 +430,8 @@ __log() {
     fi
 
     # Route to Vector if needed
-    if [ "$HOMELAB_LOG_TARGET" = "vector" ]; then
-        # Try to send to Vector, fail gracefully
-        if command -v curl >/dev/null 2>&1; then
-            # Use configurable endpoint with sensible timeout/exit-on-failure flags
-            # Default to Vector's OTLP HTTP logs endpoint. Allow override via HOMELAB_VECTOR_ENDPOINT.
-            # We construct a minimal OTLP JSON payload (resourceLogs -> scopeLogs -> logRecords)
-            # and put the structured log JSON as a string in body.stringValue. This matches
-            # the transforms in ops/vector/vector.toml which look for .message or .body.
-            local vector_endpoint="${HOMELAB_VECTOR_ENDPOINT:-http://localhost:4318/v1/logs}"
-            local curl_output=""
-
-            # Prepare timeUnixNano (portable fallback to python3 when needed)
-            local time_unix_nano
-            if time_unix_nano="$(date +%s%N 2>/dev/null)" && [ -n "$time_unix_nano" ]; then
-                :
-            elif command -v python3 >/dev/null 2>&1; then
-                time_unix_nano="$(python3 -c 'import time; print(int(time.time() * 1e9))' 2>/dev/null)"
-            else
-                # Fallback: seconds -> nanoseconds
-                local secs
-                secs="$(date +%s 2>/dev/null || printf '0')"
-                time_unix_nano="$((secs * 1000000000))"
-            fi
-
-            # Build minimal OTLP JSON payload without depending on jq
-            # We'll pass the structured JSON directly without double-stringifying
-            local otlp_payload
-            otlp_payload="$(__log_build_otlp_payload "$time_unix_nano" "$(severity_number "$level")" "$level" "$json_output")"
-
-            if ! curl_output="$(printf '%s' "$otlp_payload" | curl --silent --show-error --fail --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d @- "$vector_endpoint" 2>&1)"; then
-                echo "Warning: Failed to send log to Vector at $vector_endpoint" >&2
-                if [ -n "$curl_output" ]; then
-                    echo "$curl_output" >&2
-                fi
-            fi
-        fi
+    if [ "$HOMELAB_LOG_TARGET" = "vector" ] && command -v curl >/dev/null 2>&1; then
+        __log_send_to_vector_http "$level" "$message" "$json_output" "$event_id"
     fi
 }
 
