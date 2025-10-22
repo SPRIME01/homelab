@@ -121,7 +121,7 @@ Architecture Overview
   "environment": "ci-pipeline",
   "version": "0.0.0",
   "category": "app",
-  "event_id": "env-check-00023",
+  "event_id": "evt_1697795116818_1",
   "trace_id": "4f3a8f9d2f8d4f1c",
   "span_id": "7a1d3c92f6ab2e11",
   "context": {

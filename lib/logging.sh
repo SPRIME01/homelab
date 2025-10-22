@@ -119,15 +119,8 @@ __log_json_escape() {
 
     # Try python3 next
     if command -v python3 >/dev/null 2>&1; then
-        printf '%s' "$str" | python3 - 2>/dev/null <<'PY'
-import json
-import sys
-
-value = sys.stdin.read()
-encoded = json.dumps(value, ensure_ascii=False)
-sys.stdout.write(encoded[1:-1])
-PY
-        return 0
+        # Use a single-line python invocation to avoid heredoc + pipe issues
+        printf '%s' "$str" | python3 -c 'import json,sys; v=sys.stdin.read(); s=json.dumps(v, ensure_ascii=False); sys.stdout.write(s[1:-1])' 2>/dev/null && return 0
     fi
 
     # Fallback: use perl for comprehensive escaping of control characters

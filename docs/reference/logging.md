@@ -433,8 +433,11 @@ EVENT_ID_COUNTER=0
 
 # Get next event ID
 next_event_id() {
+  # Return an event id in the implementation's format: evt_<timestamp_ms>_<counter>
   EVENT_ID_COUNTER=$((EVENT_ID_COUNTER + 1))
-  echo "${SERVICE}-${EVENT_ID_COUNTER}"
+  local timestamp_ms
+  timestamp_ms=$(date -u +%s%3N)
+  echo "evt_${timestamp_ms}_${EVENT_ID_COUNTER}"
 }
 
 # Core logging function

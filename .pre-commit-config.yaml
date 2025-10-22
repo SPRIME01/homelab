@@ -1,0 +1,39 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-yaml
+        name: Check YAML in docs/
+        entry: scripts/check-yaml.sh
+        language: system
+        files: ^docs/.*\.(ya?ml)$
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: local
+    hooks:
+      - id: shellcheck-local
+        name: Local ShellCheck (or fallback)
+        entry: scripts/run-shellcheck.sh
+        args: ['--severity=error']
+        language: system
+        files: '\.(sh|bash)$'
+
+  - repo: local
+    hooks:
+      - id: shellcheck-local
+        name: Local ShellCheck (or fallback)
+        entry: scripts/run-shellcheck.sh
+        args: ['--severity=error']
+        language: system
+        files: '\.(sh|bash)$'
+      - id: markdownlint-local
+        name: Local MarkdownLint (or noop)
+        entry: scripts/run-markdownlint.sh
+        language: system
+        files: '\.md$'

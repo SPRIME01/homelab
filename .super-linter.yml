@@ -1,0 +1,22 @@
+---
+# Minimal Super-Linter config: focus on YAML files under docs/
+validations:
+  yaml:
+    enabled: true
+
+# Only check files under docs/
+files_to_include:
+  - "docs/**.yml"
+  - "docs/**.yaml"
+  - "docs/**.md"
+
+# Disable other linters for this workflow
+linters:
+  disable:
+    - hadolint
+    - golangci-lint
+    - shellcheck
+    - eslint
+    - rubocop
+    - flake8
+    - markdownlint
