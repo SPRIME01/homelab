@@ -12,13 +12,47 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install Devbox
+        run: |
+          # Attempt to download Devbox installer; if unavailable, skip without failing the job
+          DEVBOX_URL="https://jetpack.io/devbox/install.sh"
+          echo "Checking Devbox installer at $DEVBOX_URL"
+          if curl --head --silent --fail "$DEVBOX_URL" >/dev/null 2>&1; then
+            curl -fsSL "$DEVBOX_URL" | sh
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          else
+            echo "Devbox installer not available at $DEVBOX_URL - skipping Devbox install"
+          fi
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Ensure pnpm is available
+        run: |
+          set -euo pipefail
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "pnpm not found — enabling via corepack"
+            if command -v corepack >/dev/null 2>&1; then
+              corepack enable || true
+              corepack prepare pnpm@9 --activate || true
+            fi
+          fi
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "corepack failed to activate pnpm; installing globally"
+            npm install -g pnpm@9
+          fi
+          echo "pnpm version: $(pnpm -v)"
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "lts"
-          cache: "npm"
+          node-version: "lts/*"
+          cache: "pnpm"
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Bootstrap environment
         run: ./lib/env-loader.sh ci
       - name: Install uv & Python venv (CI)
@@ -55,7 +89,86 @@ jobs:
           echo "Python executable: $(which "$PYTHON_EXEC")"
           echo "Python version: $("$PYTHON_EXEC" --version)"
           echo "Virtual environment: $VIRTUAL_ENV"
+      - name: Activate Python virtual environment
+        run: |
+          source .venv/bin/activate
+          echo "Activated virtual environment"
+      - name: Ensure pipx tools are in PATH
+        run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "Added $HOME/.local/bin to PATH"
       - name: Lint
         run: npx nx run-many --target=lint --all
+      - name: Set UV_CACHE_DIR
+        run: echo "UV_CACHE_DIR=$HOME/.cache/uv" >> $GITHUB_ENV
+      - name: Start mock OTLP receiver
+        run: |
+          set -x
+          echo "Python executable: $(which python3)"
+          echo "Python version: $(python3 --version)"
+          echo "PWD: $(pwd)"
+          echo "Listing tests/logging:"; ls -la tests/logging || true
+          echo "Starting mock OTLP receiver..."
+          mkdir -p /tmp/otlp-test
+          chmod +x tests/logging/mock_otlp_receiver.py
+          python3 tests/logging/mock_otlp_receiver.py --ports 43215 51417 --payload-dir /tmp/otlp-test --pid-file /tmp/otlp-test/pids.txt > /tmp/otlp-receiver.log 2>&1 &
+          RECEIVER_PID=$!
+          echo $RECEIVER_PID > /tmp/otlp-test/receiver.pid
+          echo "Mock receiver started with PID: $RECEIVER_PID"
+
+          # Wait for the receiver to be ready (up to 30 seconds)
+          for i in {1..30}; do
+            if grep -q "All servers started" /tmp/otlp-receiver.log 2>/dev/null; then
+              echo "Mock receiver is ready!"
+              sed -n '1,200p' /tmp/otlp-receiver.log || true
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "ERROR: Mock receiver did not start within 30 seconds"
+              echo "--- /tmp/otlp-receiver.log (tail) ---"
+              tail -n +1 /tmp/otlp-receiver.log || echo "No log file found"
+              echo "--- /tmp/otlp-test contents ---"
+              ls -la /tmp/otlp-test || true
+              exit 1
+            fi
+            sleep 1
+          done
+      - name: Run integration OTLP test
+        run: |
+          chmod +x tests/logging/test_integration_otlp_runner.sh
+          ./tests/logging/test_integration_otlp_runner.sh
       - name: Test
         run: npx nx run-many --target=test --all
+
+      - name: Stop mock OTLP receiver and show received logs
+        if: always()
+        run: |
+          set -x || true
+          echo "---- Dumping receiver log ----"
+          if [ -f /tmp/otlp-receiver.log ]; then
+            sed -n '1,200p' /tmp/otlp-receiver.log || true
+          else
+            echo "No /tmp/otlp-receiver.log found"
+          fi
+
+          echo "---- Received payloads ----"
+          if ls /tmp/otlp-test/payload_*.json 1> /dev/null 2>&1; then
+            for f in /tmp/otlp-test/payload_*.json; do
+              echo "File: $f"
+              head -n 200 "$f" || true
+            done
+          else
+            echo "No payload files found in /tmp/otlp-test"
+            ls -la /tmp/otlp-test || true
+          fi
+
+          if [ -f /tmp/otlp-test/receiver.pid ]; then
+            PID=$(cat /tmp/otlp-test/receiver.pid)
+            echo "Killing receiver PID: $PID"
+            if kill -0 $PID 2>/dev/null; then
+              kill $PID || true
+              sleep 1
+              kill -9 $PID || true
+            fi
+          fi
+          pkill -f "mock_otlp_receiver.py" || true

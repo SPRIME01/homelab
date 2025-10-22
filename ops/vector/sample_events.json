@@ -1,0 +1,30 @@
+[
+    {
+        "message": "user signup",
+        "email": "alice@example.com",
+        "access_token": "abcd1234",
+        "api_key": "key-xyz",
+        "session_id": "sess-1",
+        "user_id": 42
+    },
+    {
+        "message": "missing sensitive fields",
+        "user_id": 7
+    },
+    {
+        "message": "non-string fields",
+        "email": {
+            "local": "bob"
+        },
+        "access_token": 12345,
+        "api_key": null,
+        "session_id": false
+    },
+    {
+        "message": "nested token-like key",
+        "auth_token": "tok-999",
+        "nested": {
+            "secret_key": "shh"
+        }
+    }
+]

@@ -26,12 +26,12 @@
         "x86_64-linux": {
           "outputs": [
             {
-              "name": "man",
-              "path": "/nix/store/zj6zgaqa4jr27g13z92dfbm927mgigys-just-1.43.0-man",
+              "path": "/nix/store/g8lpgqmha8v0vqypvrm5y2w09ydwdcwp-just-1.43.0",
               "default": true
             },
             {
-              "path": "/nix/store/g8lpgqmha8v0vqypvrm5y2w09ydwdcwp-just-1.43.0",
+              "name": "man",
+              "path": "/nix/store/zj6zgaqa4jr27g13z92dfbm927mgigys-just-1.43.0-man",
               "default": true
             }
           ]
@@ -184,6 +184,20 @@
           "outputs": [
             {
               "path": "/nix/store/jiwzxayklgiacpgj0fivzk7abp7gm6bm-uv-0.8.19",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "vector": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#vector",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/1d73f5w5ssspziiyqcqy4p1bqv6i2rfx-vector-0.50.0",
               "default": true
             }
           ]

@@ -1,0 +1,218 @@
+# Log Schema Specification
+# Version: 1.0.0
+# Last Updated: 2025-10-20
+# Purpose: Defines the structured log schema for the homelab observability stack
+
+schema:
+  version: "1.0.0"
+  description: "Structured log schema for homelab observability"
+
+# Required fields that must be present in all log entries
+required_fields:
+  - name: "timestamp"
+    type: "string"
+    format: "ISO-8601 UTC"
+    description: "Timestamp when the log event was generated"
+    example: "2025-10-20T12:21:47.389Z"
+
+  - name: "level"
+    type: "string"
+    enum: ["error", "warn", "info", "debug"]
+    description: "Log level indicating severity"
+    example: "info"
+
+  - name: "message"
+    type: "string"
+    description: "Human-readable log message"
+    example: "env-check completed"
+
+  - name: "service"
+    type: "string"
+    description: "Name of the service generating the log"
+    example: "env-check"
+
+  - name: "environment"
+    type: "string"
+    enum: ["developer-shell", "devbox-shell", "ci-pipeline", "staging", "production"]
+    description: "Environment where the log was generated"
+    example: "ci-pipeline"
+
+  - name: "version"
+    type: "string"
+    description: "Version of the service/application"
+    example: "0.0.0"
+
+  - name: "category"
+    type: "string"
+    enum: ["app", "audit", "security"]
+    default: "app"
+    description: "Log category for retention and access control"
+    example: "app"
+
+  - name: "event_id"
+    type: "string"
+    description: "Event ID should be in the format evt_<timestamp>_<counter> to match the implementation."
+    example: "evt_1697795116818_1"
+
+  - name: "trace_id"
+    type: "string"
+    description: "OpenTelemetry trace identifier for distributed tracing (16 bytes / 32 hex chars)"
+    example: "4f3a8f9d2f8d4f1c7a1d3c92f6ab2e11"
+
+  - name: "span_id"
+    type: "string"
+    description: "OpenTelemetry span identifier for distributed tracing"
+    example: "7a1d3c92f6ab2e11"
+
+  - name: "context"
+    type: "object"
+    description: "Additional contextual information as key-value pairs"
+    properties:
+      mode:
+        type: "string"
+        description: "Operational mode"
+        example: "deploy"
+      missing_env:
+        type: "array"
+        items:
+          type: "string"
+        description: "List of missing environment variables"
+        example: []
+
+# Optional fields that may be included when relevant
+optional_fields:
+  - name: "request_id"
+    type: "string"
+    description: "Request identifier for tracking specific operations"
+    example: "req-123456"
+
+  - name: "user_hash"
+    type: "string"
+    description: "Hashed user identifier (never raw user data)"
+    example: "a1b2c3d4e5f6"
+
+  - name: "source"
+    type: "string"
+    description: "Source component or module generating the log"
+    example: "lib/env-loader.sh"
+
+  - name: "duration_ms"
+    type: "integer"
+    description: "Operation duration in milliseconds"
+    example: 322
+
+  - name: "status_code"
+    type: "integer"
+    description: "HTTP status code or similar status indicator"
+    example: 200
+
+  - name: "tags"
+    type: "array"
+    items:
+      type: "string"
+    description: "Array of tags for categorization and filtering"
+    example: ["bootstrap", "validation"]
+
+# Metric-compatible fields for logs that also represent metrics
+metric_fields:
+  - name: "metric_name"
+    type: "string"
+    description: "Name of the metric"
+    example: "response_time"
+
+  - name: "metric_value"
+    type: "number"
+    description: "Numeric value of the metric"
+    example: 322
+
+  - name: "metric_unit"
+    type: "string"
+    description: "Unit of measurement for the metric"
+    example: "milliseconds"
+
+# OpenTelemetry resource attributes
+otel_fields:
+  - name: "otel_resource"
+    type: "object"
+    description: "OpenTelemetry resource attributes"
+    properties:
+      service.name:
+        type: "string"
+        description: "Service name"
+        example: "env-check"
+      service.version:
+        type: "string"
+        description: "Service version"
+        example: "0.0.0"
+      service.namespace:
+        type: "string"
+        description: "Service namespace"
+        example: "homelab"
+      deployment.environment:
+        type: "string"
+        description: "Deployment environment"
+        example: "ci-pipeline"
+
+# Schema revision history for auditing and change control
+revisions:
+  - version: "1.0.0"
+    date: "2025-10-20"
+    author: "kilo-code"
+    description: "Initial schema definition for HOMELAB-ADR-002"
+    changes:
+      - "Added required fields: timestamp, level, message, service, environment, version, category, event_id, trace_id, span_id, context"
+      - "Added optional fields: request_id, user_hash, source, duration_ms, status_code, tags"
+      - "Added metric fields: metric_name, metric_value, metric_unit"
+      - "Added OpenTelemetry resource attributes"
+      - "Defined field types and constraints"
+
+# Validation rules
+validation_rules:
+  - rule: "timestamp_format"
+    description: "All timestamps must be in ISO-8601 UTC format"
+    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+
+  - rule: "level_constraint"
+    description: "Log level must be one of: error, warn, info, debug"
+    allowed_values: ["error", "warn", "info", "debug"]
+
+  - rule: "category_constraint"
+    description: "Category must be one of: app, audit, security"
+    allowed_values: ["app", "audit", "security"]
+
+  - rule: "event_id_format"
+    description: "Event ID should be in the format evt_<timestamp>_<counter> to match the implementation."
+    pattern: "^evt_\\d+_\\d+$"
+
+  - rule: "trace_id_format"
+    description: "Trace ID must be a 32-character hexadecimal string (16 bytes in hex)"
+    pattern: "^[a-f0-9]{32}$"
+
+  - rule: "span_id_format"
+    description: "Span ID must be a 16-character hexadecimal string"
+    pattern: "^[a-f0-9]{16}$"
+
+  - rule: "pii_prohibition"
+    description: "Raw PII must not be included in log fields"
+    prohibited_patterns:
+      - "email addresses"
+      - "unencrypted access tokens"
+      - "raw user identifiers"
+      - "passwords or secrets"
+
+# Redaction rules applied by Vector
+redaction_rules:
+  - rule: "email_redaction"
+    description: "Redact email addresses"
+    pattern: "([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})"
+    replacement: "REDACTED_EMAIL"
+
+  - rule: "token_redaction"
+    description: "Redact any field containing 'token', 'key', 'secret', or 'password'"
+    field_pattern: ".*(token|key|secret|password).*"
+    replacement: "REDACTED_SENSITIVE"
+
+  - rule: "session_redaction"
+    description: "Redact session identifiers"
+    field_name: "session_id"
+    replacement: "REDACTED_SESSION"

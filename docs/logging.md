@@ -4,7 +4,7 @@ Status: Active (feature-flagged)
 ```mermaid
 flowchart LR
     EnvLoader["lib/env-loader.sh\n(HOMELAB_* flags)"] --> NodeLogger["Node logger\n(pino wrapper)"]
-    EnvLoader --> PyLogger["Python logger\n(structlog)"]
+    EnvLoader --> PyLogger["Python logger\n(schema helper)"]
     EnvLoader --> ShellLogger["Shell logger\n(lib/logging.sh)"]
     NodeLogger --> Vector["Vector collector\n(logs + metrics)"]
     PyLogger --> Vector
@@ -83,7 +83,7 @@ Architecture Overview
 - Initialise OpenTelemetry (`@opentelemetry/api`, `@opentelemetry/sdk-node`) during CLI bootstrap so the logger can populate `trace_id`/`span_id` and emit metrics counters when needed.
 
 ### Python Instrumentation (`main.py` and future scripts)
-- Add `tools/logging/python/logger.py` that configures `structlog` for JSON rendering, merges in environment metadata, and honours `HOMELAB_LOG_TARGET`.
+- Add `tools/logging/python/logger.py` that provides a dependency-free schema helper, merges in environment metadata, and honours `HOMELAB_LOG_TARGET`.
 - Update `main.py` to call the shared logger instead of raw `print`, preserving CLI output when observation is disabled by using a colorised console renderer.
 - Provide a helper `bind_trace(trace_id, span_id)` for optional tracing support and ensure the module discovers the project version from `pyproject.toml`.
 - Integrate `opentelemetry-sdk` and `opentelemetry-instrumentation` packages so span context is bound automatically and metrics counters can be emitted alongside logs.
@@ -121,7 +121,7 @@ Architecture Overview
   "environment": "ci-pipeline",
   "version": "0.0.0",
   "category": "app",
-  "event_id": "env-check-00023",
+  "event_id": "evt_1697795116818_1",
   "trace_id": "4f3a8f9d2f8d4f1c",
   "span_id": "7a1d3c92f6ab2e11",
   "context": {

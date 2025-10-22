@@ -1,0 +1,13 @@
+{
+  "name": "@homelab/logging-node",
+  "version": "1.0.0",
+  "description": "Node.js logging helper for Homelab with Pino",
+  "main": "logger.js",
+  "dependencies": {
+    "pino": "^9.3.1",
+    "pino-pretty": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

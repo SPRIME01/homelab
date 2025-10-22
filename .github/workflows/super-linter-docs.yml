@@ -1,0 +1,26 @@
+name: "Super-Linter - docs (YAML only)"
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+  pull_request:
+    paths:
+      - 'docs/**'
+
+jobs:
+  super-linter-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Super-Linter (YAML only)
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_YAML: true
+          VALIDATE_ALL_CODEBASE: false
+          LINTER_RULES_PATH: ./.super-linter.yml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: "--filter-mode"

@@ -1,0 +1,47 @@
+{
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "name": "logging",
+    "root": "tools",
+    "sourceRoot": "tools",
+    "projectType": "application",
+    "targets": {
+        "check": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node tools/tasks/logging-check.js"
+            },
+            "outputs": []
+        },
+        "logging": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node tools/tasks/logging-check.js"
+            },
+            "outputs": []
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "./tests/test_vector_logger.sh && ./tests/test_vector_logger_failure.sh && ./tests/test_vector_logger_otlp.sh"
+            },
+            "outputs": []
+        },
+        "build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "echo 'Building tools project...'"
+            },
+            "outputs": []
+        },
+        "deploy": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "echo 'Deploying tools project...'"
+            },
+            "outputs": []
+        }
+    },
+    "tags": [
+        "type:tooling"
+    ]
+}
