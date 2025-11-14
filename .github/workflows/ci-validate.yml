@@ -1,0 +1,25 @@
+name: CI Validate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just bash
+
+      - name: Show just version
+        run: just --version
+
+      - name: Run ci-validate (syntax + tests)
+        run: just ci-validate

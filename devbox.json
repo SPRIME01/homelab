@@ -3,6 +3,7 @@
   "packages": [
     "git",
     "curl",
+    "just",
     "jq",
     "postgresql"
   ],

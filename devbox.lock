@@ -1,0 +1,130 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "curl": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#curl",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "man",
+              "path": "/nix/store/0ba8dwwbddc1b7h7yrlnni6l0spdrxkh-curl-8.16.0-man",
+              "default": true
+            },
+            {
+              "name": "bin",
+              "path": "/nix/store/jxi6bwbmxyzhxi9zm9dzlihca6iv358r-curl-8.16.0-bin",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "git": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#git",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/0vbjxlqj8zp0pdjl2szvg17a98vqwyqj-git-2.51.0",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2025-11-12T10:38:40Z",
+      "resolved": "github:NixOS/nixpkgs/91c9a64ce2a84e648d0cf9671274bb9c2fb9ba60?lastModified=1762943920&narHash=sha256-ITeH8GBpQTw9457ICZBddQEBjlXMmilML067q0e6vqY%3D"
+    },
+    "glibcLocales@latest": {
+      "last_modified": "2025-10-22T20:59:19Z",
+      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#glibcLocales",
+      "source": "devbox-search",
+      "version": "2.40-66",
+      "systems": {
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/br6c397yfnlr9mnsc9ziv2mz015d70mg-glibc-locales-2.40-66",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/br6c397yfnlr9mnsc9ziv2mz015d70mg-glibc-locales-2.40-66"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lfnnsw0p9a1cbra5wf5f5zakffd7ify4-glibc-locales-2.40-66",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lfnnsw0p9a1cbra5wf5f5zakffd7ify4-glibc-locales-2.40-66"
+        }
+      }
+    },
+    "jq": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#jq",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "man",
+              "path": "/nix/store/gkl03xki3msw3dylzji7gkiwnxmk3pdp-jq-1.8.1-man",
+              "default": true
+            },
+            {
+              "name": "bin",
+              "path": "/nix/store/6y8c4kikq5nka2qnza009j03bvkx2l5l-jq-1.8.1-bin",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "just": {
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#just",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/g8lpgqmha8v0vqypvrm5y2w09ydwdcwp-just-1.43.0",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/zj6zgaqa4jr27g13z92dfbm927mgigys-just-1.43.0-man",
+              "default": true
+            }
+          ]
+        }
+      }
+    },
+    "postgresql": {
+      "plugin_version": "0.0.2",
+      "resolved": "github:NixOS/nixpkgs/36226520e9f7a35bf341cbe3b6a1ff9047bec6d9?narHash=sha256-%2B4A1SFln9wOCoUZM0mQfKefP1uRVmjz6bV5SPbl1Q%2F4%3D#postgresql",
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "path": "/nix/store/p1gmlsz3ppn9nxwfjz6n1gwi0p44qc60-postgresql-17.6",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/jpbzyna5qs7yg3lm39gbvasvjj97sj6v-postgresql-17.6-man",
+              "default": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
