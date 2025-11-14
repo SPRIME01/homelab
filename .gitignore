@@ -1,0 +1,6 @@
+# Ignore local generated key files and secrets
+/ci-keys.txt
+/homelab-keys.txt
+/secrets/
+*.tar.gz
+*.gpg
