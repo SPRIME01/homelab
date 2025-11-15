@@ -1,0 +1,44 @@
+{
+    "name": "homelab-types",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/homelab-types/src",
+    "projectType": "library",
+    "tags": [
+        "type:library",
+        "scope:shared"
+    ],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "options": {
+                "outputPath": "dist/packages/homelab-types",
+                "main": "packages/homelab-types/src/index.ts",
+                "tsConfig": "packages/homelab-types/tsconfig.json",
+                "assets": [
+                    "packages/homelab-types/*.md"
+                ]
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": [
+                "{options.outputFile}"
+            ],
+            "options": {
+                "lintFilePatterns": [
+                    "packages/homelab-types/**/*.ts"
+                ]
+            }
+        },
+        "type-check": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsc --noEmit",
+                "cwd": "packages/homelab-types"
+            }
+        }
+    }
+}

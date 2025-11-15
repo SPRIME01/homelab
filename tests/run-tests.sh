@@ -13,6 +13,7 @@ tests=(
   "07_ansible_molecule_validation.sh"
   "08_infra_guards.sh"
   "09_tailscale_ssh_verification.sh"
+  "10_nx_distributed_validation.sh"
 )
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

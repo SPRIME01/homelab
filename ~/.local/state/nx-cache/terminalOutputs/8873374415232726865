@@ -1,0 +1,16 @@
+[1m[33mYour library compilation option specifies that the compiler external helper (tslib) is needed but it is not installed.[39m[22m
+Compiling TypeScript files for project "homelab-types"...
+[1m[31m[91merror[0m[90m TS2688: [0mCannot find type definition file for 'node'.[39m[22m
+[1m[31m  The file is in the program because:[39m[22m
+[1m[31m    Entry point of type library 'node' specified in compilerOptions[39m[22m
+[1m[31m[96mpackages/homelab-types/src/index.ts[0m:[93m146[0m:[93m17[0m - [91merror[0m[90m TS2591: [0mCannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m146[0m   const value = process.env.HOMELAB ?? '0';[39m[22m
+[1m[31m[7m   [0m [91m                ~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/homelab-types/src/index.ts[0m:[93m154[0m:[93m48[0m - [91merror[0m[90m TS1225: [0mCannot find parameter 'process'.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m154[0m export function assertHomelabAccess(): asserts process is { env: { HOMELAB: '1' } } {[39m[22m
+[1m[31m[7m   [0m [91m                                               ~~~~~~~[0m[39m[22m
+[1m[31m[39m[22m
+
+[2m../../dist/packages/homelab-types/README.md[22m

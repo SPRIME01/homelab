@@ -1,0 +1,19 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "../../dist/packages/homelab-types",
+        "rootDir": "src",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "tsBuildInfoFile": "../../dist/packages/homelab-types/tsconfig.tsbuildinfo"
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts",
+        "**/*.test.ts"
+    ]
+}

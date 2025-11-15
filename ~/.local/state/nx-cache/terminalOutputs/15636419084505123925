@@ -1,0 +1,9 @@
+> nx run pulumi-bootstrap:build
+
+[1m[33mYour library compilation option specifies that the compiler external helper (tslib) is needed but it is not installed.[39m[22m
+Compiling TypeScript files for project "pulumi-bootstrap"...
+Done compiling TypeScript files for project "pulumi-bootstrap".
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.dev.yaml[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.yaml[22m

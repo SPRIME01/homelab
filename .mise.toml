@@ -57,6 +57,12 @@ node = "22.17.0"
 # Python: MCP docs contained `v3.13.9` in results — pin to that stable release.
 python = "3.13.9"
 
+# pnpm: Queried from npm registry 2025-11-14 — pinning to latest stable for monorepo efficiency
+pnpm = "10.22.0"
+# Nx: Queried from npm registry 2025-11-14 — pinning to latest stable for distributed task execution
+# Note: Installing via mise ensures nx CLI is available globally without npx prefix
+"npm:nx" = "22.0.3"
+
 # Devbox, Rust, Age, and Pulumi pinned from recent releases (queried via GitHub releases API)
 devbox = "0.16.0"
 rust = "1.91.1"

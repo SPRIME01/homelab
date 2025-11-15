@@ -1,0 +1,35 @@
+[1m[33mYour library compilation option specifies that the compiler external helper (tslib) is needed but it is not installed.[39m[22m
+Compiling TypeScript files for project "pulumi-bootstrap"...
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m1[0m:[93m1[0m - [91merror[0m[90m TS2354: [0mThis syntax requires an imported helper but module 'tslib' cannot be found.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m1[0m import * as pulumi from "@pulumi/pulumi";[39m[22m
+[1m[31m[7m [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m15[0m:[93m6[0m - [91merror[0m[90m TS6196: [0m'CommandResult' is declared but never used.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m15[0m type CommandResult<T> =[39m[22m
+[1m[31m[7m  [0m [91m     ~~~~~~~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m24[0m:[93m43[0m - [91merror[0m[90m TS1225: [0mCannot find parameter 'process'.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m24[0m function validateHomelabAccess(): asserts process is { env: { HOMELAB: '1' } } {[39m[22m
+[1m[31m[7m  [0m [91m                                          ~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m45[0m:[93m10[0m - [91merror[0m[90m TS6133: [0m'createResourceID' is declared but its value is never read.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m45[0m function createResourceID(raw: string): ResourceID {[39m[22m
+[1m[31m[7m  [0m [91m         ~~~~~~~~~~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m62[0m:[93m11[0m - [91merror[0m[90m TS6133: [0m'config' is declared but its value is never read.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m62[0m     const config = new pulumi.Config();[39m[22m
+[1m[31m[7m  [0m [91m          ~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m78[0m:[93m5[0m - [91merror[0m[90m TS2322: [0mType 'OutputInstance<void>' is not assignable to type 'void'.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m78[0m     return pulumi.all(metadata).apply((resolved) => {[39m[22m
+[1m[31m[7m  [0m [91m    ~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m80[0m:[93m20[0m - [91merror[0m[90m TS2339: [0mProperty 'export' does not exist on type 'typeof import("/home/prime/homelab/node_modules/.pnpm/@pulumi+pulumi@3.207.0_typescript@5.9.3/node_modules/@pulumi/pulumi/index")'.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m80[0m             pulumi.export(key, value);[39m[22m
+[1m[31m[7m  [0m [91m                   ~~~~~~[0m[39m[22m
+[1m[31m[39m[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.dev.yaml[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.yaml[22m

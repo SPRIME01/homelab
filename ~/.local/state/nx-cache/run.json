@@ -1,0 +1,21 @@
+{
+  "run": {
+    "command": "nx build pulumi-bootstrap",
+    "startTime": "2025-11-15T04:32:50.035Z",
+    "endTime": "2025-11-15T04:32:52.805Z",
+    "inner": false
+  },
+  "tasks": [
+    {
+      "taskId": "pulumi-bootstrap:build",
+      "target": "build",
+      "projectName": "pulumi-bootstrap",
+      "hash": "15636419084505123925",
+      "startTime": "2025-11-15T04:32:50.045Z",
+      "endTime": "2025-11-15T04:32:52.788Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
+    }
+  ]
+}

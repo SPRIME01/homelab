@@ -1,0 +1,11 @@
+[1m[33mYour library compilation option specifies that the compiler external helper (tslib) is needed but it is not installed.[39m[22m
+Compiling TypeScript files for project "pulumi-bootstrap"...
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m8[0m:[93m6[0m - [91merror[0m[90m TS6196: [0m'ResourceID' is declared but never used.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m8[0m type ResourceID = string & { readonly __brand: 'ResourceID' };[39m[22m
+[1m[31m[7m [0m [91m     ~~~~~~~~~~[0m[39m[22m
+[1m[31m[39m[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.dev.yaml[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.yaml[22m

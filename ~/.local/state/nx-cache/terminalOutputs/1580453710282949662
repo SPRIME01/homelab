@@ -1,0 +1,19 @@
+[1m[33mYour library compilation option specifies that the compiler external helper (tslib) is needed but it is not installed.[39m[22m
+Compiling TypeScript files for project "pulumi-bootstrap"...
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m15[0m:[93m6[0m - [91merror[0m[90m TS6196: [0m'CommandResult' is declared but never used.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m15[0m type CommandResult<T> =[39m[22m
+[1m[31m[7m  [0m [91m     ~~~~~~~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m45[0m:[93m10[0m - [91merror[0m[90m TS6133: [0m'createResourceID' is declared but its value is never read.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m45[0m function createResourceID(raw: string): ResourceID {[39m[22m
+[1m[31m[7m  [0m [91m         ~~~~~~~~~~~~~~~~[0m[39m[22m
+[1m[31m[96mpackages/pulumi-bootstrap/index.ts[0m:[93m62[0m:[93m11[0m - [91merror[0m[90m TS6133: [0m'config' is declared but its value is never read.[39m[22m
+[1m[31m[39m[22m
+[1m[31m[7m62[0m     const config = new pulumi.Config();[39m[22m
+[1m[31m[7m  [0m [91m          ~~~~~~[0m[39m[22m
+[1m[31m[39m[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.dev.yaml[22m
+
+[2m../../dist/packages/pulumi-bootstrap/Pulumi.yaml[22m

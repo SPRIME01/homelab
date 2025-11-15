@@ -1,0 +1,58 @@
+# Nx ignore patterns - exclude from Nx computation graph
+
+# Encrypted secrets (never process with Nx)
+**/*.sops
+**/*.env
+infra/*.env
+infra/**/*.sops
+
+# Local environment configuration
+.envrc
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# SOPS age keys (never scan)
+.config/sops/
+homelab-keys.txt
+ci-keys.txt
+
+# Ansible retry files
+*.retry
+
+# Pulumi state (managed separately)
+.pulumi/

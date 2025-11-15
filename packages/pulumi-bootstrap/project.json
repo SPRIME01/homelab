@@ -1,0 +1,45 @@
+{
+  "name": "pulumi-bootstrap",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/pulumi-bootstrap/src",
+  "projectType": "library",
+  "tags": ["infra", "pulumi", "homelab-guarded"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/pulumi-bootstrap",
+        "main": "packages/pulumi-bootstrap/index.ts",
+        "tsConfig": "packages/pulumi-bootstrap/tsconfig.lib.json",
+        "assets": ["packages/pulumi-bootstrap/*.md", "packages/pulumi-bootstrap/Pulumi*.yaml"]
+      },
+      "configurations": {
+        "production": {
+          "sourceMap": false
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/pulumi-bootstrap/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'Pulumi project requires HOMELAB=1 for testing'",
+        "cwd": "packages/pulumi-bootstrap"
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/pulumi-bootstrap"
+      }
+    }
+  }
+}

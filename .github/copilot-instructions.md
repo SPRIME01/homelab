@@ -103,6 +103,15 @@ chmod 600 "$HOME/.config/sops/age/keys.txt"
 ### No Sudo Policy
 **Only exception:** Installing `tailscaled` system service on Windows host or homelab nodes. Everything else is user-local (`$HOME/.local/bin`).
 
+### Generating Config Files
+Use tool-specific init commands to generate config files, then modify as needed. For example:
+
+```bash mise config generate > .mise.toml
+mise config generate > .mise.toml
+devbox init > devbox.json
+```
+Generate all config files using tool inti command to limit the surface for halucination then modify the generated files as needed.
+
 ## Common Pitfalls
 
 1. **SOPS fails with "invalid character"**: Add `--input-type dotenv --output-type dotenv` for `.env` files

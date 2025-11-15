@@ -24,3 +24,28 @@ infra/ansible-bootstrap/.pytest_cache/
 infra/ansible-bootstrap/__pycache__/
 infra/ansible-bootstrap/venv/
 infra/ansible-bootstrap/.venv/
+
+# Node.js and pnpm
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+
+# Nx cache and outputs
+.nx/
+dist/
+.cache/
+tmp/
+
+# pnpm
+pnpm-lock.yaml
+
+# Build artifacts
+build/
+out/
+
+# TypeScript compiled outputs
+packages/*/dist/
+packages/*/*.tsbuildinfo
+
+# Nx infra secrets
+infra/nx-agents.env
