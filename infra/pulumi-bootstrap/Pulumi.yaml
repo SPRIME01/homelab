@@ -9,7 +9,11 @@ backend:
   # Backend configured via PULUMI_BACKEND_URL environment variable
   # Options:
   #   - Cloud: unset (default) or "https://api.pulumi.com"
-  #   - Local: "file://~/.pulumi"
+  #   - Local: XDG-style local path (recommended). Example below shows the
+  #     environment variable `PULUMI_LOCAL_STATE` which defaults to
+  #     `${XDG_STATE_HOME:-$HOME/.local/state}/pulumi`.
   #   - S3: "s3://<bucket-name>"
-  # Example: export PULUMI_BACKEND_URL="file://~/.pulumi"
+  # Example (preferred local XDG path):
+  #   export PULUMI_LOCAL_STATE="${PULUMI_LOCAL_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/pulumi}"
+  #   export PULUMI_BACKEND_URL="file://$PULUMI_LOCAL_STATE"
   url: ${PULUMI_BACKEND_URL}

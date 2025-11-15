@@ -52,11 +52,17 @@ python --version       # Should show 3.13.9
 **Option B: Local File Backend (no cloud account needed)**
 
 ```bash
-# Set backend to local filesystem
-export PULUMI_BACKEND_URL="file://~/.pulumi"
+# Preferred local backend (XDG-style):
+# Pulumi state will be stored under an XDG-friendly path by default. The
+# `just` Pulumi recipes will create this path when needed and set
+# `PULUMI_BACKEND_URL` to use it unless you override it explicitly.
+export PULUMI_LOCAL_STATE="${PULUMI_LOCAL_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/pulumi}"
+mkdir -p "$PULUMI_LOCAL_STATE"
+export PULUMI_BACKEND_URL="file://$PULUMI_LOCAL_STATE"
 
-# Or add to infra/.envrc:
-echo 'export PULUMI_BACKEND_URL="file://~/.pulumi"' >> infra/.envrc
+# Or add to infra/.envrc so direnv provides it automatically:
+echo 'export PULUMI_LOCAL_STATE="${PULUMI_LOCAL_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/pulumi}"' >> infra/.envrc
+echo 'export PULUMI_BACKEND_URL="file://$PULUMI_LOCAL_STATE"' >> infra/.envrc
 direnv allow infra/
 ```
 
@@ -76,10 +82,20 @@ export HOMELAB=1
 # Initialize the default "dev" stack
 cd infra/pulumi-bootstrap
 npm install
+
+# Ensure Pulumi CLI is installed (use `mise install` or your devbox image):
+# `mise install` will install the pinned Pulumi version declared in `.mise.toml`.
 pulumi stack init dev
 
 # Or use justfile recipe:
 HOMELAB=1 STACK_NAME=dev just pulumi-stack-init
+
+# Notes:
+# - The `just` Pulumi recipes use the installed `pulumi` binary (not `npx`).
+# - They prefer an XDG-style local backend at `$PULUMI_LOCAL_STATE` and will
+#   create the directory and run `pulumi login file://...` automatically.
+# - If you prefer Pulumi Cloud, set `PULUMI_BACKEND_URL` or run `pulumi login`
+#   with your cloud token instead.
 ```
 
 ### 4. Encrypt Cloud Provider Credentials
@@ -340,8 +356,10 @@ source ~/.bashrc
 
 **Fix for local backend:**
 ```bash
-export PULUMI_BACKEND_URL="file://~/.pulumi"
-pulumi login --local
+PULUMI_LOCAL_STATE="${PULUMI_LOCAL_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/pulumi}"
+mkdir -p "$PULUMI_LOCAL_STATE"
+export PULUMI_BACKEND_URL="file://$PULUMI_LOCAL_STATE"
+pulumi login "$PULUMI_BACKEND_URL"
 ```
 
 **Fix for cloud backend:**
