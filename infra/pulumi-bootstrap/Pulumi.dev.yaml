@@ -6,6 +6,6 @@ config:
   # aws:region: us-east-1
   # aws:accessKey: <encrypt-me>
   # aws:secretKey: <encrypt-me>
-
   pulumi-bootstrap:environment: development
   pulumi-bootstrap:description: Local development stack for testing infrastructure code
+encryptionsalt: v1:mtekRfIwpJk=:v1:sBVa+4TvEP4fHnWp:5yBVYUQRKc9CfQDSxeImwnGQt/xU7Q==
