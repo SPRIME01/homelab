@@ -1,0 +1,59 @@
+---
+# Ansible playbook to verify HOMELAB guard and Tailscale connectivity
+# This playbook must be run with HOMELAB=1 and active Tailscale connection
+
+- name: Verify HOMELAB guard before ANY task
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Check HOMELAB environment variable
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'HOMELAB') == '1'
+        fail_msg: >
+          Refusing to run: HOMELAB != 1.
+          Set HOMELAB=1 to enable infrastructure operations on trusted machines.
+        success_msg: "HOMELAB access validated"
+
+    - name: Verify Tailscale connectivity
+      ansible.builtin.command: tailscale status --json
+      register: tailscale_status
+      failed_when: tailscale_status.rc != 0
+      changed_when: false
+      when: lookup('env', 'REQUIRE_TAILSCALE') == '1'
+
+    - name: Parse Tailscale status
+      ansible.builtin.set_fact:
+        tailscale_info: "{{ tailscale_status.stdout | from_json }}"
+      when:
+        - lookup('env', 'REQUIRE_TAILSCALE') == '1'
+        - tailscale_status is defined
+
+    - name: Display Tailscale connectivity
+      ansible.builtin.debug:
+        msg: "Tailscale connected: {{ tailscale_info.Self.Online | default(false) }}"
+      when:
+        - lookup('env', 'REQUIRE_TAILSCALE') == '1'
+        - tailscale_info is defined
+
+- name: Example deployment tasks (gated by HOMELAB=1)
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Ping all hosts
+      ansible.builtin.ping:
+
+    - name: Gather basic facts
+      ansible.builtin.setup:
+        gather_subset:
+          - '!all'
+          - '!min'
+          - 'network'
+
+    - name: Display host information
+      ansible.builtin.debug:
+        msg: |
+          Host: {{ inventory_hostname }}
+          IP: {{ ansible_host | default('N/A') }}
+          OS: {{ ansible_distribution | default('N/A') }} {{ ansible_distribution_version | default('') }}

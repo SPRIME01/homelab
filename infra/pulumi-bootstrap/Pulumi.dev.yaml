@@ -1,0 +1,11 @@
+config:
+  # Stack-specific configuration (encrypted with Pulumi passphrase or cloud backend)
+  # Add cloud provider credentials here and encrypt with: pulumi config set --secret <key> <value>
+
+  # Example placeholders (DO NOT commit real credentials):
+  # aws:region: us-east-1
+  # aws:accessKey: <encrypt-me>
+  # aws:secretKey: <encrypt-me>
+
+  pulumi-bootstrap:environment: development
+  pulumi-bootstrap:description: Local development stack for testing infrastructure code

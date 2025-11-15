@@ -63,4 +63,10 @@ rust = "1.91.1"
 age = "1.2.1"
 pulumi = "3.207.0"
 
+# Ansible-core pinned to latest stable from PyPI (2024-2025)
+# Version 2.18.x series is latest before 2.19 (which requires Python 3.11+)
+# Using Ansible 2.18.x for broader compatibility while still being recent
+"pipx:ansible-core" = "2.18.1"
+"pipx:molecule" = "5.1.0"
+
 

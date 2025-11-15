@@ -5,15 +5,29 @@
     "curl",
     "just",
     "jq",
-    "postgresql"
+    "postgresql",
+    "nodejs_22",
+    "python313",
+    "docker"
   ],
   "shell": {
     "init_hook": [
-      "echo 'Welcome to devbox!' > /dev/null"
+      "echo 'Welcome to devbox!' > /dev/null",
+      "echo 'Infrastructure tools available: pulumi, ansible-core, molecule' > /dev/null"
     ],
     "scripts": {
       "test": [
-        "echo \"Error: no test specified\" && exit 1"
+        "just ci-validate"
+      ],
+      "test:pulumi": [
+        "bash tests/06_pulumi_project_validation.sh"
+      ],
+      "test:ansible": [
+        "bash tests/07_ansible_molecule_validation.sh"
+      ],
+      "test:infra": [
+        "bash tests/08_infra_guards.sh",
+        "bash tests/09_tailscale_ssh_verification.sh"
       ]
     }
   }

@@ -1,0 +1,10 @@
+---
+# Optional: Prepare playbook for pre-converge setup
+- name: Prepare
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Display preparation message
+      ansible.builtin.debug:
+        msg: "Preparing {{ inventory_hostname }} for testing"

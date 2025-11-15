@@ -1,0 +1,15 @@
+name: pulumi-bootstrap
+description: Security-hardened Pulumi TypeScript infrastructure bootstrap
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+    nodeVersion: 22.17.0
+backend:
+  # Backend configured via PULUMI_BACKEND_URL environment variable
+  # Options:
+  #   - Cloud: unset (default) or "https://api.pulumi.com"
+  #   - Local: "file://~/.pulumi"
+  #   - S3: "s3://<bucket-name>"
+  # Example: export PULUMI_BACKEND_URL="file://~/.pulumi"
+  url: ${PULUMI_BACKEND_URL}

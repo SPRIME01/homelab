@@ -1,0 +1,31 @@
+---
+# Molecule converge playbook - runs the role under test
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Update apt cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+
+    - name: Install basic packages for testing
+      ansible.builtin.package:
+        name:
+          - curl
+          - ca-certificates
+        state: present
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: testuser
+        comment: "Molecule test user"
+        create_home: true
+        state: present
+
+    - name: Display converge success
+      ansible.builtin.debug:
+        msg: "Converge completed successfully on {{ inventory_hostname }}"

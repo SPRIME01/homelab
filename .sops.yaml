@@ -11,3 +11,11 @@ creation_rules:
     age:
       - "age1ml9z356pnzxgjs8x96ngtzycfvxr4yuxq7qnqs5f2eperevgfupsvue8jl"
       - "age10wdqda8m4lnw2f67xgum9x9m0shgz87dw7qd5h7smqjm65dljyfqn63g9h"
+  - path_regex: '.*infra/pulumi.*\.(yaml|env)\.sops$'
+    age:
+      - "age1ml9z356pnzxgjs8x96ngtzycfvxr4yuxq7qnqs5f2eperevgfupsvue8jl"
+      - "age10wdqda8m4lnw2f67xgum9x9m0shgz87dw7qd5h7smqjm65dljyfqn63g9h"
+  - path_regex: '.*infra/ansible.*\.(yaml|env)\.sops$'
+    age:
+      - "age1ml9z356pnzxgjs8x96ngtzycfvxr4yuxq7qnqs5f2eperevgfupsvue8jl"
+      - "age10wdqda8m4lnw2f67xgum9x9m0shgz87dw7qd5h7smqjm65dljyfqn63g9h"

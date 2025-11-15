@@ -1,0 +1,31 @@
+# Example homelab inventory
+# Replace with your actual Tailscale IPs and configuration
+# This file should be encrypted with SOPS before committing
+
+all:
+  vars:
+    ansible_user: "{{ lookup('env', 'USER') }}"
+    homelab_flag: "{{ lookup('env', 'HOMELAB') }}"
+
+  children:
+    homelab_nodes:
+      hosts:
+        # Example: Uncomment and configure with your actual nodes
+        # node1:
+        #   ansible_host: 100.64.0.10  # Tailscale IP
+        #   tags:
+        #     - tag:homelab-wsl2
+        #     - development
+
+        # node2:
+        #   ansible_host: 100.64.0.11
+        #   tags:
+        #     - tag:homelab-wsl2
+        #     - production
+
+    # Group for testing (uses localhost)
+    local:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_python_interpreter: "{{ ansible_playbook_python }}"

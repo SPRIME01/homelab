@@ -1,0 +1,17 @@
+---
+# Ansible-lint configuration
+profile: production
+
+exclude_paths:
+  - .tox/
+  - molecule/*/tests/
+  - venv/
+  - .venv/
+
+skip_list:
+  - role-name  # Allow flexible role naming for bootstrap projects
+  - yaml[line-length]  # Handled by yamllint
+
+warn_list:
+  - experimental  # Warn on experimental features
+  - no-changed-when  # Warn on commands without changed_when

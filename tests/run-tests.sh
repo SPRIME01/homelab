@@ -9,6 +9,10 @@ tests=(
   "03_round_trip_homelab.sh"
   "04_just_safety_guards.sh"
   "05_tailscale_ssh_guards.sh"
+  "06_pulumi_project_validation.sh"
+  "07_ansible_molecule_validation.sh"
+  "08_infra_guards.sh"
+  "09_tailscale_ssh_verification.sh"
 )
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

@@ -1,0 +1,35 @@
+---
+# Molecule verify playbook - runs tests after converge
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify curl is installed
+      ansible.builtin.command: which curl
+      register: curl_check
+      failed_when: curl_check.rc != 0
+      changed_when: false
+
+    - name: Verify test user exists
+      ansible.builtin.user:
+        name: testuser
+        state: present
+      check_mode: true
+      register: user_check
+      failed_when: user_check.changed
+
+    - name: Verify user home directory exists
+      ansible.builtin.stat:
+        path: /home/testuser
+      register: home_dir
+      failed_when: not home_dir.stat.exists or not home_dir.stat.isdir
+
+    - name: Display verification results
+      ansible.builtin.debug:
+        msg: |
+          Verification passed:
+          - curl installed: {{ curl_check.rc == 0 }}
+          - testuser exists: {{ not user_check.changed }}
+          - home directory exists: {{ home_dir.stat.exists }}

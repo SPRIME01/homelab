@@ -1,0 +1,82 @@
+---
+# Molecule configuration for testing Ansible roles with Docker
+# This provides isolated testing without requiring live homelab infrastructure
+
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+    requirements-file: requirements.txt
+
+driver:
+  name: docker
+
+platforms:
+  - name: instance-ubuntu2204
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    pre_build_image: true
+    privileged: false
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    capabilities:
+      - SYS_ADMIN
+    tmpfs:
+      - /run
+      - /tmp
+
+  - name: instance-debian12
+    image: geerlingguy/docker-debian12-ansible:latest
+    pre_build_image: true
+    privileged: false
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    capabilities:
+      - SYS_ADMIN
+    tmpfs:
+      - /run
+      - /tmp
+
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer,yaml
+      stdout_callback: yaml
+      verbosity: 1
+  inventory:
+    host_vars:
+      instance-ubuntu2204:
+        ansible_user: root
+      instance-debian12:
+        ansible_user: root
+  env:
+    # Molecule tests do NOT require HOMELAB=1 (mocked environment)
+    ANSIBLE_FORCE_COLOR: "1"
+    ANSIBLE_LOAD_CALLBACK_PLUGINS: "1"
+
+verifier:
+  name: ansible
+  directory: tests/
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
+
+lint: |
+  set -e
+  yamllint .
+  ansible-lint .

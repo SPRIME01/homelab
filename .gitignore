@@ -5,3 +5,22 @@
 *.tar.gz
 *.gpg
 infra/tailscale-acl.local.json
+
+# Infrastructure secrets (plaintext - always encrypted before committing)
+infra/pulumi.env
+infra/ansible.env
+infra/.envrc
+
+# Pulumi state and outputs (managed by backend)
+infra/pulumi-bootstrap/node_modules/
+infra/pulumi-bootstrap/bin/
+infra/pulumi-bootstrap/.pulumi/
+infra/pulumi-bootstrap/Pulumi.*.yaml.bak
+
+# Ansible/Molecule artifacts
+infra/ansible-bootstrap/.molecule/
+infra/ansible-bootstrap/.tox/
+infra/ansible-bootstrap/.pytest_cache/
+infra/ansible-bootstrap/__pycache__/
+infra/ansible-bootstrap/venv/
+infra/ansible-bootstrap/.venv/
