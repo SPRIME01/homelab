@@ -1,0 +1,86 @@
+// Tailscale ACL policy (HuJSON: JSON with comments). Copy/paste directly into
+// the Tailscale admin console, or strip comments with `strip-json-comments` for
+// strict JSON tooling.
+{
+    // -----------------------------------------------------------------------
+    // Tag owners: who can assign tags to devices.
+    // -----------------------------------------------------------------------
+    "tagOwners": {
+        "tag:k8s-operator": [],
+        "tag:k8s": [
+            "tag:k8s-operator"
+        ],
+        "tag:homelab-wsl2": [
+            "admin@example.com"
+        ]
+    },
+    // -----------------------------------------------------------------------
+    // Grants: general network access rules (non-SSH). Keeping this wide open
+    // for now; tighten later if you want to restrict ports or subnets.
+    // -----------------------------------------------------------------------
+    "grants": [
+        {
+            "src": [
+                "*"
+            ],
+            "dst": [
+                "*"
+            ],
+            "ip": [
+                "*"
+            ]
+        }
+        // Future example:
+        // { "src": ["group:dev"], "dst": ["tag:homelab-wsl2:22"], "ip": ["tcp:22"] }
+    ],
+    // -----------------------------------------------------------------------
+    // SSH rules: least-privilege access for Tailscale SSH. Only "accept" and
+    // "check" actions are valid; everything else is denied by default.
+    // -----------------------------------------------------------------------
+    "ssh": [
+        {
+            // Admin-only SSH into homelab hosts
+            "action": "accept",
+            "src": [
+                "admin@example.com"
+            ],
+            "dst": [
+                "tag:homelab-wsl2"
+            ],
+            "users": [
+                "admin@example.com"
+            ]
+        },
+        {
+            // Allow users to SSH into their own devices (default behavior)
+            "action": "check",
+            "src": [
+                "autogroup:member"
+            ],
+            "dst": [
+                "autogroup:self"
+            ],
+            "users": [
+                "autogroup:nonroot",
+                "root"
+            ]
+        }
+        // No explicit deny needed: unmatched SSH requests are denied.
+    ],
+    // -----------------------------------------------------------------------
+    // Tests: optional validation helpers. Uncomment and edit to catch mistakes
+    // before applying the ACL.
+    // -----------------------------------------------------------------------
+    "tests": [
+        // {
+        //   "src": "admin@example.com",
+        //   "accept": ["tag:homelab-wsl2"],
+        //   "deny": []
+        // },
+        // {
+        //   "src": "someone-else@example.com",
+        //   "accept": [],
+        //   "deny": ["tag:homelab-wsl2"]
+        // }
+    ]
+}

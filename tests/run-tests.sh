@@ -8,6 +8,7 @@ tests=(
   "02_sops_yaml_schema.sh"
   "03_round_trip_homelab.sh"
   "04_just_safety_guards.sh"
+  "05_tailscale_ssh_guards.sh"
 )
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

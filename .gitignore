@@ -4,3 +4,4 @@
 /secrets/
 *.tar.gz
 *.gpg
+infra/tailscale-acl.local.json
