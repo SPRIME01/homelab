@@ -49,7 +49,14 @@ See `docs/Reference/Template-Testing.md` for testing and customization details.
    just ci-validate      # runs the 10 bash-based guard tests
    pnpm exec nx graph    # optional visualization of the Nx workspace
    ```
-4. **Start with the first tutorial** – follow `docs/Tutorials/Your-First-Deployment.md` to generate age keys, join the tailnet, encrypt your first secret, and run a DRY-RUN deployment end-to-end.
+4. **Test Python code and templates** (uses Devbox for reproducible environment):
+   ```bash
+   devbox shell          # activates Python 3.13.9 + pytest + dev deps
+   pytest tests/python -q
+   exit
+   ```
+   See `docs/Reference/Template-Testing.md` for full testing guide.
+5. **Start with the first tutorial** – follow `docs/Tutorials/Your-First-Deployment.md` to generate age keys, join the tailnet, encrypt your first secret, and run a DRY-RUN deployment end-to-end.
 
 ## Documentation Map
 

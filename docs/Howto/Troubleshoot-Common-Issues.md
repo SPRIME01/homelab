@@ -29,6 +29,27 @@ if ! command -v tailscale >/dev/null 2>&1; then
 fi
 ```
 
+## 2a. Python tests fail with import errors
+
+**Cause**: Missing `pytest.ini` with `pythonpath = .` or running tests outside proper environment.
+
+**Diagnose**:
+```bash
+# Check pytest.ini exists
+cat pytest.ini | grep pythonpath
+
+# Verify Python environment
+devbox shell
+which pytest
+pytest --version
+```
+
+**Fix**: Run tests inside Devbox shell (see `docs/Reference/Template-Testing.md`):
+```bash
+devbox shell
+pytest tests/python -q
+```
+
 ## 3. `just deploy` blocked
 
 **Cause**: `HOMELAB`, `DEPLOY_CONFIRM`, or `REQUIRE_TAILSCALE` not satisfied.

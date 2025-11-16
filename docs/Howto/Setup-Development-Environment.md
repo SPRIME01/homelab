@@ -31,6 +31,14 @@ Bring a workstation online with the exact tool versions and guard rails expected
    just check
    just detect-homelab
    ```
+5. **Test Copier template and Python code** (requires Devbox):
+   ```bash
+   devbox shell
+   pytest tests/python -q
+   just ci-validate
+   exit
+   ```
+   See `docs/Reference/Template-Testing.md` for comprehensive testing guide including template generation validation.
 
 ## Notes
 
