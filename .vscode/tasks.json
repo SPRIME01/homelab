@@ -23,7 +23,11 @@
         {
             "label": "Verify Python tests",
             "type": "shell",
-            "command": "pytest tests",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "\"${HOME}/.local/bin/mise\" exec python -- python -m pytest tests"
+            ],
             "group": "test",
             "presentation": {
                 "reveal": "always"

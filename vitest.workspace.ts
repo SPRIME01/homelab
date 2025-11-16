@@ -1,9 +1,2 @@
-{
-  "version": 1,
-  "projects": [
-    {
-      "root": "./packages/homelab-types",
-      "test": "vitest"
-    }
-  ]
-}
+// Vitest workspaces expect a default export listing each project root.
+export default ['./packages/homelab-types'];
