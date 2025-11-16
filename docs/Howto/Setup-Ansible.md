@@ -72,7 +72,7 @@ Prepare Ansible to manage homelab nodes via Tailscale SSH with Molecule-backed t
    export LC_ALL=C.UTF-8
    HOMELAB=1 just ansible-molecule-test  # create → converge → verify → destroy
    ```
-   
+
    **Tip:** Use the VS Code task `Verify Molecule (UTF-8)` to run this with the locale pre-configured.
 
 ## Validation Checklist
