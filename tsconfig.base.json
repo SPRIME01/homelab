@@ -17,8 +17,12 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@homelab/types": ["packages/homelab-types/src/index.ts"],
-      "@homelab/pulumi-bootstrap": ["packages/pulumi-bootstrap/index.ts"]
+      "@homelab/types": [
+        "packages/homelab-types/src/index.ts"
+      ],
+      "@homelab/pulumi-bootstrap": [
+        "packages/pulumi-bootstrap/index.ts"
+      ]
     },
     "strict": true,
     "noImplicitAny": true,

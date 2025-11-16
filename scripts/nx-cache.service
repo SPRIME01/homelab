@@ -1,0 +1,13 @@
+[Unit]
+Description=Nx cache HTTP server (user)
+After=network.target
+
+[Service]
+Type=simple
+Environment=HOME=%h
+ExecStart=/usr/bin/env npx http-server "$XDG_STATE_HOME/.local/state/nx-cache" --port 3333 --cors --host 0.0.0.0
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=default.target

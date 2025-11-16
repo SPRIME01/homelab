@@ -1,14 +1,21 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist/packages/pulumi-bootstrap",
-    "rootDir": ".",
-    "module": "commonjs",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "tsBuildInfoFile": "../../dist/packages/pulumi-bootstrap/tsconfig.tsbuildinfo"
-  },
-  "include": ["*.ts"],
-  "exclude": ["node_modules", "bin", "**/*.spec.ts", "**/*.test.ts"]
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "../../dist/packages/pulumi-bootstrap",
+        "rootDir": ".",
+        "module": "commonjs",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "tsBuildInfoFile": "../../dist/packages/pulumi-bootstrap/tsconfig.tsbuildinfo"
+    },
+    "include": [
+        "*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "bin",
+        "**/*.spec.ts",
+        "**/*.test.ts"
+    ]
 }

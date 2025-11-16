@@ -26,6 +26,46 @@ bash tests/run-tests.sh  # Runs all tests; treats exit code 2 as "skipped"
 just ci-validate         # CI target: syntax check + tests
 ```
 
+**Test structure (10 test suites):**
+```
+tests/
+├── 01_non_homelab_decrypt.sh          # SOPS guard behavior (HOMELAB=0)
+├── 02_sops_yaml_schema.sh             # .sops.yaml validation
+├── 03_round_trip_homelab.sh           # Encrypt/decrypt cycle
+├── 04_just_safety_guards.sh           # Justfile guard validation
+├── 05_tailscale_ssh_guards.sh         # Tailscale SSH transport (mocked)
+├── 06_pulumi_project_validation.sh    # Pulumi strict mode, branded types
+├── 07_ansible_molecule_validation.sh  # Ansible structure validation
+├── 08_infra_guards.sh                 # Infra recipe guards
+├── 09_tailscale_ssh_verification.sh   # SSH config validation
+└── 10_nx_distributed_validation.sh    # Nx monorepo structure, guards
+```
+
+**Exit code convention:**
+- `0` = pass (green in CI)
+- `1` = fail (red, blocks merge)
+- `2` = **skip** (yellow, allows CI to pass when optional deps missing)
+
+**Example skip pattern (for tests requiring homelab keys):**
+```bash
+if [ ! -f "$HOME/.config/sops/age/keys.txt" ]; then
+  echo "SKIP: no homelab key, cannot test decryption" >&2
+  exit 2
+fi
+```
+
+**Mock external deps in tests:**
+```bash
+# tests/05_tailscale_ssh_guards.sh pattern:
+TMPDIR="$(mktemp -d)"
+cat > "$TMPDIR/tailscale" << 'MOCK'
+#!/usr/bin/env bash
+echo "100.64.0.10"  # Fake Tailscale IP
+MOCK
+chmod +x "$TMPDIR/tailscale"
+export PATH="$TMPDIR:$PATH"  # Mock tailscale CLI
+```
+
 ### Secrets Management (SOPS + age)
 ```bash
 # Encrypt (always use --input-type/--output-type for .env files)
@@ -257,14 +297,100 @@ if ! HOMELAB=1 DRY_RUN=1 just my-infra-action | grep -q "DRY RUN"; then
 fi
 ```
 
+## Nx Monorepo & Distributed Builds
+
+This project uses **Nx 22.0.3 + pnpm 10.22.0** for distributed task execution across Tailscale-networked machines.
+
+### Architecture
+```
+packages/
+├── homelab-types/       # Branded types library (@homelab/types)
+│   ├── src/index.ts     # TailscaleIP, SOPSFilePath, AgeRecipient, HomelabFlag
+│   └── project.json     # Nx project config (@nx/js:tsc executor)
+└── pulumi-bootstrap/    # Migrated from infra/ (symlinked for compat)
+    ├── index.ts         # Infrastructure code importing @homelab/types
+    └── project.json     # Nx build target
+```
+
+**Key files:**
+- `nx.json` — Cache in `~/.local/state/nx-cache` (XDG_STATE_HOME pattern), parallel=3, daemon enabled
+- `pnpm-workspace.yaml` — Packages: `['packages/*', 'infra/*']` (allows legacy infra/ projects)
+- `tsconfig.base.json` — Strict mode + path mappings for `@homelab/*` packages
+- `.nxignore` — Excludes `**/*.sops`, `**/*.env`, `.envrc` from task graph
+
+### Build Commands
+```bash
+# Build specific project
+pnpm exec nx build homelab-types
+pnpm exec nx build pulumi-bootstrap
+
+# Build all affected by changes
+just nx-affected-build
+
+# Distributed build (requires HOMELAB=1 + agents configured)
+DEPLOY_CONFIRM=yes just nx-distributed-build
+```
+
+### Distributed Agent Workflow
+**Bootstrap (one-time setup):**
+```bash
+# Generate shared secret (256-bit)
+bash scripts/generate-nx-agent-secret.sh
+
+# Configure agents (copy from docs/Reference/example.nx-agents.env)
+# infra/nx-agents.env:
+#   NX_SHARED_SECRET=<hex-token>
+#   NX_AGENT_IPS=100.64.0.10,100.64.0.11  # Tailscale IPs
+
+# Encrypt config
+export AGE_RECIPIENT="age1ml9z356pnzxgjs8x96ngtzycfvxr4yuxq7qnqs5f2eperevgfupsvue8jl"
+just nx-encrypt-config
+
+# Start cache server (HTTP on port 3333)
+just nx-cache-server-start
+
+# Start agent on each machine
+just nx-start-agent  # Decrypts infra/nx-agents.env.sops, starts background agent
+```
+
+**Critical patterns:**
+- **Agent discovery**: Static list via `NX_AGENT_IPS` in encrypted config (see `just nx-discover-agents` for Tailscale IP detection)
+- **Cache backend**: Local HTTP initially (`npx http-server ~/.local/state/nx-cache --port 3333`), migrate to NFS/S3 for >10 agents
+- **Fallback behavior**: Nx automatically falls back to local execution if agents unreachable
+- **Health monitoring**: `scripts/nx-agent-health-monitor.sh` checks Tailscale/cache/agent, restarts via `scripts/nx-agent-restart.sh`
+- **Systemd integration**: `scripts/nx-cache.service` for persistent cache server (`systemctl --user enable`)
+
+**Adding new projects to monorepo:**
+1. Create `packages/<name>/project.json` with `@nx/js:tsc` executor
+2. Add `tsconfig.json` (extends `../../tsconfig.base.json`) and `tsconfig.lib.json` (compilation)
+3. Update `tsconfig.base.json` paths: `"@homelab/<name>": ["packages/<name>/src/index.ts"]`
+4. Set `outDir: ../../dist/packages/<name>` in `tsconfig.lib.json` for task outputs
+5. Build with `nx build <name>` (never use `tsc` directly)
+
+### Migration Pattern (infra/ → packages/)
+When moving legacy projects into Nx:
+1. **Create packages/<name>** with proper Nx project structure
+2. **Symlink old location**: `ln -s ../packages/<name> infra/<name>` (backward compatibility)
+3. **Update imports**: Change relative paths to `@homelab/<name>` aliases
+4. **Validate builds**: Run `nx build <name>` and ensure dist/ outputs correct
+5. **Update justfile recipes**: Keep existing recipes working via symlink
+
+**Example from this repo:**
+```bash
+# Pulumi was migrated from infra/pulumi-bootstrap → packages/pulumi-bootstrap
+# Old path still works via symlink for gradual migration
+ls -la infra/pulumi-bootstrap  # → ../packages/pulumi-bootstrap
+```
+
 ## Key Documentation References
 
 - **`docs/Secrets Management.md`** — SOPS/age workflow, backup, rotation
 - **`docs/Tailscale.md`** — Complete Tailscale SSH setup walkthrough
 - **`docs/Automation.md`** — Justfile guard patterns, HOMELAB detection
-- **`justfile`** — All recipes with embedded guard logic
+- **`docs/Nx Distributed Agents.md`** — Distributed builds, agent setup, troubleshooting
+- **`justfile`** — All recipes with embedded guard logic (33 recipes: 21 infra + 12 Nx)
 - **`.envrc`** — Auto-detection of homelab environment
-- **`.sops.yaml`** — Encryption rules for `infra/` files
+- **`.sops.yaml`** — Encryption rules for `infra/` files (includes `infra/nx.*\.sops$`)
 
 ## Type Safety Requirements (Strict)
 
@@ -339,6 +465,120 @@ fi
 - ❌ `Any` type (use `object` or explicit unions)
 - ❌ Mutable default arguments (`def func(items: list = [])`)
 - ❌ Type comments (`# type: ignore`) without JIRA ticket reference
+
+## Day-to-Day Development Patterns
+
+### Adding a New TypeScript Package
+```bash
+# 1. Create package structure
+mkdir -p packages/my-package/src
+cd packages/my-package
+
+# 2. Create project.json (Nx config)
+cat > project.json << 'EOF'
+{
+  "name": "my-package",
+  "sourceRoot": "packages/my-package/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/my-package",
+        "main": "packages/my-package/src/index.ts",
+        "tsConfig": "packages/my-package/tsconfig.lib.json"
+      }
+    }
+  }
+}
+EOF
+
+# 3. Create tsconfig files (extend root, set outDir)
+# tsconfig.json references tsconfig.lib.json
+# tsconfig.lib.json extends ../../tsconfig.base.json with outDir: ../../dist/packages/my-package
+
+# 4. Update tsconfig.base.json paths
+# Add: "@homelab/my-package": ["packages/my-package/src/index.ts"]
+
+# 5. Build and validate
+pnpm exec nx build my-package
+just ci-validate
+```
+
+### Working with Encrypted Secrets
+```bash
+# View encrypted file (requires HOMELAB=1)
+sops -d --input-type dotenv --output-type dotenv infra/tailscale.env.sops
+
+# Edit in-place (decrypts → $EDITOR → re-encrypts)
+sops infra/tailscale.env.sops
+
+# Add new encrypted file
+cp docs/Reference/example.env infra/my-service.env
+vim infra/my-service.env  # Fill values
+export AGE_RECIPIENT="age1ml9z356pnzxgjs8x96ngtzycfvxr4yuxq7qnqs5f2eperevgfupsvue8jl"
+sops --encrypt --input-type dotenv --output-type dotenv \
+  --age "$AGE_RECIPIENT" infra/my-service.env > infra/my-service.env.sops
+rm infra/my-service.env  # Never commit plaintext
+git add infra/my-service.env.sops
+```
+
+### Debugging Infrastructure Changes
+```bash
+# 1. Always preview first (DRY_RUN or tool-native preview)
+HOMELAB=1 DRY_RUN=1 just pulumi-up        # Shows intended changes
+HOMELAB=1 just pulumi-preview             # Pulumi native preview
+
+# 2. Test with single-node subset first
+HOMELAB=1 DEPLOY_CONFIRM=yes just ansible-ping  # Validate connectivity
+
+# 3. Apply incrementally with check mode
+HOMELAB=1 just ansible-check              # Ansible dry-run
+
+# 4. Full deploy only after validation
+HOMELAB=1 DEPLOY_CONFIRM=yes just ansible-deploy
+
+# 5. Verify with distributed build
+DEPLOY_CONFIRM=yes just nx-affected-build  # Only changed projects
+```
+
+### Common TDD Workflow (Adding New Feature)
+```bash
+# 1. Create test file first
+cat > tests/11_my_feature.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Test: my-feature requires HOMELAB=1"
+if HOMELAB=0 just my-feature >/dev/null 2>&1; then
+  echo "FAIL: succeeded with HOMELAB=0" >&2
+  exit 1
+fi
+
+echo "Test: my-feature supports DRY_RUN"
+if ! HOMELAB=1 DRY_RUN=1 just my-feature | grep -q "DRY RUN"; then
+  echo "FAIL: DRY_RUN not respected" >&2
+  exit 1
+fi
+
+echo "my-feature validation passed"
+exit 0
+EOF
+chmod +x tests/11_my_feature.sh
+
+# 2. Add to test runner
+# Edit tests/run-tests.sh: add "11_my_feature.sh" to tests array
+
+# 3. Implement feature (test will fail first - RED)
+# Edit justfile: add my-feature recipe with guards
+
+# 4. Validate implementation (GREEN)
+bash tests/11_my_feature.sh
+just ci-validate
+
+# 5. Document in appropriate docs/ file
+```
 
 ## Quick Start for AI Agents
 

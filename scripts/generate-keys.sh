@@ -31,5 +31,5 @@ echo
 echo "Next steps:
 - Add the two public recipients into .sops.yaml (replace placeholders).
 - Encrypt infra/example.env with: sops --encrypt --age <homelab-or-ci-public> infra/example.env > infra/example.env.sops
-- Back up $HOME/.config/sops/age/keys.txt securely (see Secrets Management.md).
+- Back up $HOME/.config/sops/age/keys.txt securely (see Secrets-Management.md).
 "

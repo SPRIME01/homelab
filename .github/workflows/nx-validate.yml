@@ -1,0 +1,25 @@
+name: Nx Validate (no agents)
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  nx-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Node and pnpm
+        run: |
+          curl -fsSL https://get.pnpm.io/install.sh | pnpm=latest bash -s -- -y
+          pnpm --version
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.17.0'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run Nx tests (validation only)
+        run: pnpm exec nx run-many --target=test --all --parallel=3

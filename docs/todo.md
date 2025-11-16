@@ -1,0 +1,3 @@
+- [] Install a systemd user timer for nx-agent-health-monitor.sh and enable it?
+- [] Add the systemd service file into a user-services/ install recipe (and a just target to install it)?
+- [] Implement NFS/S3 cache backend configuration and integration guide?
