@@ -83,3 +83,12 @@ DEPLOY_CONFIRM=yes just nx-distributed-build            # run
 
 **Appendix: migration to per-agent keys**
 - See docs/Nx Agent Migration.md (example and step-by-step) for full migration.
+
+## Remaining Human Tasks
+
+- [ ] Generate production SOPS age keypair (cannot be automated, store in password manager)
+- [ ] Encrypt cloud provider API tokens (AWS_ACCESS_KEY_ID, etc.)
+- [ ] Configure Tailscale ACL tags in admin console (tag:homelab-wsl2, tag:homelab-server)
+- [ ] Copy and customize example.envrc for your environment
+- [ ] Create Pulumi stack secrets (pulumi config set --secret)
+- [ ] Setup systemd user timers for nx-agent-health-monitor.sh

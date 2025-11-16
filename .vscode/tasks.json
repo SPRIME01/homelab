@@ -1,0 +1,73 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "pnpm install",
+            "type": "shell",
+            "command": "pnpm install",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Verify JS tests",
+            "type": "shell",
+            "command": "pnpm vitest",
+            "group": "test",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Verify Python tests",
+            "type": "shell",
+            "command": "pytest tests",
+            "group": "test",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Verify Molecule",
+            "type": "shell",
+            "command": "HOMELAB=1 just ansible-molecule-test",
+            "group": "test",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Verify Molecule (UTF-8)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "LANG=C.UTF-8 LC_ALL=C.UTF-8 HOMELAB=1 just ansible-molecule-test"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Verify All",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "pnpm install",
+                "Verify JS tests",
+                "Verify Python tests",
+                "Verify Molecule (UTF-8)"
+            ],
+            "type": "shell",
+            "command": "echo 'Verification complete'",
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}

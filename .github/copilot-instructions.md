@@ -96,6 +96,8 @@ just tailscale-join            # Decrypts infra/tailscale.env.sops and joins tai
 ### Environment Detection
 `.envrc` (via direnv) auto-sets `HOMELAB=1` when `~/.config/sops/age/keys.txt` exists. Run `direnv allow` after modifying `.envrc`.
 
+> **Devbox note:** the current `.envrc` only marks Devbox as available and exposes `devbox-shell`; you still need to run `devbox shell` manually before using Devbox-managed tools (pytest, `uv` installs, etc.), so the host shell stays predictable.
+
 ## Project-Specific Conventions
 
 ### Test Exit Codes
