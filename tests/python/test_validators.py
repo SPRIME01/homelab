@@ -30,3 +30,13 @@ def test_is_valid_email_true():
 def test_is_valid_email_false():
     f = ValidationFilters()
     assert not f.is_valid_email('not-an-email')
+
+
+def test_is_project_name_valid_true():
+    f = ValidationFilters()
+    assert f.is_project_name_valid('my-project')
+
+
+def test_is_project_name_valid_false():
+    f = ValidationFilters()
+    assert not f.is_project_name_valid('-leading')

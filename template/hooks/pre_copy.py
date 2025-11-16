@@ -25,7 +25,12 @@ def is_npm_scope(v: str) -> bool:
 
 
 def is_project_name_valid(name: str) -> bool:
-    return bool(re.match(r"^[a-z0-9\-_]+$", name))
+    """
+    Project names must start with a lower-case alphanumeric character
+    and may contain hyphens/underscores between alphanumeric segments.
+    This prevents leading/trailing separators and duplicate separators.
+    """
+    return bool(re.match(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$", name))
 
 
 def is_valid_email(v: str) -> bool:

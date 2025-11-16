@@ -16,6 +16,11 @@ def is_valid_email(value: str) -> bool:
     return bool(re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", value))
 
 
+def is_project_name_valid(name: str) -> bool:
+    """Same rules used pre-copy: start with alnum, separators only between segments."""
+    return bool(re.match(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$", name))
+
+
 class ValidationFilters(Extension):
     """
     Jinja2 extension to register filters used by Copier templates.
@@ -38,6 +43,7 @@ class ValidationFilters(Extension):
             self.is_semver = is_semver
             self.is_npm_scope = is_npm_scope
             self.is_valid_email = is_valid_email
+            self.is_project_name_valid = is_project_name_valid
             return
 
         super().__init__(environment)
@@ -45,3 +51,4 @@ class ValidationFilters(Extension):
         environment.filters["is_semver"] = is_semver
         environment.filters["is_npm_scope"] = is_npm_scope
         environment.filters["is_valid_email"] = is_valid_email
+        environment.filters["is_project_name_valid"] = is_project_name_valid

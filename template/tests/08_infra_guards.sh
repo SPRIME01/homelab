@@ -9,7 +9,7 @@ if ! command -v just >/dev/null 2>&1; then
 fi
 
 echo "Test: justfile contains infra recipes"
-if ! just --list 2>/dev/null | grep -qE "(pulumi|ansible)" ; then
+if ! just --list 2>/dev/null | tr -d '\r' | grep -qE "(pulumi|ansible)" ; then
   echo "FAIL: justfile missing pulumi or ansible recipes" >&2
   exit 1
 fi
