@@ -31,16 +31,20 @@ Prepare Ansible to manage homelab nodes via Tailscale SSH with Molecule-backed t
    uv venv
    source .venv/bin/activate
 
+   # Set UTF-8 locale (required for Ansible/Molecule)
+   export LANG=C.UTF-8
+   export LC_ALL=C.UTF-8
+
    # Install deps (versions are specified in requirements.txt)
    uv pip install -r requirements.txt
 
    # Verify installations
-   ansible --version    # should show 2.18.x
-   molecule --version   # should show 5.1.x
-   pytest --version     # should show 8.x
+   pytest --version     # should show 9.x
+   molecule --version   # should show 25.x with ansible 2.20.x
+   ansible --version    # should show 2.20.x
    ```
 
-   **Note:** Always run these installs inside `devbox shell` or after `mise activate` so `uv` and the pinned Python version from `.mise.toml` are used.
+   **Note:** Always run these installs inside `devbox shell` or after `mise activate` so `uv` and the pinned Python version from `.mise.toml` are used. The `C.UTF-8` locale is required for Ansible/Molecule to function correctly.
 2. **Configure inventory**
    ```bash
    cp docs/Reference/example.ansible.env infra/ansible.env
@@ -63,8 +67,13 @@ Prepare Ansible to manage homelab nodes via Tailscale SSH with Molecule-backed t
    ```
 5. **Test roles with Molecule**
    ```bash
-   just ansible-molecule-test            # create → converge → verify → destroy
+   # Ensure UTF-8 locale is set
+   export LANG=C.UTF-8
+   export LC_ALL=C.UTF-8
+   HOMELAB=1 just ansible-molecule-test  # create → converge → verify → destroy
    ```
+   
+   **Tip:** Use the VS Code task `Verify Molecule (UTF-8)` to run this with the locale pre-configured.
 
 ## Validation Checklist
 
