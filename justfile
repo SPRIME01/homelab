@@ -79,6 +79,14 @@ ansible-molecule-destroy:
 ci-validate:
 	bash -lc 'just --dump >/dev/null; bash tests/run-tests.sh'
 
+# Copier template validation using a generated project
+copier-validate:
+	bash -lc 'python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt && copier copy --vcs-ref=HEAD . /tmp/homelab-test -d project_name=test-homelab -d admin_email=test@example.com -d enable_pulumi=true -d enable_ansible=true -d enable_nx_distributed=true; cd /tmp/homelab-test && bash tests/04_just_safety_guards.sh && bash tests/08_infra_guards.sh && pytest tests/python -q'
+
+# Run Python template tests using local template generation
+copier-test:
+	bash -lc 'python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt && pytest tests/python -q'
+
 # Nx distributed task execution recipes
 nx-init:
 	bash -lc 'set -euo pipefail; if [ "${HOMELAB:-0}" != "1" ]; then echo "Refusing nx-init: HOMELAB != 1" >&2; exit 1; fi; echo "Installing pnpm dependencies..."; pnpm install; echo "Validating nx.json schema..."; if ! command -v jq >/dev/null 2>&1; then echo "WARN: jq not installed, skipping JSON validation" >&2; else jq empty nx.json || { echo "ERROR: nx.json is invalid JSON" >&2; exit 1; }; fi; echo "Nx workspace initialized successfully"'

@@ -1,0 +1,162 @@
+_subdirectory: template
+_min_copier_version: "9.0.0"
+_templates_suffix: .j2
+_jinja_extensions:
+  - copier_templates_extensions.TemplateExtensionLoader
+  - extensions/validators.py:ValidationFilters
+
+_exclude:
+  - .git
+  - .nx
+  - node_modules
+  - dist
+  - tmp
+  - "*.sops"
+  - .copier-answers.yml
+  - pnpm-lock.yaml
+  - "{% if not enable_pulumi %}packages/pulumi-bootstrap{% endif %}"
+  - "{% if not enable_pulumi %}infra/pulumi-bootstrap{% endif %}"
+  - "{% if not enable_pulumi %}tests/06_pulumi_project_validation.sh{% endif %}"
+  - "{% if not enable_ansible %}infra/ansible-bootstrap{% endif %}"
+  - "{% if not enable_ansible %}tests/07_ansible_molecule_validation.sh{% endif %}"
+  - "{% if not enable_nx_distributed %}scripts/nx-*.sh{% endif %}"
+  - "{% if not enable_nx_distributed %}docs/Explanations/Nx-Distributed-Architecture.md{% endif %}"
+
+# Post generation message and tasks
+_message_after_copy: |
+  Your project "{{ project_name }}" has been created successfully!
+
+  Next steps:
+
+  1. Change directory to the project root:
+
+     $ cd {{ _copier_conf.dst_path }}
+
+  2. Read docs/Tutorials/Your-First-Deployment.md
+
+_tasks:
+  - command: ["{{ _copier_python }}", "hooks/pre_copy.py", "--full-conf={{ _copier_conf|to_json }}", "--answers={{ _copier_answers|to_json }}"]
+    when: "{{ _copier_operation == 'copy' }}"
+  - command: ["bash", "hooks/post_copy.sh"]
+    when: "{{ _copier_operation == 'copy' }}"
+
+# Basic options
+project_name:
+  type: str
+  help: "Lowercase project name (a-z0-9_-). Will be used in docker/image names and package names."
+  validator: >-
+    {% if not (project_name | regex_search('^[a-z0-9\-_]+$')) %}
+    project_name must contain only lowercase letters, numbers, hyphens and underscores.
+    {% endif %}
+
+project_description:
+  type: str
+  help: "Short description of the project"
+  default: "A secure homelab infra template"
+
+admin_email:
+  type: str
+  help: "Administrator email for contact and ACL configuration"
+  validator: >-
+    {% if '@' not in admin_email or not (admin_email | regex_search('[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')) %}
+    admin_email must be a valid email address (e.g. admin@example.com)
+    {% endif %}
+
+github_owner:
+  type: str
+  help: "GitHub owner/org for the generated repo"
+  default: "your-org"
+
+npm_scope:
+  type: str
+  help: "Optional npm scope (start with @). Leave blank to skip."
+  default: ""
+  validator: >-
+    {% if npm_scope and not (npm_scope | regex_search('^@[a-z0-9\-_]+$')) %}
+    npm_scope must start with @ followed by lowercase alphanumerics or hyphen/underscore
+    {% endif %}
+
+node_version:
+  type: str
+  help: "Node.js semantic version (e.g. 22.17.0)"
+  default: "22.17.0"
+  validator: >-
+    {% if not (node_version | regex_search('^\d+\.\d+\.\d+$')) %}
+    node_version must be a semver (major.minor.patch) e.g. 22.17.0
+    {% endif %}
+
+python_version:
+  type: str
+  help: "Python semantic version (e.g. 3.13.9)"
+  default: "3.13.9"
+  validator: >-
+    {% if not (python_version | regex_search('^\d+\.\d+\.\d+$')) %}
+    python_version must be a semver (major.minor.patch) e.g. 3.13.9
+    {% endif %}
+
+pulumi_version:
+  type: str
+  default: "3.207.0"
+  help: "Pulumi version to use"
+  validator: >-
+    {% if not (pulumi_version | regex_search('^\d+\.\d+\.\d+$')) %}
+    pulumi_version must be a semver (major.minor.patch)
+    {% endif %}
+
+pnpm_version:
+  type: str
+  default: "10.22.0"
+  validator: >-
+    {% if not (pnpm_version | regex_search('^\d+\.\d+\.\d+$')) %}
+    pnpm_version must be a semver (major.minor.patch)
+    {% endif %}
+
+nx_version:
+  type: str
+  default: "22.0.3"
+  validator: >-
+    {% if not (nx_version | regex_search('^\d+\.\d+\.\d+$')) %}
+    nx_version must be a semver (major.minor.patch)
+    {% endif %}
+
+# feature toggles
+enable_pulumi:
+  type: bool
+  default: true
+  help: "Include Pulumi resources and CI, otherwise remove pulumi packages/libraries"
+
+enable_ansible:
+  type: bool
+  default: true
+  help: "Include Ansible playbooks and tests"
+
+enable_nx_distributed:
+  type: bool
+  default: true
+  help: "Enable Nx distributed agent toolkit"
+
+# tailscale
+tailnet_name:
+  type: str
+  default: "homelab"
+  help: "Name of the Tailnet"
+
+tailscale_tag:
+  type: str
+  default: "tag:homelab-server"
+  help: "Tailscale ACL tag used for homelab servers"
+
+# internal constants
+_template_version:
+  type: str
+  default: "1.0.0"
+  when: false
+
+# small security hints
+_message_after_copy: |
+  After the project is generated, please follow the security checklist printed at the end.
+
+_migrations:
+  - version: v2.0.0
+    command: ./scripts/migrations/migrate_v1_to_v2.sh
+    when: "{{ _copier_operation == 'update' }}"

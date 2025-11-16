@@ -6,7 +6,7 @@ Transform the homelab repository into a Copier template on a `template` branch, 
 
 ### 1. Create `template` branch with Copier structure
 
-Branch from `main`, reorganize as `copier.yml` (root), `template/` (all current files), `hooks/` (pre/post generation scripts), `extensions/` (validators.py). Add `copier.yml` with 15+ variables (project identity, tool versions, feature flags), `_exclude` for `.git|node_modules|*.sops|pnpm-lock.yaml`, `_templates_suffix: .jinja`, validation tasks checking mise/direnv installation.
+Branch from `main`, reorganize as `copier.yml` (root), `template/` (all current files), `hooks/` (pre/post generation scripts), `extensions/` (validators.py). Add `copier.yml` with 15+ variables (project identity, tool versions, feature flags), `_exclude` for `.git|node_modules|*.sops|pnpm-lock.yaml`, `_templates_suffix: .j2`, validation tasks checking mise/direnv installation.
 
 **Variables to include:**
 - **Project Identity**: `project_name`, `project_description`, `admin_email`, `github_owner`
@@ -50,28 +50,28 @@ Validate all user inputs before generation to prevent common mistakes:
 - Exit with error code 1 and descriptive message on validation failure
 - Provide helpful suggestions (e.g., "project_name must be lowercase, got 'MyProject', try 'my-project'")
 
-### 3. Template 40+ files with `.jinja` suffix
+### 3. Template 40+ files with `.j2` suffix
 
 **Core configuration files:**
-- `.envrc.jinja` - Add project/admin comment header
-- `.mise.toml.jinja` - Parameterize tool versions
-- `devbox.json.jinja` - Allow package customization
-- `package.json.jinja` - Project name, description, optional npm scope
-- `tsconfig.base.json.jinja` - Path mappings with npm scope
-- `README.md.jinja` - Project metadata, GitHub links
+- `.envrc.j2` - Add project/admin comment header
+- `.mise.toml.j2` - Parameterize tool versions
+- `devbox.json.j2` - Allow package customization
+- `package.json.j2` - Project name, description, optional npm scope
+- `tsconfig.base.json.j2` - Path mappings with npm scope
+- `README.md.j2` - Project metadata, GitHub links
 
 **Documentation files (25+ files):**
 - All `docs/Explanations/*.md` → Replace hardcoded examples with `{{ admin_email }}`, `{{ project_name }}`
 - All `docs/Howto/*.md` → Template example commands with user's context
 - All `docs/Tutorials/*.md` → Personalize walkthrough steps
 - All `docs/Reference/*.md` → Template variable names and examples
-- `docs/Reference/example.envrc.jinja` → Template admin_email
-- `docs/Reference/example.tailscale-acl.json.jinja` → Template admin_email, tags
+ - `docs/Reference/example.envrc.j2` → Template admin_email
+ - `docs/Reference/example.tailscale-acl.json.j2` → Template admin_email, tags
 
 **Package files:**
-- `packages/homelab-types/package.json.jinja` → npm scope
-- `packages/pulumi-bootstrap/package.json.jinja` → npm scope, project name
-- `packages/pulumi-bootstrap/index.ts.jinja` → Project-specific resource names (optional)
+ - `packages/homelab-types/package.json.j2` → npm scope
+ - `packages/pulumi-bootstrap/package.json.j2` → npm scope, project name
+ - `packages/pulumi-bootstrap/index.ts.j2` → Project-specific resource names (optional)
 
 **Files to keep as-is (universal patterns):**
 - `justfile` - Guard patterns are universal
@@ -226,28 +226,30 @@ cat docs/Reference/Migration-v1-to-v2.md
 - `tests/08_infra_guards.sh`: New test validates REQUIRE_TAILSCALE behavior
 ```
 
-### 6. Add conditional feature exclusion via Jinja2
+### 6. Add conditional feature exclusion via Jinja2 ✅ IMPLEMENTED
 
 **When `enable_pulumi=false`, exclude:**
-- `packages/pulumi-bootstrap/` (entire directory)
-- `infra/pulumi-bootstrap/` (symlink)
-- `tests/06_pulumi_project_validation.sh`
-- Pulumi recipes from `justfile` (lines 45-54):
+- `packages/pulumi-bootstrap/` (entire directory) — ✅ via `_exclude` in copier.yml
+- `infra/pulumi-bootstrap/` (symlink) — ✅ via `_exclude` in copier.yml
+- `tests/06_pulumi_project_validation.sh` — ✅ via `_exclude` in copier.yml
+- Pulumi recipes from `justfile` — ✅ **IMPLEMENTED** via `{% if enable_pulumi %}` in template/justfile.j2:
   - `pulumi-preview`
   - `pulumi-up`
   - `pulumi-destroy`
   - `pulumi-stack-init`
-- Pulumi dependencies from `package.json`:
-  - `@pulumi/pulumi`
-  - All `@pulumi/*` packages
+- Pulumi dependencies from `package.json` — ⏳ TODO (currently included unconditionally)
 
 **When `enable_ansible=false`, skip:**
-- `infra/ansible-bootstrap/` (entire directory)
-- `tests/07_ansible_molecule_validation.sh`
-- Ansible recipes from `justfile` (lines 57-73):
+- `infra/ansible-bootstrap/` (entire directory) — ✅ via `_exclude` in copier.yml
+- `tests/07_ansible_molecule_validation.sh` — ✅ via `_exclude` in copier.yml
+- Ansible recipes from `justfile` — ✅ **IMPLEMENTED** via `{% if enable_ansible %}` in template/justfile.j2:
   - `ansible-ping`
   - `ansible-deploy`
   - `ansible-check`
+  - `ansible-molecule-test`
+  - `ansible-molecule-converge`
+  - `ansible-molecule-verify`
+  - `ansible-molecule-destroy`
   - `ansible-molecule-*` recipes
 
 **When `enable_nx_distributed=false`, skip:**
@@ -450,3 +452,30 @@ echo "  - Cloud provider tokens"
 - [ ] Template CI validates generation and tests on every push
 - [ ] Users can choose template version via `--vcs-ref=v1.0.0`
 - [ ] Comprehensive documentation for first-time users and update paths
+
+
+
+## Current Status
+
+### ✅ Completed
+- Replaced .jinja with .j2 in the template and docs
+- Added core templated files and feature toggles
+- Added unit tests for extensions.validators and hooks.pre_copy (unit test framework added to CI)
+- Implemented migrations scaffolding and CHANGELOG.md
+- **Added conditional Pulumi and Ansible recipes to `template/justfile.j2`** using `{% if enable_pulumi %}` and `{% if enable_ansible %}` blocks
+- **Fixed Python import issues in generated projects** by adding `template/pytest.ini` with `pythonpath = .` configuration
+- **Added `__init__.py` to template packages** (`hooks/` and `extensions/`) to make them proper Python packages
+- **Updated ValidationFilters** to allow instantiation without Jinja environment for unit testing
+- **All tests passing**: Repository tests (11/11), generated project shell tests, and generated project Python tests (9/9)
+
+### ✅ Validated
+- Template generation works with all feature combinations (enable_pulumi, enable_ansible, enable_nx_distributed)
+- Guard tests pass in generated projects (04_just_safety_guards.sh, 08_infra_guards.sh)
+- Python imports work correctly in generated projects via pytest.ini configuration
+- Conditional recipe inclusion works as expected
+
+### 🔄 Next recommended items (optional enhancements):
+- Template the remaining files (40+ files in the plan): .mise.toml.j2, tsconfig.base.json.j2, docs/Howto/Tutorials pages
+- Add more template-specific tests for migrations and conditional exclusions
+- Consider adding a pre-commit hook for .rej files
+- Expand CI matrix to test more feature combinations

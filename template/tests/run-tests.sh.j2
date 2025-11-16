@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run generated test suite. Some tests are conditional per selected features.
+
+tests=(
+  "01_non_homelab_decrypt.sh"
+  "02_sops_yaml_schema.sh"
+  "03_round_trip_homelab.sh"
+  "04_just_safety_guards.sh"
+  "05_tailscale_ssh_guards.sh"
+{% if enable_pulumi %}
+  "06_pulumi_project_validation.sh"
+{% endif %}
+{% if enable_ansible %}
+  "07_ansible_molecule_validation.sh"
+{% endif %}
+  "08_infra_guards.sh"
+  "09_tailscale_ssh_verification.sh"
+{% if enable_nx_distributed %}
+  "10_nx_distributed_validation.sh"
+{% endif %}
+)
+
+for t in "${tests[@]}"; do
+  echo "== Running $t =="
+  bash tests/$t || exit 1
+done
+
+echo "All requested tests passed."

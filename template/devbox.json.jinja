@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
+  "packages": [
+    "git",
+    "curl",
+    "just",
+    "jq",
+{% if enable_ansible %}
+    "ansible-core",
+    "molecule",
+{% endif %}
+    "postgresql",
+    "nodejs_{{ node_version.split('.')[0] }}",
+    "python{{ python_version }}",
+    {% if enable_pulumi %}"pulumi",{% endif %}
+    "docker"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo 'Welcome to devbox!' > /dev/null"
+    ],
+    "scripts": {
+      "test": [
+        "just ci-validate"
+      ]
+    }
+  }
+}

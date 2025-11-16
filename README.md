@@ -2,6 +2,36 @@
 
 This repository codifies a security-first homelab with strict guard rails (`HOMELAB=1`, Tailscale SSH, encrypted secrets) and a fully-typed automation toolchain (Pulumi, Ansible, Nx, Molecule). Every command in the repo is designed to fail closed unless you are on a trusted machine that meets the guard conditions defined in `.github/copilot-instructions.md`.
 
+## Generate Your Own Homelab (Copier Template)
+
+This repository can be used as a **Copier template** to generate customized homelab projects with optional features:
+
+```bash
+# Install copier
+pip install copier
+
+# Generate a new project
+copier copy gh:SPRIME01/homelab my-homelab \
+  -d project_name=my-homelab \
+  -d admin_email=you@example.com \
+  -d enable_pulumi=true \
+  -d enable_ansible=true \
+  -d enable_nx_distributed=false
+
+# Follow the post-generation security checklist
+cd my-homelab
+cat README.md
+```
+
+The template includes:
+- ✅ Conditional infrastructure tooling (Pulumi, Ansible, Nx)
+- ✅ Pre-configured security guards and validation tests
+- ✅ Encrypted secrets management (SOPS + age)
+- ✅ Tailscale SSH transport for remote execution
+- ✅ Python and shell test suites with pytest
+
+See `docs/Reference/Template-Testing.md` for testing and customization details.
+
 ## Five-Minute Setup
 
 1. **Install the pinned toolchain**

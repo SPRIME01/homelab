@@ -1,0 +1,26 @@
+{
+    "name": "{{ npm_scope if npm_scope else '@homelab' }}/types",
+    "version": "0.1.0",
+    "description": "Branded TypeScript types for homelab infrastructure security",
+    "type": "module",
+    "main": "../../dist/packages/homelab-types/index.js",
+    "types": "../../dist/packages/homelab-types/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "../../dist/packages/homelab-types/index.d.ts",
+            "import": "../../dist/packages/homelab-types/index.js",
+            "default": "../../dist/packages/homelab-types/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.lib.json",
+        "type-check": "tsc -p tsconfig.lib.json --noEmit"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.0"
+    },
+    "engines": {
+        "node": ">={{ node_version }}"
+    }
+}

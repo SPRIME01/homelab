@@ -1,0 +1,4 @@
+pytest>=8.0.0
+pytest-copier>=0.4.0
+copier>=9.0.0
+copier-templates-extensions>=0.3.2

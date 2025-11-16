@@ -1,0 +1,71 @@
+name: Validate Template
+
+on:
+  push:
+    branches: [template]
+  pull_request:
+    branches: [template]
+
+jobs:
+  validate-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install copier (pipx)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --user pipx
+          python -m pipx ensurepath
+          pipx install copier
+
+      - name: Install dev/test packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --user pipx
+          python -m pipx ensurepath || true
+          # Install python test deps for pytest, pytest-copier and local programmatic tests
+          python -m pip install -r requirements-dev.txt
+
+      - name: Validate copier.yml (lint)
+        run: copier --help-all
+
+      - name: Run unit tests in template repository (pytest)
+        run: pytest tests/python -q
+
+      - name: Generate test project - all features
+        run: |
+          copier copy --vcs-ref=HEAD . /tmp/test-all \
+            -d project_name=test-homelab \
+            -d admin_email=test@example.com \
+            -d enable_pulumi=true \
+            -d enable_ansible=true \
+            -d enable_nx_distributed=true
+
+      - name: Run guard tests in generated project - all
+        run: |
+          cd /tmp/test-all
+          bash tests/04_just_safety_guards.sh
+          bash tests/08_infra_guards.sh
+          # Run python unit tests in generated project too
+          pytest tests/python -q
+
+      - name: Generate test project - minimal
+        run: |
+          copier copy --vcs-ref=HEAD . /tmp/test-minimal \
+            -d project_name=minimal-lab \
+            -d admin_email=test@example.com \
+            -d enable_pulumi=false \
+            -d enable_ansible=false \
+            -d enable_nx_distributed=false
+
+      - name: Run guard tests in generated project - minimal
+        run: |
+          cd /tmp/test-minimal
+          bash tests/04_just_safety_guards.sh

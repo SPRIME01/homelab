@@ -1,0 +1,39 @@
+# {{ project_name | default('Homelab') }} Infrastructure
+
+{{ project_description }}
+
+Admin contact: {{ admin_email }}
+
+## Five-Minute Setup
+
+1. Install the pinned toolchain:
+
+```bash
+mise install  # installs node {{ node_version }}, python {{ python_version }}, etc.
+pnpm install
+```
+
+2. Load the development environment
+
+```bash
+direnv allow
+just detect-homelab
+```
+
+3. Verify guard rails
+
+```bash
+just ci-validate
+pnpm exec nx graph
+```
+
+### Optional features
+{% if not enable_pulumi %}
+Note: Pulumi integration is disabled for this project.
+{% endif %}
+{% if not enable_ansible %}
+Note: Ansible integration is disabled for this project.
+{% endif %}
+{% if not enable_nx_distributed %}
+Note: Nx distributed agents disabled.
+{% endif %}
