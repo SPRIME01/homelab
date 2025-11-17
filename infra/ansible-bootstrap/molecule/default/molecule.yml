@@ -3,13 +3,12 @@
 # This provides isolated testing without requiring live homelab infrastructure
 
 dependency:
-  # Use a 'shell' dependency to skip ansible-galaxy steps in CI
+  # Disable ansible-galaxy dependency installation for CI environments
   # (avoids external network dependency and allows tests to run in
-  # minimal environments). The command `true` is a no-op that exits
-  # successfully.
-  name: shell
-  options:
-    command: "true"
+  # minimal environments). The empty requirements.yml files document
+  # that no Galaxy roles/collections are needed.
+  name: galaxy
+  enabled: False
 
 driver:
   name: docker
