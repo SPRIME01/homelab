@@ -379,6 +379,113 @@ just nx-start-agent
 
 **What this does**: Starts an Nx agent that can receive build tasks from the orchestrator. Used for distributed TypeScript builds. Requires `HOMELAB=1`.
 
+## Recorded Host Actions: Tailscale & SSH Setup (this host)
+
+The following documents the steps taken on this homelab host to enable Tailscale connectivity and Tailscale SSH. Use this as a checklist when preparing other homelab machines.
+
+1) Install Tailscale (system package)
+
+```bash
+# Installer (runs apt on Ubuntu; requires sudo)
+curl -fsSL https://tailscale.com/install.sh | sh
+```
+
+Notes: the installer will add the Tailscale APT repository and install `tailscale` and `tailscaled`. It requires `sudo` to configure system services.
+
+2) Join the tailnet using the encrypted auth key
+
+This repository keeps Tailscale credentials encrypted at `infra/tailscale.env.sops`. To join using the encrypted auth key (homelab-only flow):
+
+```bash
+# Decrypt into a temp file and source it (requires sops)
+TMP=$(mktemp)
+sops -d --input-type dotenv --output-type dotenv infra/tailscale.env.sops > "$TMP"
+. "$TMP"  # exports TAILSCALE_AUTHKEY and other vars
+rm -f "$TMP"
+
+# Bring the system up with the auth key (requires sudo)
+sudo tailscale up --authkey="$TAILSCALE_AUTHKEY"
+```
+
+Notes: `tailscale up` may print warnings about advertised routes ("--accept-routes is false"). Accept routes only if you understand the routing implications and want this node to route traffic for subnets.
+
+3) Enable Tailscale SSH on the host
+
+```bash
+sudo tailscale up --ssh
+```
+
+This configures the local tailscaled process to allow Tailscale-managed SSH. It does not change local SSH configs; it enables the Tailscale control-plane for SSH.
+
+4) Verify the host is reachable over Tailscale
+
+```bash
+tailscale ip -4            # prints the host's Tailscale IPv4 address (e.g. 100.x.y.z)
+tailscale status --json | jq -r '.Self.TailscaleIPs[]'  # prints IPs in JSON mode
+# confirm sshd listening locally
+ss -tlnp | grep ":22" || sudo systemctl status sshd
+```
+
+5) How to SSH from your laptop (two options)
+
+- Standard SSH over Tailscale IP (most common):
+
+  1. Ensure your laptop is connected to the same Tailnet (run `tailscale up` on the laptop or use the Tailscale app).
+  2. From your laptop:
+     ```bash
+     ssh prime@<tailscale-ip>
+     ```
+     Replace `<tailscale-ip>` with the output of `tailscale ip -4` above. Use the local username on the homelab host (here `prime`).
+
+- Tailscale-managed SSH (if your Tailnet ACLs enable it):
+
+  ```bash
+  tailscale ssh prime@<hostname-or-ip>
+  ```
+
+6) Add your laptop public key to the homelab host (if you want passwordless login)
+
+From your laptop (recommended):
+
+```bash
+# copies ~/.ssh/id_rsa.pub into the remote authorized_keys (creates .ssh if needed)
+ssh-copy-id -i ~/.ssh/id_rsa.pub prime@<tailscale-ip>
+```
+
+If `ssh-copy-id` is not available, append the key manually (on the host):
+
+```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo '<your-public-key-contents>' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+7) Firewall and sshd sanity checks
+
+- If `ufw` is used, allow OpenSSH:
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw enable   # only if you intend to enable ufw
+```
+
+- Verify `sshd` is active and accepting connections on port 22:
+
+```bash
+sudo systemctl restart sshd
+sudo systemctl status sshd
+ss -tlnp | grep ":22"
+```
+
+8) Common issues and fixes
+
+- "Connection refused": `sshd` not running or firewall blocking port 22.
+- "Permission denied (publickey)": ensure your public key is in `~/.ssh/authorized_keys` and that permissions are strict (700 for `.ssh`, 600 for `authorized_keys`).
+- "Route" warnings from `tailscale up`: review `--accept-routes` option before enabling; accepting routes can change how traffic flows through your network.
+
+This host was prepared using the flow above: Tailscale installed, `infra/tailscale.env.sops` decrypted and used to join the tailnet, and `tailscale up --ssh` executed. To SSH from your laptop, run `ssh prime@$(tailscale ip -4)` where `$(tailscale ip -4)` is the host's Tailscale IP printed above.
+
 ## Quick Reference
 
 ### Dev Machine vs Homelab Node
