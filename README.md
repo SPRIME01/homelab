@@ -24,11 +24,12 @@ cat README.md
 ```
 
 The template includes:
-- ✅ Conditional infrastructure tooling (Pulumi, Ansible, Nx)
-- ✅ Pre-configured security guards and validation tests
-- ✅ Encrypted secrets management (SOPS + age)
+- ✅ Conditional infrastructure tooling (Pulumi, Ansible, Nx distributed builds)
+- ✅ Pre-configured security guards with dual test system (bash + Python)
+- ✅ Encrypted secrets management (SOPS + age with 2 recipients)
 - ✅ Tailscale SSH transport for remote execution
-- ✅ Python and shell test suites with pytest
+- ✅ 23 inline validators for safe project generation
+- ✅ VSCode tasks for running all test suites
 
 See `docs/Reference/Template-Testing.md` for testing and customization details.
 
@@ -46,13 +47,13 @@ See `docs/Reference/Template-Testing.md` for testing and customization details.
    ```
 3. **Verify guard rails before touching infrastructure**
    ```bash
-   just ci-validate      # runs the 10 bash-based guard tests
+   just ci-validate      # runs 10 bash infrastructure tests (guards, SOPS, Tailscale)
    pnpm exec nx graph    # optional visualization of the Nx workspace
    ```
-4. **Test Python code and templates** (uses Devbox for reproducible environment):
+4. **Test Python template code** (uses Devbox for reproducible environment):
    ```bash
    devbox shell          # activates Python 3.13.9 + pytest + dev deps
-   pytest tests/python -q
+   pytest tests/python -q   # runs 4 Python modules (hooks, validators, generation)
    exit
    ```
    See `docs/Reference/Template-Testing.md` for full testing guide.
@@ -70,7 +71,10 @@ See `docs/Reference/Template-Testing.md` for testing and customization details.
 
 - Never bypass the guard pattern `if [ "${HOMELAB:-0}" != "1" ]; then ...; fi` in scripts or just recipes.
 - Mock external dependencies (Tailscale, Pulumi backends, Nx agents) in tests so CI can run with `HOMELAB=0`.
-- Run `just ci-validate` before opening a pull request; treat exit code `2` as "skipped" per the testing convention.
+- Run **both test systems** before opening a pull request:
+  - `just ci-validate` — bash tests (exit code `2` = skip when optional deps missing)
+  - `devbox shell && pytest tests/python -q` — Python template tests
+- When modifying the Copier template, update validators in `copier.yml` AND `hooks/pre_copy.py`.
 - Document any new workflow inside the appropriate Diataxis section (Tutorial/How-to/Reference/Explanation) before requesting review.
 
 If you are unsure where to start, open `docs/README.md` and follow the "If you want to..." prompts.

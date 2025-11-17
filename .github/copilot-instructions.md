@@ -20,15 +20,32 @@ fi
 
 ## Critical Developer Workflows
 
-### Running Tests
+### Running Tests (Dual Test System)
+This project has **two complementary test systems**:
+
+**1. Bash-based infrastructure tests** (for guards, SOPS, Tailscale):
 ```bash
-bash tests/run-tests.sh  # Runs all tests; treats exit code 2 as "skipped"
-just ci-validate         # CI target: syntax check + tests
+bash tests/run-tests.sh  # Runs all bash tests; treats exit code 2 as "skipped"
+just ci-validate         # CI target: validates justfile syntax + runs bash tests
 ```
 
-**Test structure (10 test suites):**
+**2. Python-based template tests** (for Copier template validation):
+```bash
+devbox shell             # Activates reproducible Python 3.13.9 + pytest env
+pytest tests/python -q   # Runs Python tests for hooks/validators/template generation
+exit                     # Leaves devbox shell
+```
+
+**VSCode tasks available**:
+- "Verify JS tests" → `pnpm vitest` (runs vitest for TypeScript packages)
+- "Verify Python tests" → `pytest tests/python` (runs Python template tests)
+- "Verify Molecule" → `HOMELAB=1 just ansible-molecule-test` (Ansible validation)
+- "Verify All" → Runs all three test suites in sequence
+
+**Test structure (10 bash + 4 Python test suites):**
 ```
 tests/
+# Bash infrastructure tests (exit codes: 0=pass, 1=fail, 2=skip)
 ├── 01_non_homelab_decrypt.sh          # SOPS guard behavior (HOMELAB=0)
 ├── 02_sops_yaml_schema.sh             # .sops.yaml validation
 ├── 03_round_trip_homelab.sh           # Encrypt/decrypt cycle
@@ -38,7 +55,15 @@ tests/
 ├── 07_ansible_molecule_validation.sh  # Ansible structure validation
 ├── 08_infra_guards.sh                 # Infra recipe guards
 ├── 09_tailscale_ssh_verification.sh   # SSH config validation
-└── 10_nx_distributed_validation.sh    # Nx monorepo structure, guards
+├── 10_nx_distributed_validation.sh    # Nx monorepo structure, guards
+└── run-tests.sh                       # Test runner (treats exit 2 as skip)
+
+# Python template tests (pytest-based, run via devbox shell)
+└── python/
+    ├── conftest.py                    # Pytest configuration & fixtures
+    ├── test_pre_copy.py               # Validates hooks/pre_copy.py validators
+    ├── test_validators.py             # Validates extensions/validators.py filters
+    └── test_template_generation.py    # End-to-end Copier template generation
 ```
 
 **Exit code convention:**
@@ -384,6 +409,41 @@ When moving legacy projects into Nx:
 ls -la infra/pulumi-bootstrap  # → ../packages/pulumi-bootstrap
 ```
 
+## Copier Template System
+
+This repository **doubles as a Copier template** for generating customized homelab projects. Key files:
+
+**Template definition:**
+- `copier.yml` — Template metadata, questions (23 validators), conditional exclusions, post-gen tasks
+- `template/` — Source files with `.j2` Jinja templates (renders to target project)
+- `hooks/pre_copy.py` — Pre-generation validation (project_name, email, semver, npm_scope)
+- `hooks/post_copy.sh` — Post-generation setup (chmod +x scripts, create placeholders)
+- `extensions/validators.py` — Custom Jinja filters for template validation
+
+**Critical patterns:**
+- All user-facing prompts have **inline validators** in `copier.yml` (regex-based)
+- Python hooks provide **secondary validation** via `hooks/pre_copy.py` (runs before file copy)
+- Conditional exclusions based on feature flags: `enable_pulumi`, `enable_ansible`, `enable_nx_distributed`
+- Template testing via `pytest tests/python/test_template_generation.py` (requires devbox shell)
+
+**Generate a new project from this template:**
+```bash
+pip install copier
+copier copy gh:SPRIME01/homelab my-homelab \
+  -d project_name=my-homelab \
+  -d admin_email=you@example.com \
+  -d enable_pulumi=true \
+  -d enable_ansible=true \
+  -d enable_nx_distributed=false
+```
+
+**Modifying the template (workflow):**
+1. Edit files in `template/` (use `.j2` suffix for Jinja templates)
+2. Add validators to `copier.yml` or `hooks/pre_copy.py` for new questions
+3. Test with `devbox shell && pytest tests/python -q` (validates hooks + generation)
+4. Test generated project with `just copier-validate` (full end-to-end)
+5. Update `README.md` and `docs/Reference/Template-Testing.md`
+
 ## Key Documentation References
 
 - **`docs/Secrets Management.md`** — SOPS/age workflow, backup, rotation
@@ -393,6 +453,8 @@ ls -la infra/pulumi-bootstrap  # → ../packages/pulumi-bootstrap
 - **`justfile`** — All recipes with embedded guard logic (33 recipes: 21 infra + 12 Nx)
 - **`.envrc`** — Auto-detection of homelab environment
 - **`.sops.yaml`** — Encryption rules for `infra/` files (includes `infra/nx.*\.sops$`)
+- **`copier.yml`** — Template definition with 23 inline validators
+- **`pytest.ini`** — Python test configuration (testpaths, maxfail, warnings)
 
 ## Type Safety Requirements (Strict)
 
