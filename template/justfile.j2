@@ -67,3 +67,7 @@ ansible-molecule-destroy:
 	bash -lc 'set -euo pipefail; cd infra/ansible-bootstrap && molecule destroy'
 {% endraw %}
 {% endif %}
+
+# CI validation target: syntax + tests
+ci-validate:
+	bash -lc 'just --dump >/dev/null; bash tests/run-tests.sh'
