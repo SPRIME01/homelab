@@ -1,4 +1,3 @@
-_subdirectory: template
 _min_copier_version: "9.0.0"
 _templates_suffix: .j2
 _jinja_extensions:
@@ -8,6 +7,7 @@ _jinja_extensions:
 _exclude:
   - .git
   - .nx
+  - template/
   - node_modules
   - dist
   - tmp
