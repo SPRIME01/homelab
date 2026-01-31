@@ -6,6 +6,9 @@
 *.gpg
 infra/tailscale-acl.local.json
 
+# Local omc file
+.omc
+
 # Infrastructure secrets (plaintext - always encrypted before committing)
 infra/pulumi.env
 infra/ansible.env
