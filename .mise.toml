@@ -57,9 +57,9 @@ bun = "1.2.36"
 # Python: MCP docs contained `v3.13.9` in results — pin to that stable release.
 python = "3.13.9"
 
-# Nx: 20.4.0 for official Bun support via @nx/bun plugin
+# Nx: 22.0.3 for @nx-extend/pulumi compatibility and improved Bun support
 # Note: Installing via mise ensures nx CLI is available globally without bunx prefix
-"npm:nx" = "20.4.0"
+"npm:nx" = "22.0.3"
 
 # Devbox, Rust, Age, and Pulumi pinned from recent releases (queried via GitHub releases API)
 devbox = "0.16.0"

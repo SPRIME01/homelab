@@ -10,7 +10,21 @@
       "Bash(git checkout -b migrate-to-bun)",
       "Bash(git add -A)",
       "Bash(git commit -m \"chore: Migrate from Node.js/pnpm to Bun 1.2.36\n\nThis commit migrates the homelab infrastructure repository from Node.js\n22.17.0 + pnpm 10.22.0 to Bun 1.2.36 with full runtime replacement.\n\nCore changes:\n- .mise.toml: Add bun 1.2.36, remove node/pnpm pins\n- package.json: Add engines.bun, workspaces field, downgrade Nx to 20.4.0 for @nx/bun plugin\n- nx.json: Add @nx/bun plugin for Bun support\n- Delete pnpm-workspace.yaml \\(workspace config moved to package.json\\)\n- justfile: Replace all pnpm exec/npm with bunx/bun\n- scripts/nx-agent-restart.sh: Use bunx instead of pnpm exec\n- .github/workflows/nx-validate.yml: Use oven-sh/setup-bun@v2 action\n- copier.yml: Add bun_version variable, remove pnpm_version, update nx_version\n- tests: Update validation tests to check for bun instead of node/npm\n- README.md, CLAUDE.md: Update setup instructions to use bun install/bunx\n\nRemaining documentation files will be updated in follow-up commits.\")",
-      "Bash(git commit -m \"docs: Update all documentation for Bun 1.2.36 migration\n\nUpdate all documentation files to reflect the migration from Node.js/pnpm\nto Bun:\n- docs/Reference/Tool-Versions.md: Replace node/pnpm entries with bun\n- docs/Explanations/System-Architecture.md: Update tool chain references\n- docs/Explanations/Nx-Distributed-Architecture.md: Use bunx instead of pnpm exec\n- docs/Howto/Add-New-Nx-Project.md: Update all Nx commands\n- docs/Howto/Create-Dev-Machine.md: Update setup instructions\n- docs/Howto/Setup-Pulumi.md: Update Pulumi setup for Bun\n- docs/Tutorials/Build-A-Typed-Infrastructure-Module.md: Update examples\n- docs/Tutorials/Setup-Three-Node-Distributed-Build.md: Update commands\n- docs/Tutorials/Your-First-Deployment.md: Update prerequisites\n- .github/copilot-instructions.md: Update Nx version to 20.4.0 for Bun support\")"
+      "Bash(git commit -m \"docs: Update all documentation for Bun 1.2.36 migration\n\nUpdate all documentation files to reflect the migration from Node.js/pnpm\nto Bun:\n- docs/Reference/Tool-Versions.md: Replace node/pnpm entries with bun\n- docs/Explanations/System-Architecture.md: Update tool chain references\n- docs/Explanations/Nx-Distributed-Architecture.md: Use bunx instead of pnpm exec\n- docs/Howto/Add-New-Nx-Project.md: Update all Nx commands\n- docs/Howto/Create-Dev-Machine.md: Update setup instructions\n- docs/Howto/Setup-Pulumi.md: Update Pulumi setup for Bun\n- docs/Tutorials/Build-A-Typed-Infrastructure-Module.md: Update examples\n- docs/Tutorials/Setup-Three-Node-Distributed-Build.md: Update commands\n- docs/Tutorials/Your-First-Deployment.md: Update prerequisites\n- .github/copilot-instructions.md: Update Nx version to 20.4.0 for Bun support\")",
+      "Bash(just --justfile --check)",
+      "Bash(just --dump)",
+      "Bash(bash tests/run-tests.sh)",
+      "Bash(bash tests/06_pulumi_project_validation.sh)",
+      "Bash(bash tests/10_nx_distributed_validation.sh)",
+      "Bash(git checkout main)",
+      "Bash(git merge migrate-to-bun --no-edit)",
+      "WebSearch",
+      "Bash(npm view @nx-bun/nx versions --json)",
+      "Bash(bunx nx show projects)",
+      "Bash(bunx nx report)",
+      "Bash(bunx nx show projects --json)",
+      "Bash(bunx nx g @nx-extend/pulumi:init --help)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ntest: Upgrade to Nx 22.0.3 for @nx-extend/pulumi compatibility\n\nThis commit upgrades Nx from 20.4.0 to 22.0.3 to enable usage of the\n@nx-extend/pulumi community plugin, which requires @nx/devkit ^22.0.0.\n\nChanges:\n- .mise.toml: Upgrade npm:nx from 20.4.0 to 22.0.3\n- package.json: Upgrade all @nx/* packages to 22.0.3\n- nx.json: Remove non-existent @nx/bun plugin \\(use @nx/js only\\)\n- copier.yml: Update nx_version default to 22.0.3\n- docs/Reference/Tool-Versions.md: Update Nx version reference\n\nKey findings:\n- @nx/bun plugin does NOT exist \\(only community @nx-bun/nx\\)\n- Bun 1.2.36 runtime works perfectly with Nx 22.0.3 via @nx/js plugin\n- @nx-extend/pulumi@11.0.2 installs and registers successfully\n- All validation tests pass \\(06_pulumi, 10_nx_distributed\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

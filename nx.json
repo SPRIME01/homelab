@@ -54,14 +54,6 @@
         "testTargetName": "test",
         "lintTargetName": "lint"
       }
-    },
-    {
-      "plugin": "@nx/bun",
-      "options": {
-        "buildTargetName": "build",
-        "testTargetName": "test",
-        "serveTargetName": "serve"
-      }
     }
   ],
   "generators": {

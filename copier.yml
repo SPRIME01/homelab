@@ -106,7 +106,7 @@ pulumi_version:
 
 nx_version:
   type: str
-  default: "20.4.0"
+  default: "22.0.3"
   validator: >-
     {% if not (nx_version | regex_search('^\d+\.\d+\.\d+$')) %}
     nx_version must be a semver (major.minor.patch)

@@ -4,7 +4,7 @@
 | --- | --- | --- | --- |
 | `bun` | 1.2.36 | Bun releases (latest stable as of Jan 2026) | 2026-01-31 |
 | `python` | 3.13.9 | Context7 MCP lookup | 2025-11-14 |
-| `npm:nx` | 20.4.0 | npm registry query (for @nx/bun plugin support) | 2026-01-31 |
+| `npm:nx` | 22.0.3 | npm registry query (for @nx-extend/pulumi compatibility) | 2026-01-31 |
 | `pulumi` | 3.207.0 | GitHub releases (mise plugin) | 2025-11-14 |
 | `devbox` | 0.16.0 | Jetify release referenced in devbox docs | 2025-11-14 |
 | `rust` | 1.91.1 | Rust releases (mise plugin) | 2025-11-14 |
