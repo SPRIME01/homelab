@@ -3,13 +3,8 @@ set -euo pipefail
 
 # Test: Pulumi project structure and configuration validation
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "SKIP: node not installed" >&2
-  exit 2
-fi
-
-if ! command -v npm >/dev/null 2>&1; then
-  echo "SKIP: npm not installed" >&2
+if ! command -v bun >/dev/null 2>&1; then
+  echo "SKIP: bun not installed" >&2
   exit 2
 fi
 

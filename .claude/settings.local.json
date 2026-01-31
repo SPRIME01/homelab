@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(superpowers:brainstorming)",
+      "Bash(tree -L 2 -I \"__pycache__|*.pyc|.git\" /home/sprime01/projects/homelab)",
+      "Bash(cat /home/sprime01/projects/homelab/.github/workflows/ci-validate.yml)",
+      "Bash(cat /home/sprime01/projects/homelab/.github/workflows/template-validation.yml)",
+      "Bash(git add CLAUDE.md)",
+      "Bash(git commit -m \"docs: Add CLAUDE.md for future Claude Code instances\")",
+      "Bash(git checkout -b migrate-to-bun)",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"chore: Migrate from Node.js/pnpm to Bun 1.2.36\n\nThis commit migrates the homelab infrastructure repository from Node.js\n22.17.0 + pnpm 10.22.0 to Bun 1.2.36 with full runtime replacement.\n\nCore changes:\n- .mise.toml: Add bun 1.2.36, remove node/pnpm pins\n- package.json: Add engines.bun, workspaces field, downgrade Nx to 20.4.0 for @nx/bun plugin\n- nx.json: Add @nx/bun plugin for Bun support\n- Delete pnpm-workspace.yaml \\(workspace config moved to package.json\\)\n- justfile: Replace all pnpm exec/npm with bunx/bun\n- scripts/nx-agent-restart.sh: Use bunx instead of pnpm exec\n- .github/workflows/nx-validate.yml: Use oven-sh/setup-bun@v2 action\n- copier.yml: Add bun_version variable, remove pnpm_version, update nx_version\n- tests: Update validation tests to check for bun instead of node/npm\n- README.md, CLAUDE.md: Update setup instructions to use bun install/bunx\n\nRemaining documentation files will be updated in follow-up commits.\")"
+    ]
+  }
+}

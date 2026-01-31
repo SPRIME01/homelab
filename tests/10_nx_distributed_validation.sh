@@ -155,21 +155,38 @@ if ! echo "$DRY_RUN_OUTPUT" | grep -q "DRY RUN:"; then
   exit 1
 fi
 
-# Test 8: pnpm-workspace.yaml exists and references correct paths
-echo "  [10.8] Validating pnpm-workspace.yaml configuration..."
-if [ ! -f "$REPO_ROOT/pnpm-workspace.yaml" ]; then
-  echo "FAIL: pnpm-workspace.yaml not found" >&2
-  exit 1
-fi
-
-if ! grep -q "packages/\*" "$REPO_ROOT/pnpm-workspace.yaml"; then
-  echo "FAIL: pnpm-workspace.yaml should include 'packages/*'" >&2
-  exit 1
-fi
-
-if ! grep -q "infra/\*" "$REPO_ROOT/pnpm-workspace.yaml"; then
-  echo "FAIL: pnpm-workspace.yaml should include 'infra/*'" >&2
-  exit 1
+# Test 8: Bun workspace configuration exists and references correct paths
+echo "  [10.8] Validating Bun workspace configuration..."
+if [ ! -f "$REPO_ROOT/bun-workspace.yml" ]; then
+  # Check package.json for workspaces field (alternative approach)
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "SKIP: jq not installed (cannot validate package.json workspaces)" >&2
+    exit 2
+  fi
+  if ! jq -e '.workspaces' "$REPO_ROOT/package.json" >/dev/null 2>&1; then
+    echo "FAIL: package.json missing workspaces field and no bun-workspace.yml found" >&2
+    exit 1
+  fi
+  # Validate workspaces includes packages/* and infra/*
+  WORKSPACES=$(jq -r '.workspaces[]' "$REPO_ROOT/package.json")
+  if ! echo "$WORKSPACES" | grep -q "packages/\*"; then
+    echo "FAIL: package.json workspaces should include 'packages/*'" >&2
+    exit 1
+  fi
+  if ! echo "$WORKSPACES" | grep -q "infra/\*"; then
+    echo "FAIL: package.json workspaces should include 'infra/*'" >&2
+    exit 1
+  fi
+else
+  # Validate bun-workspace.yml
+  if ! grep -q "packages/\*" "$REPO_ROOT/bun-workspace.yml"; then
+    echo "FAIL: bun-workspace.yml should include 'packages/*'" >&2
+    exit 1
+  fi
+  if ! grep -q "infra/\*" "$REPO_ROOT/bun-workspace.yml"; then
+    echo "FAIL: bun-workspace.yml should include 'infra/*'" >&2
+    exit 1
+  fi
 fi
 
 # Test 9: .nxignore excludes encrypted secrets

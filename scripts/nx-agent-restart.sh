@@ -41,7 +41,7 @@ fi
 MACHINE_ID=$(tailscale ip -4 2>/dev/null || echo "local-dev")
 LOG_DIR="$HOME/.local/state"
 mkdir -p "$LOG_DIR"
-nohup pnpm exec nx-cloud start-agent --machineId "$MACHINE_ID" > "$LOG_DIR/nx-agent.log" 2>&1 &
+nohup bunx nx-cloud start-agent --machineId "$MACHINE_ID" > "$LOG_DIR/nx-agent.log" 2>&1 &
 agent_pid=$!
 echo "$agent_pid" > "$LOG_DIR/nx-agent.pid"
 

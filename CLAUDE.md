@@ -36,10 +36,10 @@ just verify-all                # Runs bash + Python + Molecule tests
 
 ```bash
 # Nx monorepo builds
-pnpm exec nx build homelab-types      # Build types library
-pnpm exec nx build pulumi-bootstrap   # Build Pulumi infra
-just nx-affected-build                # Build changed projects only
-just nx-distributed-build             # Distributed build (requires HOMELAB=1 + agents)
+bunx nx build homelab-types              # Build types library
+bunx nx build pulumi-bootstrap           # Build Pulumi infra
+just nx-affected-build                   # Build changed projects only
+just nx-distributed-build                # Distributed build (requires HOMELAB=1 + agents)
 
 # Pulumi operations
 just pulumi-preview                   # Preview changes
@@ -52,15 +52,15 @@ HOMELAB=1 DEPLOY_CONFIRM=yes just pulumi-up    # Deploy (requires confirmation)
 just --justfile --check              # Validate justfile syntax
 just sops-validate                   # Check .sops.yaml schema
 just nx-validate                     # Workspace validation
-pnpm exec nx graph                   # Visualize task graph
+bunx nx graph                        # Visualize task graph
 just ansible-lint                    # Lint Ansible playbooks
 ```
 
 ### Environment Setup
 
 ```bash
-mise install                         # Install pinned tools (node 22.17.0, python 3.13.9, etc.)
-pnpm install                         # Prepare monorepo packages
+mise install                         # Install pinned tools (bun 1.2.36, python 3.13.9, etc.)
+bun install                          # Prepare monorepo packages
 direnv allow                         # Trust .envrc for HOMELAB auto-detection
 just detect-homelab                  # Confirm SOPS/age key detection
 ```

@@ -54,6 +54,14 @@
         "testTargetName": "test",
         "lintTargetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/bun",
+      "options": {
+        "buildTargetName": "build",
+        "testTargetName": "test",
+        "serveTargetName": "serve"
+      }
     }
   ],
   "generators": {
@@ -79,7 +87,7 @@
   },
   "release": {
     "version": {
-      "preVersionCommand": "pnpm run test"
+      "preVersionCommand": "bun run test"
     }
   }
 }

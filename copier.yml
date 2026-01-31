@@ -14,6 +14,7 @@ _exclude:
   - "*.sops"
   - .copier-answers.yml
   - pnpm-lock.yaml
+  - bun.lockb
   - "{% if not enable_pulumi %}packages/pulumi-bootstrap{% endif %}"
   - "{% if not enable_pulumi %}infra/pulumi-bootstrap{% endif %}"
   - "{% if not enable_pulumi %}tests/06_pulumi_project_validation.sh{% endif %}"
@@ -76,13 +77,13 @@ npm_scope:
     npm_scope must start with @ followed by lowercase alphanumerics or hyphen/underscore
     {% endif %}
 
-node_version:
+bun_version:
   type: str
-  help: "Node.js semantic version (e.g. 22.17.0)"
-  default: "22.17.0"
+  help: "Bun semantic version (e.g. 1.2.36)"
+  default: "1.2.36"
   validator: >-
-    {% if not (node_version | regex_search('^\d+\.\d+\.\d+$')) %}
-    node_version must be a semver (major.minor.patch) e.g. 22.17.0
+    {% if not (bun_version | regex_search('^\d+\.\d+\.\d+$')) %}
+    bun_version must be a semver (major.minor.patch) e.g. 1.2.36
     {% endif %}
 
 python_version:
@@ -103,17 +104,9 @@ pulumi_version:
     pulumi_version must be a semver (major.minor.patch)
     {% endif %}
 
-pnpm_version:
-  type: str
-  default: "10.22.0"
-  validator: >-
-    {% if not (pnpm_version | regex_search('^\d+\.\d+\.\d+$')) %}
-    pnpm_version must be a semver (major.minor.patch)
-    {% endif %}
-
 nx_version:
   type: str
-  default: "22.0.3"
+  default: "20.4.0"
   validator: >-
     {% if not (nx_version | regex_search('^\d+\.\d+\.\d+$')) %}
     nx_version must be a semver (major.minor.patch)

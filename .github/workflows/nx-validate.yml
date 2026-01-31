@@ -11,15 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Node and pnpm
-        run: |
-          curl -fsSL https://get.pnpm.io/install.sh | pnpm=latest bash -s -- -y
-          pnpm --version
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '22.17.0'
+          bun-version: '1.2.36'
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
       - name: Run Nx tests (validation only)
-        run: pnpm exec nx run-many --target=test --all --parallel=3
+        run: bunx nx run-many --target=test --all --parallel=3

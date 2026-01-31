@@ -37,8 +37,8 @@ See `docs/Reference/Template-Testing.md` for testing and customization details.
 
 1. **Install the pinned toolchain**
    ```bash
-   mise install          # installs node 22.17.0, python 3.13.9, pulumi 3.207.0, etc.
-   pnpm install          # prepares the monorepo packages
+   mise install          # installs bun 1.2.36, python 3.13.9, pulumi 3.207.0, etc.
+   bun install           # prepares the monorepo packages
    ```
 2. **Load the development environment**
    ```bash
@@ -48,7 +48,7 @@ See `docs/Reference/Template-Testing.md` for testing and customization details.
 3. **Verify guard rails before touching infrastructure**
    ```bash
    just ci-validate      # runs 10 bash infrastructure tests (guards, SOPS, Tailscale)
-   pnpm exec nx graph    # optional visualization of the Nx workspace
+   bunx nx graph         # optional visualization of the Nx workspace
    ```
 4. **Test Python template code** (uses Devbox for reproducible environment):
    ```bash
