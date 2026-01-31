@@ -9,16 +9,22 @@
     "lint": "nx run-many --target=lint --all"
   },
   "engines": {
-    "node": ">={{ node_version }}",
-    "pnpm": ">={{ pnpm_version }}"
+    "bun": ">={{ bun_version }}"
   },
-  "packageManager": "pnpm@{{ pnpm_version }}",
+  "packageManager": "bun@{{ bun_version }}",
+  "workspaces": [
+    "packages/*",
+    "infra/*"
+  ],
   "devDependencies": {
 {% if enable_nx_distributed %}
     "nx": "{{ nx_version }}",
     "@nx/js": "{{ nx_version }}",
     "@nx/node": "{{ nx_version }}",
     "@nx/workspace": "{{ nx_version }}",
+{% endif %}
+{% if enable_pulumi %}
+    "@nx-extend/pulumi": "^11.0.2",
 {% endif %}
     "typescript": "^5.7.0",
     "vitest": "^2.1.8",
