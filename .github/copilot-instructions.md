@@ -37,7 +37,7 @@ exit                     # Leaves devbox shell
 ```
 
 **VSCode tasks available**:
-- "Verify JS tests" → `pnpm vitest` (runs vitest for TypeScript packages)
+- "Verify JS tests" → `bunx vitest` (runs vitest for TypeScript packages)
 - "Verify Python tests" → `pytest tests/python` (runs Python template tests)
 - "Verify Molecule" → `HOMELAB=1 just ansible-molecule-test` (Ansible validation)
 - "Verify All" → Runs all three test suites in sequence
@@ -150,7 +150,7 @@ All bash scripts and `justfile` recipes use `set -euo pipefail` for fail-fast be
 
 ### Tool Pinning (.mise.toml)
 Versions are **pinned from Context7 MCP lookups** or GitHub releases API:
-- `node = "22.17.0"`
+- `bun = "1.2.36"`
 - `python = "3.13.9"`
 - `pulumi = "3.207.0"`
 
@@ -326,7 +326,7 @@ fi
 
 ## Nx Monorepo & Distributed Builds
 
-This project uses **Nx 22.0.3 + pnpm 10.22.0** for distributed task execution across Tailscale-networked machines.
+This project uses **Nx 20.4.0 + Bun 1.2.36** for distributed task execution across Tailscale-networked machines.
 
 ### Architecture
 ```
@@ -341,15 +341,15 @@ packages/
 
 **Key files:**
 - `nx.json` — Cache in `~/.local/state/nx-cache` (XDG_STATE_HOME pattern), parallel=3, daemon enabled
-- `pnpm-workspace.yaml` — Packages: `['packages/*', 'infra/*']` (allows legacy infra/ projects)
+- `bun.lockb` — Bun lockfile for dependency management
 - `tsconfig.base.json` — Strict mode + path mappings for `@homelab/*` packages
 - `.nxignore` — Excludes `**/*.sops`, `**/*.env`, `.envrc` from task graph
 
 ### Build Commands
 ```bash
 # Build specific project
-pnpm exec nx build homelab-types
-pnpm exec nx build pulumi-bootstrap
+bunx nx build homelab-types
+bunx nx build pulumi-bootstrap
 
 # Build all affected by changes
 just nx-affected-build
@@ -566,7 +566,7 @@ EOF
 # Add: "@homelab/my-package": ["packages/my-package/src/index.ts"]
 
 # 5. Build and validate
-pnpm exec nx build my-package
+bunx nx build my-package
 just ci-validate
 ```
 

@@ -10,7 +10,7 @@ Create a new Nx project that ships branded types, integrates with Pulumi, and in
 
 1. **Generate project skeleton**
    ```bash
-   pnpm exec nx g @nrwl/node:library packages/infra-hello --unitTestRunner=vitest
+   bunx nx g @nrwl/node:library packages/infra-hello --unitTestRunner=vitest
    ```
 2. **Adopt branded types**
    - Import `TailscaleIP`, `assertHomelabAccess`, and other helpers from `@homelab/homelab-types`.
@@ -31,8 +31,8 @@ Create a new Nx project that ships branded types, integrates with Pulumi, and in
 Run the following commands and confirm they succeed:
 
 ```bash
-pnpm exec nx build infra-hello
-pnpm exec nx test infra-hello
+bunx nx build infra-hello
+bunx nx test infra-hello
 just pulumi-preview
 HOMELAB=1 DRY_RUN=1 DEPLOY_CONFIRM=yes just pulumi-up  # should exit after DRY RUN message
 ```

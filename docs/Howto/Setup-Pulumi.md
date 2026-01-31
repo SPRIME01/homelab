@@ -5,7 +5,7 @@ Configure Pulumi with typed stacks, encrypted credentials, and the XDG-friendly 
 ## Prerequisites
 
 - `HOMELAB=1` exported (direnv will do this if your age key exists).
-- Tools installed via `mise install` (Pulumi 3.207.0, Node 22.17.0).
+- Tools installed via `mise install` (Pulumi 3.207.0, Bun 1.2.36).
 - Age key at `~/.config/sops/age/keys.txt` so you can encrypt secrets.
 
 ## Steps
@@ -27,7 +27,7 @@ Configure Pulumi with typed stacks, encrypted credentials, and the XDG-friendly 
 2. **Install dependencies**
    ```bash
    cd infra/pulumi-bootstrap
-   pnpm install || npm install
+   bun install
    ```
 3. **Initialize or select a stack**
    ```bash
@@ -53,7 +53,7 @@ Configure Pulumi with typed stacks, encrypted credentials, and the XDG-friendly 
 ## Validation
 
 - Pulumi commands should log the backend URL they are talking to (file:// path by default).
-- The TypeScript program in `infra/pulumi-bootstrap/index.ts` uses branded types, so TypeScript must compile cleanly (`pnpm exec tsc --noEmit`).
+- The TypeScript program in `infra/pulumi-bootstrap/index.ts` uses branded types, so TypeScript must compile cleanly (`bunx tsc --noEmit`).
 - `just pulumi-up` refuses to run unless both `HOMELAB=1` and a confirmation token are provided.
 
 ## Remaining Human Tasks

@@ -11,7 +11,7 @@ Bring up one orchestrator and three agents connected over Tailscale, share a cac
 1. **Prepare orchestrator**
    ```bash
    HOMELAB=1 direnv allow
-   pnpm install
+   bun install
    scripts/generate-nx-agent-secret.sh
    cp docs/Reference/example.nx-agents.env infra/nx-agents.env
    $EDITOR infra/nx-agents.env   # set NX_SHARED_SECRET and three agent IPs
@@ -41,7 +41,7 @@ Bring up one orchestrator and three agents connected over Tailscale, share a cac
 ## Success Criteria
 
 - `just nx-cache-health` returns `✓ Cache server is healthy`.
-- `pnpm exec nx run-many --target=build --all --parallel=3 --configuration=production` (triggered by the just recipe) prints remote execution logs instead of local-only runs.
+- `bunx nx run-many --target=build --all --parallel=3 --configuration=production` (triggered by the just recipe) prints remote execution logs instead of local-only runs.
 - Each agent reports `Starting Nx agent with machine ID: 100.x.x.x` using its Tailscale IP.
 - `HOMELAB=1 DEPLOY_CONFIRM=yes just nx-distributed-build` exits `0` without falling back to local execution.
 

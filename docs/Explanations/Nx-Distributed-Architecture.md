@@ -20,8 +20,8 @@ sequenceDiagram
   Orchestrator->>Agent2: Add to infra/nx-agents.env
   Orchestrator->>Orchestrator: Encrypt file via sops -> infra/nx-agents.env.sops
   Agent1->>Tailscale: tailscale ip -4 (determine identity)
-  Agent1->>Nx Cloud: pnpm exec nx-cloud start-agent (NX_SHARED_SECRET)
-  Orchestrator->>Nx Cloud: pnpm exec nx run-many ... (auth via same secret)
+  Agent1->>Nx Cloud: bunx nx-cloud start-agent (NX_SHARED_SECRET)
+  Orchestrator->>Nx Cloud: bunx nx run-many ... (auth via same secret)
 ```
 
 ## Cache Hierarchy Flow
@@ -30,7 +30,7 @@ sequenceDiagram
 graph TD
   A[Build Command] --> B{Cache Hit?}
   B -->|Yes| C[Tailnet HTTP Cache (Nx cache server)]
-  C --> D[pnpm exec nx uses artifact]
+  C --> D[bunx nx uses artifact]
   B -->|No| E[Local Execution]
   E --> F[Upload to Nx Cloud cache]
   F --> G[Optional: Sync to Tailnet cache]

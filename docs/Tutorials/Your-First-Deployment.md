@@ -8,7 +8,7 @@ Generate age keys, join the tailnet, encrypt your first secret, and perform a gu
 
 ## Prerequisites
 
-- Laptop with `direnv`, `mise`, `pnpm`, and `sops` installed.
+- Laptop with `direnv`, `mise`, `bun`, and `sops` installed.
 - Access to the Tailscale admin console.
 - Ability to install the pinned versions via `mise install`.
 
@@ -17,7 +17,7 @@ Generate age keys, join the tailnet, encrypt your first secret, and perform a gu
 1. **Install toolchain**
    ```bash
    mise install
-   pnpm install
+   bun install
    ```
 2. **Create age key**
    ```bash

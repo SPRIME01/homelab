@@ -21,7 +21,7 @@ flowchart TD
 ## Tool Chain
 
 - **Devbox**: Creates a reproducible base image (packages like git, jq, curl) but leaves activation explicit. Use `devbox shell` when you want system packages plus mise-managed tools.
-- **Mise**: Pins versions defined in `.mise.toml` (node 22.17.0, python 3.13.9, pulumi 3.207.0, etc.) and places them on `PATH` automatically once `.envrc` activates mise.
+- **Mise**: Pins versions defined in `.mise.toml` (bun 1.2.36, python 3.13.9, pulumi 3.207.0, etc.) and places them on `PATH` automatically once `.envrc` activates mise.
 - **direnv / .envrc**: Detects `~/.config/sops/age/keys.txt` and exports `HOMELAB=1` only on trusted machines. It also sets `PULUMI_LOCAL_STATE` and `XDG_STATE_HOME` friendly defaults so Pulumi, Nx cache, and logs never spill into the repo.
 - **just**: Central dispatcher for guarded workflows. Every recipe follows the `HOMELAB` + `DEPLOY_CONFIRM` + `DRY_RUN` + `REQUIRE_TAILSCALE` guard pattern defined in `.github/copilot-instructions.md`.
 

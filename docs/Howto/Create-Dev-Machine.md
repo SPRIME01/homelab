@@ -113,7 +113,7 @@ mise install
 ```
 
 This installs:
-- Node.js 22.17.0
+- Bun 1.2.36
 - Python 3.13.9
 - Pulumi 3.207.0
 - And other pinned tools
@@ -121,23 +121,20 @@ This installs:
 ### Option B: Manual Installation
 
 If you prefer not to use `mise`, install these tools manually:
-- Node.js 22.17.0+: https://nodejs.org/
+- Bun 1.2.36+: https://bun.sh/
 - Python 3.13.9+: https://www.python.org/
-- pnpm 10.22.0+: `npm install -g pnpm`
 - Just: https://just.systems/
 - Pulumi (if enable_pulumi=true): https://www.pulumi.com/docs/get-started/install/
 
-### Install Node.js Dependencies
+### Install Bun Dependencies
 
-After installing Node.js and pnpm, install the project's JavaScript packages:
+After installing Bun, install the project's JavaScript packages:
 
 ```bash
-pnpm install
+bun install
 ```
 
-**What this does**: Downloads and installs all Node.js libraries needed for the TypeScript packages, Nx build system, and testing tools.
-
-**If pnpm command not found**: Install it with `npm install -g pnpm` first.
+**What this does**: Downloads and installs all JavaScript libraries needed for the TypeScript packages, Nx build system, and testing tools.
 
 ## Step 4: Set Up Environment Auto-Loading (Optional but Recommended)
 
@@ -271,7 +268,7 @@ just ci-validate
 ### Build TypeScript Packages
 
 ```bash
-pnpm exec nx build homelab-types
+bunx nx build homelab-types
 ```
 
 **What this does**: Compiles the TypeScript branded types library used by infrastructure code.
@@ -279,7 +276,7 @@ pnpm exec nx build homelab-types
 ### Run JavaScript Tests
 
 ```bash
-pnpm vitest
+bun test
 ```
 
 **What this does**: Runs unit tests for TypeScript packages using Vitest.
@@ -511,7 +508,7 @@ just ci-validate              # Bash infrastructure tests
 devbox shell && pytest tests/python -q   # Python template tests
 
 # Build code
-pnpm exec nx build homelab-types    # Build TypeScript packages
+bunx nx build homelab-types    # Build TypeScript packages
 
 # Join Tailscale (dev machine)
 tailscale up                  # Interactive login
@@ -525,8 +522,8 @@ just --list
 ### "Command not found: mise"
 Install mise from https://mise.jdx.dev/getting-started.html and restart your terminal.
 
-### "Command not found: pnpm"
-Install with: `npm install -g pnpm`
+### "Command not found: bun"
+Install from https://bun.sh/#install
 
 ### "Command not found: just"
 Install from https://just.systems/ or use `mise`: add `just = "latest"` to `.mise.toml` and run `mise install`.
