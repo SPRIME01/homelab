@@ -52,3 +52,4 @@ packages/*/*.tsbuildinfo
 
 # Nx infra secrets
 infra/nx-agents.env
+__pycache__/
